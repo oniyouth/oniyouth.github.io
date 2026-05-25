@@ -1,637 +1,1849 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OniYouth - Digital Youth Platform</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👹</text></svg>">
+    <title>OniYouth - Streetwear Culture</title>
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/images/logo.png">
+    <meta name="description" content="OniYouth - Marca de ropa streetwear. Moda urbana con actitud.">
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap');
-
-        * {
+        /* ========== CSS RESET & BASE ========== */
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
         :root {
-            --primary: #ff3e3e;
-            --primary-glow: #ff3e3e80;
-            --secondary: #00f0ff;
-            --secondary-glow: #00f0ff40;
-            --dark: #0a0a0f;
-            --darker: #050508;
-            --text: #e0e0e0;
-            --text-muted: #888;
-            --card-bg: #12121a;
-            --card-border: #1e1e2e;
+            /* Dark theme (default) */
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-card: #111111;
+            --bg-card-hover: #1a1a1a;
+            --bg-nav: rgba(0, 0, 0, 0.85);
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --text-muted: #666666;
+            --border-color: #222222;
+            --border-hover: #444444;
+            --accent: #ffffff;
+            --logo-filter: brightness(0) invert(1);
+            --product-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            --overlay-gradient: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.95));
+            --hero-text-color: #ffffff;
+            --scrollbar-track: #111;
+            --scrollbar-thumb: #333;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-card: #f0f0f0;
+            --bg-card-hover: #e8e8e8;
+            --bg-nav: rgba(255, 255, 255, 0.9);
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --text-muted: #999999;
+            --border-color: #e0e0e0;
+            --border-hover: #cccccc;
+            --accent: #000000;
+            --logo-filter: none;
+            --product-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            --overlay-gradient: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.95));
+            --hero-text-color: #ffffff;
+            --scrollbar-track: #f0f0f0;
+            --scrollbar-thumb: #ccc;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--darker);
-            color: var(--text);
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
-            min-height: 100vh;
+            cursor: default;
+            transition: background 0.6s ease, color 0.6s ease;
         }
 
-        /* Particle Canvas */
-        #particles {
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+        /* ========== CUSTOM CURSOR ========== */
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transition: all 0.15s ease-out;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-ring.hover {
+            transform: scale(1.8);
+            border-color: var(--accent);
+            opacity: 0.5;
+        }
+
+        /* ========== PRELOADER ========== */
+        .preloader {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-            background: rgba(5, 5, 8, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 62, 62, 0.1);
-        }
-
-        .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), #ff7b3e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: color 0.3s;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        /* Hero Section */
-        .hero {
-            position: relative;
-            min-height: 100vh;
+            background: #000;
+            z-index: 10000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 2rem;
-            z-index: 1;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
 
-        .hero-badge {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            border: 1px solid var(--primary);
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--primary);
-            margin-bottom: 2rem;
-            animation: pulse-border 2s infinite;
+        .preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
         }
 
-        @keyframes pulse-border {
-            0%, 100% { box-shadow: 0 0 5px var(--primary-glow); }
-            50% { box-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow); }
+        .preloader-logo {
+            width: 80px;
+            height: 80px;
+            animation: preloaderPulse 1.5s ease-in-out infinite;
         }
 
-        .hero h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(3rem, 8vw, 7rem);
-            font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero h1 .line1 {
-            display: block;
-            background: linear-gradient(135deg, #fff, #ccc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero h1 .line2 {
-            display: block;
-            background: linear-gradient(135deg, var(--primary), #ff7b3e, var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            line-height: 1.8;
-            margin-bottom: 3rem;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border: none;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #ff7b3e);
+        .preloader-text {
             color: #fff;
-            box-shadow: 0 4px 20px var(--primary-glow);
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-top: 2rem;
+            opacity: 0.6;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 30px var(--primary-glow);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text);
-            border: 2px solid var(--card-border);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--secondary);
-            color: var(--secondary);
-            box-shadow: 0 0 20px var(--secondary-glow);
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            bottom: 2rem;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(10px); }
-        }
-
-        .scroll-indicator svg {
-            width: 30px;
-            height: 30px;
-            stroke: var(--text-muted);
-        }
-
-        /* Features Section */
-        .section {
-            position: relative;
-            z-index: 1;
-            padding: 6rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .section-subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto 4rem;
-            line-height: 1.6;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 2.5rem;
-            transition: all 0.4s;
+        .preloader-bar {
+            width: 120px;
+            height: 1px;
+            background: #333;
+            margin-top: 2rem;
             position: relative;
             overflow: hidden;
         }
 
-        .feature-card::before {
+        .preloader-bar::after {
             content: '';
+            position: absolute;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            animation: preloaderSlide 1.2s ease-in-out infinite;
+        }
+
+        @keyframes preloaderPulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes preloaderSlide {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* ========== NAVIGATION ========== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: var(--bg-nav);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.4s ease;
+        }
+
+        nav.scrolled {
+            padding: 0.8rem 3rem;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+        }
+
+        .nav-logo img {
+            width: 36px;
+            height: 36px;
+            filter: var(--logo-filter);
+            transition: filter 0.6s ease;
+        }
+
+        .nav-logo-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: color 0.6s ease;
+        }
+
+        .nav-center {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+        }
+
+        .nav-center a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-center a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--text-primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-center a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-center a:hover::after {
+            width: 100%;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            width: 44px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: none;
+            outline: none;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="light"] .theme-toggle::after {
+            transform: translateX(20px);
+        }
+
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .toggle-icon.moon { left: 5px; }
+        .toggle-icon.sun { right: 5px; }
+
+        /* Mobile Menu */
+        .menu-btn {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .menu-btn span {
+            width: 24px;
+            height: 1.5px;
+            background: var(--text-primary);
+            transition: all 0.3s;
+        }
+
+        /* ========== HERO SECTION ========== */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .hero-slideshow {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            object-fit: cover;
+            object-position: center top;
+            filter: grayscale(30%) contrast(1.1);
+        }
+
+        .hero-slide.active {
+            opacity: 1;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-gradient);
+            z-index: 2;
+        }
+
+        .hero-content {
+            position: absolute;
+            bottom: 8%;
+            left: 5%;
+            z-index: 3;
+            max-width: 700px;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            padding: 0.4rem 1.2rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .hero-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(3.5rem, 8vw, 7rem);
+            font-weight: 800;
+            line-height: 0.95;
+            color: var(--hero-text-color);
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-title span {
+            display: block;
+        }
+
+        .hero-title .thin {
+            font-weight: 300;
+            font-size: 0.5em;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .hero-desc {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.8;
+            max-width: 500px;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2.5rem;
+            background: #fff;
+            color: #000;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.4s;
+        }
+
+        .hero-cta:hover {
+            background: transparent;
+            color: #fff;
+            outline: 1px solid #fff;
+        }
+
+        .hero-cta svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s;
+        }
+
+        .hero-cta:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* Slide indicators */
+        .hero-indicators {
+            position: absolute;
+            bottom: 8%;
+            right: 5%;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .indicator {
+            width: 30px;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.4s;
+        }
+
+        .indicator.active {
+            background: #fff;
+            width: 50px;
+        }
+
+        /* Scroll hint */
+        .scroll-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scroll-hint span {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            writing-mode: vertical-rl;
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-line::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            width: 100%;
+            height: 50%;
+            background: #fff;
+            animation: scrollDown 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollDown {
+            0% { top: -50%; }
+            100% { top: 150%; }
+        }
+
+        /* ========== MARQUEE ========== */
+        .marquee-section {
+            padding: 2rem 0;
+            overflow: hidden;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            transition: background 0.6s, border-color 0.6s;
+        }
+
+        .marquee-track {
+            display: flex;
+            animation: marquee 25s linear infinite;
+            width: max-content;
+        }
+
+        .marquee-item {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            padding: 0 3rem;
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        .marquee-item .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* ========== COLLECTION SECTION ========== */
+        .section {
+            padding: 6rem 3rem;
+            position: relative;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .section-link {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3rem;
+        }
+
+        .section-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* ========== PRODUCT GRID ========== */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .product-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            background: var(--bg-card);
+            transition: background 0.6s;
+        }
+
+        .product-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease, filter 0.5s;
+            filter: grayscale(20%);
+        }
+
+        .product-card:hover .product-image-wrapper img {
+            transform: scale(1.05);
+            filter: grayscale(0%);
+        }
+
+        .product-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
             opacity: 0;
             transition: opacity 0.4s;
         }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-            box-shadow: 0 10px 40px rgba(255, 62, 62, 0.1);
+        [data-theme="light"] .product-overlay {
+            background: linear-gradient(to top, rgba(255,255,255,0.9), transparent);
         }
 
-        .feature-card:hover::before {
+        .product-card:hover .product-overlay {
             opacity: 1;
         }
 
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+        .product-quick-view {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.5rem;
+            background: #fff;
+            color: #000;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .product-quick-view:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        [data-theme="light"] .product-quick-view:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .product-info {
+            padding: 1.2rem 0;
+        }
+
+        .product-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .product-category {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .product-colors {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.3);
+        }
+
+        /* ========== LOOKBOOK SECTION ========== */
+        .lookbook {
+            position: relative;
+            padding: 0;
+            height: 80vh;
+            overflow: hidden;
+        }
+
+        .lookbook-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(40%) contrast(1.05);
+        }
+
+        .lookbook-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.6), transparent 60%);
+            z-index: 2;
+        }
+
+        .lookbook-content {
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            transform: translateY(-50%);
+            z-index: 3;
+            max-width: 500px;
+        }
+
+        .lookbook-label {
+            font-size: 0.7rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 1.5rem;
+        }
+
+        .lookbook-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .lookbook-desc {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .lookbook-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.4s;
+        }
+
+        .lookbook-btn:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        /* ========== ABOUT/BRAND SECTION ========== */
+        .brand-section {
+            padding: 8rem 3rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .brand-logo-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .brand-logo-large {
+            width: 280px;
+            height: 280px;
+            filter: var(--logo-filter);
+            transition: filter 0.6s ease;
+            animation: floatLogo 6s ease-in-out infinite;
+        }
+
+        @keyframes floatLogo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .brand-text h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+        }
+
+        .brand-text p {
+            color: var(--text-secondary);
+            line-height: 1.9;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-values {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .brand-value {
+            text-align: center;
+        }
+
+        .brand-value-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .brand-value-label {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* ========== NEWSLETTER ========== */
+        .newsletter {
+            padding: 6rem 3rem;
+            text-align: center;
+            background: var(--bg-secondary);
+            transition: background 0.6s;
+        }
+
+        .newsletter h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .newsletter p {
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .newsletter-form {
+            display: flex;
+            max-width: 500px;
+            margin: 0 auto;
+            gap: 0;
+        }
+
+        .newsletter-form input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .newsletter-form input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .newsletter-form input:focus {
+            border-color: var(--accent);
+        }
+
+        .newsletter-form button {
+            padding: 1rem 2rem;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .newsletter-form button:hover {
+            opacity: 0.8;
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            padding: 4rem 3rem 2rem;
+            border-top: 1px solid var(--border-color);
+            transition: border-color 0.6s;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .footer-brand img {
+            width: 40px;
+            height: 40px;
+            filter: var(--logo-filter);
+            transition: filter 0.6s;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            max-width: 300px;
+        }
+
+        .footer-col h4 {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-col a {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            transition: color 0.3s;
+        }
+
+        .footer-col a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-bottom p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-socials a {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            background: rgba(255, 62, 62, 0.1);
-            border: 1px solid rgba(255, 62, 62, 0.2);
-        }
-
-        .feature-card h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .feature-card p {
             color: var(--text-muted);
-            line-height: 1.7;
-            font-size: 0.95rem;
-        }
-
-        /* Stats Section */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            padding: 4rem 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .stat-number {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* CTA Section */
-        .cta {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            padding: 6rem 2rem;
-        }
-
-        .cta-box {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 4rem;
-            background: linear-gradient(135deg, rgba(255, 62, 62, 0.05), rgba(0, 240, 255, 0.05));
-            border: 1px solid rgba(255, 62, 62, 0.2);
-            border-radius: 24px;
-        }
-
-        .cta h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
-        }
-
-        .cta p {
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
-        }
-
-        /* Footer */
-        footer {
-            position: relative;
-            z-index: 1;
-            border-top: 1px solid var(--card-border);
-            padding: 3rem 2rem;
-            text-align: center;
-        }
-
-        footer p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        footer a {
-            color: var(--primary);
             text-decoration: none;
+            transition: all 0.3s;
+            font-size: 0.9rem;
         }
 
-        footer a:hover {
-            text-decoration: underline;
+        .footer-socials a:hover {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
         }
 
-        /* Animations */
-        .fade-in {
+        /* ========== ANIMATIONS ========== */
+        .reveal {
             opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        .fade-in.visible {
+        .reveal.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
-        /* Responsive */
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+
+        /* ========== PRODUCT MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 5000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            transition: background 0.6s;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-content {
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal-category {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .modal-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .modal-desc {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .modal-sizes {
+            margin-bottom: 2rem;
+        }
+
+        .modal-sizes h4 {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.8rem;
+        }
+
+        .size-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .size-btn {
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .size-btn:hover, .size-btn.selected {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .modal-add-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .modal-add-btn:hover {
+            opacity: 0.85;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1024px) {
+            .brand-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 4rem 2rem;
+            }
+
+            .brand-values {
+                justify-content: center;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
+            .nav-center { display: none; }
+            .menu-btn { display: flex; }
+            nav { padding: 1rem 1.5rem; }
 
-            .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
+            .hero-content { left: 5%; right: 5%; bottom: 12%; }
+            .hero-title { font-size: clamp(2.5rem, 10vw, 4rem); }
+            .hero-indicators { display: none; }
 
-            .cta-box {
-                padding: 2rem;
-            }
+            .section { padding: 4rem 1.5rem; }
+            .product-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
 
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .lookbook { height: 60vh; }
+            .lookbook-content { max-width: 90%; }
+
+            .brand-section { padding: 4rem 1.5rem; }
+            .brand-logo-large { width: 180px; height: 180px; }
+
+            .modal { grid-template-columns: 1fr; }
+            .modal-image { height: 50vh; }
+
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+
+            .cursor-dot, .cursor-ring { display: none; }
+
+            .newsletter-form { flex-direction: column; }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title { font-size: 2.5rem; }
+            .product-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <canvas id="particles"></canvas>
 
-    <nav>
-        <a href="#" class="logo">ONIYOUTH</a>
-        <ul class="nav-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <img src="assets/images/logo.png" alt="OniYouth" class="preloader-logo">
+        <div class="preloader-text">OniYouth</div>
+        <div class="preloader-bar"></div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <a href="#" class="nav-logo">
+            <img src="assets/images/logo.png" alt="O">
+            <span class="nav-logo-text">OniYouth</span>
+        </a>
+        <div class="nav-center">
+            <a href="#collection">Coleccion</a>
+            <a href="#lookbook">Lookbook</a>
+            <a href="#about">Marca</a>
+            <a href="#contact">Contacto</a>
+        </div>
+        <div class="nav-right">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <span class="toggle-icon moon">&#9790;</span>
+                <span class="toggle-icon sun">&#9788;</span>
+            </button>
+            <button class="menu-btn" id="menuBtn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
     </nav>
 
-    <section class="hero">
-        <span class="hero-badge">Coming Soon</span>
-        <h1>
-            <span class="line1">DIGITAL</span>
-            <span class="line2">YOUTH</span>
-        </h1>
-        <p>La plataforma digital de nueva generacion. Entretenimiento, herramientas creativas y comunidad para la juventud del futuro.</p>
-        <div class="hero-buttons">
-            <a href="#features" class="btn btn-primary">Explorar</a>
-            <a href="#about" class="btn btn-outline">Conocer Mas</a>
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-slideshow">
+            <img src="assets/images/hero-model-1.png" alt="Model 1" class="hero-slide active" id="slide0">
+            <img src="assets/images/hero-model-2.png" alt="Model 2" class="hero-slide" id="slide1">
+            <img src="assets/images/hero-model-3.png" alt="Model 3" class="hero-slide" id="slide2">
         </div>
-        <div class="scroll-indicator">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
-                <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
-            </svg>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-tag">SS26 Collection</div>
+            <h1 class="hero-title">
+                <span class="thin">Define Your</span>
+                <span>ATTITUDE</span>
+            </h1>
+            <p class="hero-desc">Streetwear que habla por ti. Prendas diseñadas para quienes no siguen tendencias, las crean.</p>
+            <a href="#collection" class="hero-cta">
+                Ver Coleccion
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
         </div>
-    </section>
-
-    <section class="section" id="features">
-        <h2 class="section-title fade-in">Lo Que Viene</h2>
-        <p class="section-subtitle fade-in">Estamos construyendo algo increible. Mira lo que estamos preparando para ti.</p>
-        <div class="features-grid">
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#127918;</div>
-                <h3>Entretenimiento</h3>
-                <p>Juegos, trivia, retos y mucho mas. Experiencias interactivas diseñadas para mantenerte entretenido y desafiado en cada visita.</p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#127912;</div>
-                <h3>Creatividad</h3>
-                <p>Herramientas de diseño, arte pixelado, pizarra digital y mas. Libera tu imaginacion con herramientas profesionales en tu navegador.</p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#129302;</div>
-                <h3>IA Integrada</h3>
-                <p>Asistente inteligente listo para ayudarte. Chat con IA, generacion de contenido y herramientas potenciadas por inteligencia artificial.</p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#128640;</div>
-                <h3>Comunidad</h3>
-                <p>Unete a una comunidad vibrante de jovenes creativos. Comparte, colabora y crece junto a otros con tus mismos intereses.</p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#128274;</div>
-                <h3>Privacidad</h3>
-                <p>Tus datos son tuyos. Sin rastreo invasivo, sin venta de informacion. Privacidad por diseño en cada caracteristica que construimos.</p>
-            </div>
-            <div class="feature-card fade-in">
-                <div class="feature-icon">&#9889;</div>
-                <h3>Velocidad</h3>
-                <p>Experiencia ultrarapida. Sin tiempos de carga, sin interrupciones. Optimizado para funcionar perfecto en cualquier dispositivo.</p>
-            </div>
+        <div class="hero-indicators">
+            <div class="indicator active" data-slide="0"></div>
+            <div class="indicator" data-slide="1"></div>
+            <div class="indicator" data-slide="2"></div>
+        </div>
+        <div class="scroll-hint">
+            <span>Scroll</span>
+            <div class="scroll-line"></div>
         </div>
     </section>
 
-    <div class="stats">
-        <div class="stat-item fade-in">
-            <div class="stat-number" data-target="100">0</div>
-            <div class="stat-label">Proximamente</div>
-        </div>
-        <div class="stat-item fade-in">
-            <div class="stat-number" data-target="6">0</div>
-            <div class="stat-label">Categorias</div>
-        </div>
-        <div class="stat-item fade-in">
-            <div class="stat-number" data-target="24">0</div>
-            <div class="stat-label">/ 7 Disponible</div>
-        </div>
-        <div class="stat-item fade-in">
-            <div class="stat-number" data-target="1">0</div>
-            <div class="stat-label">Comunidad</div>
+    <!-- Marquee -->
+    <div class="marquee-section">
+        <div class="marquee-track">
+            <div class="marquee-item">OniYouth <span class="dot"></span></div>
+            <div class="marquee-item">Streetwear <span class="dot"></span></div>
+            <div class="marquee-item">SS26 <span class="dot"></span></div>
+            <div class="marquee-item">Actitud <span class="dot"></span></div>
+            <div class="marquee-item">Sin Limite <span class="dot"></span></div>
+            <div class="marquee-item">Cultura <span class="dot"></span></div>
+            <div class="marquee-item">OniYouth <span class="dot"></span></div>
+            <div class="marquee-item">Streetwear <span class="dot"></span></div>
+            <div class="marquee-item">SS26 <span class="dot"></span></div>
+            <div class="marquee-item">Actitud <span class="dot"></span></div>
+            <div class="marquee-item">Sin Limite <span class="dot"></span></div>
+            <div class="marquee-item">Cultura <span class="dot"></span></div>
         </div>
     </div>
 
-    <section class="cta" id="about">
-        <div class="cta-box fade-in">
-            <h2>Se Parte del Futuro</h2>
-            <p>OniYouth esta en desarrollo. Pronto tendremos todo listo para ti. Mientras tanto, sigue nuestro progreso y se de los primeros en unirte.</p>
-            <a href="https://github.com/oniyouth" target="_blank" class="btn btn-primary">Ver en GitHub</a>
+    <!-- Collection Section -->
+    <section class="section" id="collection">
+        <div class="section-header">
+            <div>
+                <div class="section-label reveal">Nueva Temporada</div>
+                <h2 class="section-title reveal">Coleccion SS26</h2>
+            </div>
+            <a href="#" class="section-link reveal">
+                Ver Todo
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <div class="product-grid">
+            <!-- Product 1 -->
+            <div class="product-card reveal reveal-delay-1" data-product="hoodie">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-hoodie.png" alt="Oversized Hoodie">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('hoodie')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Hoodies</div>
+                    <div class="product-name">Oversized Hoodie</div>
+                    <div class="product-price">$89.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#000"></div>
+                        <div class="color-dot" style="background:#fff; border-color:#ccc"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 2 -->
+            <div class="product-card reveal reveal-delay-2" data-product="tshirt">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-tshirt.png" alt="Graphic T-Shirt">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('tshirt')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">T-Shirts</div>
+                    <div class="product-name">Graphic T-Shirt</div>
+                    <div class="product-price">$49.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#000"></div>
+                        <div class="color-dot" style="background:#333"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 3 -->
+            <div class="product-card reveal reveal-delay-3" data-product="bomber">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-bomber.png" alt="Bomber Jacket">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('bomber')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Jackets</div>
+                    <div class="product-name">Bomber Jacket</div>
+                    <div class="product-price">$129.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#000"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 4 -->
+            <div class="product-card reveal reveal-delay-4" data-product="joggers">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-joggers.png" alt="Tech Joggers">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('joggers')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Pants</div>
+                    <div class="product-name">Tech Joggers</div>
+                    <div class="product-price">$69.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#000"></div>
+                        <div class="color-dot" style="background:#444"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 5 -->
+            <div class="product-card reveal reveal-delay-5" data-product="hoodie-white">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-hoodie-white.png" alt="White Hoodie">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('hoodie-white')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Hoodies</div>
+                    <div class="product-name">Essential Hoodie</div>
+                    <div class="product-price">$84.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#fff; border-color:#ccc"></div>
+                        <div class="color-dot" style="background:#ddd"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product 6 -->
+            <div class="product-card reveal reveal-delay-6" data-product="cap">
+                <div class="product-image-wrapper">
+                    <img src="assets/images/product-cap.png" alt="Logo Cap">
+                    <div class="product-overlay">
+                        <button class="product-quick-view" onclick="openModal('cap')">Vista Rapida</button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">Accesorios</div>
+                    <div class="product-name">Logo Cap</div>
+                    <div class="product-price">$34.99</div>
+                    <div class="product-colors">
+                        <div class="color-dot" style="background:#000"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <footer id="contact">
-        <p>&copy; 2026 <a href="https://oniyouth.github.io">OniYouth</a>. Hecho con pasion para la juventud digital.</p>
+    <!-- Lookbook Section -->
+    <section class="lookbook" id="lookbook">
+        <img src="assets/images/hero-model-2.png" alt="Lookbook" class="lookbook-image">
+        <div class="lookbook-overlay"></div>
+        <div class="lookbook-content">
+            <div class="lookbook-label reveal">Lookbook SS26</div>
+            <h2 class="lookbook-title reveal">DONDE LA<br>CALLE SE<br>VISTE</h2>
+            <p class="lookbook-desc reveal">Cada prenda cuenta una historia. Nuestro lookbook captura la esencia de la cultura urbana a traves de siluetas atrevidas y detalles unicos.</p>
+            <a href="#" class="lookbook-btn reveal">
+                Ver Lookbook
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Brand Section -->
+    <section class="brand-section" id="about">
+        <div class="brand-logo-display">
+            <img src="assets/images/logo.png" alt="OniYouth Logo" class="brand-logo-large">
+        </div>
+        <div class="brand-text">
+            <div class="section-label reveal">Nuestra Esencia</div>
+            <h2 class="reveal">MAS QUE<br>ROPA</h2>
+            <p class="reveal">OniYouth nace de la calle, para la calle. No seguimos tendencias, las creamos. Cada prenda es una declaracion de intencion, un grito silencioso que dice: yo defino mi estilo.</p>
+            <p class="reveal">Nuestro logo con cuernos representa esa energia rebelde, esa fuerza interior que todos llevamos. La "O" es el circulo completo: comunidad, unidad, pertenencia a algo mas grande.</p>
+            <div class="brand-values reveal">
+                <div class="brand-value">
+                    <div class="brand-value-number">100%</div>
+                    <div class="brand-value-label">Organico</div>
+                </div>
+                <div class="brand-value">
+                    <div class="brand-value-number">0</div>
+                    <div class="brand-value-label">Compromiso</div>
+                </div>
+                <div class="brand-value">
+                    <div class="brand-value-number">&#8734;</div>
+                    <div class="brand-value-label">Actitud</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter" id="contact">
+        <div class="section-label reveal" style="text-align:center">Unete</div>
+        <h2 class="reveal">SE PARTE DEL<br>MOVIMIENTO</h2>
+        <p class="reveal">Suscribete y se el primero en conocer nuevos lanzamientos, ediciones limitadas y eventos exclusivos.</p>
+        <form class="newsletter-form reveal" onsubmit="event.preventDefault(); this.querySelector('button').textContent='SUSCRITO!'; setTimeout(()=>this.querySelector('button').textContent='SUSCRIBIRSE', 2000);">
+            <input type="email" placeholder="Tu email" required>
+            <button type="submit">Suscribirse</button>
+        </form>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <img src="assets/images/logo.png" alt="OniYouth">
+                <p>Streetwear con actitud. Prendas diseñadas para quienes crean su propio camino.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Tienda</h4>
+                <a href="#collection">Nuevos</a>
+                <a href="#collection">Hoodies</a>
+                <a href="#collection">T-Shirts</a>
+                <a href="#collection">Accesorios</a>
+            </div>
+            <div class="footer-col">
+                <h4>Info</h4>
+                <a href="#about">Sobre Nosotros</a>
+                <a href="#">Guia de Tallas</a>
+                <a href="#">Envios</a>
+                <a href="#">Devoluciones</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <a href="mailto:hello@oniyouth.com">hello@oniyouth.com</a>
+                <a href="#">Instagram</a>
+                <a href="#">TikTok</a>
+                <a href="#">Twitter</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 OniYouth. Todos los derechos reservados.</p>
+            <div class="footer-socials">
+                <a href="#" aria-label="Instagram">IG</a>
+                <a href="#" aria-label="TikTok">TK</a>
+                <a href="#" aria-label="Twitter">X</a>
+            </div>
+        </div>
     </footer>
 
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="productModal">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal">
+            <img src="" alt="" class="modal-image" id="modalImage">
+            <div class="modal-content">
+                <div class="modal-category" id="modalCategory"></div>
+                <div class="modal-name" id="modalName"></div>
+                <div class="modal-price" id="modalPrice"></div>
+                <div class="modal-desc" id="modalDesc"></div>
+                <div class="modal-sizes">
+                    <h4>Talla</h4>
+                    <div class="size-options">
+                        <button class="size-btn" onclick="selectSize(this)">XS</button>
+                        <button class="size-btn" onclick="selectSize(this)">S</button>
+                        <button class="size-btn selected" onclick="selectSize(this)">M</button>
+                        <button class="size-btn" onclick="selectSize(this)">L</button>
+                        <button class="size-btn" onclick="selectSize(this)">XL</button>
+                    </div>
+                </div>
+                <button class="modal-add-btn" onclick="addToCart()">Agregar al Carrito</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Particle System
-        const canvas = document.getElementById('particles');
-        const ctx = canvas.getContext('2d');
+        // ========== PRELOADER ==========
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').classList.add('hidden');
+            }, 2000);
+        });
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        // ========== CUSTOM CURSOR ==========
+        const dot = document.getElementById('cursorDot');
+        const ring = document.getElementById('cursorRing');
+        let mouseX = 0, mouseY = 0;
+        let ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            dot.style.left = mouseX - 4 + 'px';
+            dot.style.top = mouseY - 4 + 'px';
+        });
+
+        function animateCursor() {
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            ring.style.left = ringX - 20 + 'px';
+            ring.style.top = ringY - 20 + 'px';
+            requestAnimationFrame(animateCursor);
         }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        animateCursor();
 
-        class Particle {
-            constructor() {
-                this.reset();
-            }
+        // Hover effects for cursor
+        document.querySelectorAll('a, button, .product-card, .indicator').forEach(el => {
+            el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+            el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+        });
 
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = (Math.random() - 0.5) * 0.5;
-                this.speedY = (Math.random() - 0.5) * 0.5;
-                this.opacity = Math.random() * 0.5 + 0.1;
-                this.color = Math.random() > 0.7 ? '#ff3e3e' : '#00f0ff';
-            }
+        // ========== THEME TOGGLE ==========
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
 
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-                    this.reset();
-                }
-            }
+        // Load saved theme
+        const savedTheme = localStorage.getItem('oniyouth-theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.opacity;
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('oniyouth-theme', next);
+        });
+
+        // ========== NAVBAR SCROLL ==========
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 100);
+        });
+
+        // ========== HERO SLIDESHOW ==========
+        const slides = document.querySelectorAll('.hero-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        let currentSlide = 0;
+        let slideInterval;
+
+        function goToSlide(index) {
+            slides.forEach(s => s.classList.remove('active'));
+            indicators.forEach(i => i.classList.remove('active'));
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+            currentSlide = index;
         }
 
-        const particles = Array.from({ length: 80 }, () => new Particle());
+        function nextSlide() {
+            goToSlide((currentSlide + 1) % slides.length);
+        }
 
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
+        function startSlideshow() {
+            slideInterval = setInterval(nextSlide, 4000);
+        }
+
+        startSlideshow();
+
+        indicators.forEach(ind => {
+            ind.addEventListener('click', () => {
+                clearInterval(slideInterval);
+                goToSlide(parseInt(ind.dataset.slide));
+                startSlideshow();
             });
+        });
 
-            // Draw connections
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 150) {
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.strokeStyle = '#ff3e3e';
-                        ctx.globalAlpha = 0.05 * (1 - dist / 150);
-                        ctx.stroke();
-                        ctx.globalAlpha = 1;
-                    }
-                }
-            }
-
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-
-        // Scroll Animations
-        const observer = new IntersectionObserver((entries) => {
+        // ========== SCROLL REVEAL ==========
+        const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
                 }
             });
-        }, { threshold: 0.1 });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-        // Counter Animation
-        const counterObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const target = parseInt(entry.target.getAttribute('data-target'));
-                    let current = 0;
-                    const increment = target / 60;
-                    const timer = setInterval(() => {
-                        current += increment;
-                        if (current >= target) {
-                            current = target;
-                            clearInterval(timer);
-                        }
-                        entry.target.textContent = Math.floor(current) + (target === 100 ? '+' : '');
-                    }, 30);
-                    counterObserver.unobserve(entry.target);
+        // ========== PARALLAX ==========
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const heroImages = document.querySelectorAll('.hero-slide');
+            heroImages.forEach(img => {
+                img.style.transform = `scale(1.05) translateY(${scrolled * 0.15}px)`;
+            });
+
+            const lookbookImg = document.querySelector('.lookbook-image');
+            if (lookbookImg) {
+                const rect = lookbookImg.getBoundingClientRect();
+                const visible = rect.top < window.innerHeight && rect.bottom > 0;
+                if (visible) {
+                    const progress = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
+                    lookbookImg.style.transform = `translateY(${(progress - 0.5) * 40}px) scale(1.05)`;
+                }
+            }
+        });
+
+        // ========== PRODUCT MODAL ==========
+        const products = {
+            'hoodie': {
+                name: 'Oversized Hoodie',
+                category: 'Hoodies',
+                price: '$89.99',
+                image: 'assets/images/product-hoodie.png',
+                desc: 'Hoodie oversized con corte relajado y capucha ajustable. Confeccionado en algodon organico premium de 400gsm con el logo OniYouth bordado en el pecho. Interior afelpado para maxima comodidad.'
+            },
+            'tshirt': {
+                name: 'Graphic T-Shirt',
+                category: 'T-Shirts',
+                price: '$49.99',
+                image: 'assets/images/product-tshirt.png',
+                desc: 'Camiseta oversized con estampa grafica exclusiva de la coleccion SS26. Algodon organico 100% de 220gsm, corte boxy fit. Estampa serigrafiada de alta definicion que resiste lavados.'
+            },
+            'bomber': {
+                name: 'Bomber Jacket',
+                category: 'Jackets',
+                price: '$129.99',
+                image: 'assets/images/product-bomber.png',
+                desc: 'Bomber jacket con estructura robusta y acabado satinado. Forro interior estampado, puños y cintura elastica. Cierre frontal YKK con bolsillos laterales con cremallera.'
+            },
+            'joggers': {
+                name: 'Tech Joggers',
+                category: 'Pants',
+                price: '$69.99',
+                image: 'assets/images/product-joggers.png',
+                desc: 'Joggers tech con corte tapered y tobillos elastizados. Tejido tecnico de secado rapido con bolsillos con cremallera. Cordon de ajuste en cintura con puntas metalicas con logo.'
+            },
+            'hoodie-white': {
+                name: 'Essential Hoodie',
+                category: 'Hoodies',
+                price: '$84.99',
+                image: 'assets/images/product-hoodie-white.png',
+                desc: 'Hoodie esencial en color blanco roto. Algodon organico premium con acabado suave al tacto. Logo OniYouth bordado tono sobre tono. Capucha con forro interior y bolsillo canguro.'
+            },
+            'cap': {
+                name: 'Logo Cap',
+                category: 'Accesorios',
+                price: '$34.99',
+                image: 'assets/images/product-cap.png',
+                desc: 'Gorra estructurada con logo OniYouth bordado en frente. Corona de 6 paneles con visera curva. Cierre trasero ajustable con hebilla metalica. Una pieza para completar cualquier look.'
+            }
+        };
+
+        function openModal(productId) {
+            const product = products[productId];
+            if (!product) return;
+
+            document.getElementById('modalImage').src = product.image;
+            document.getElementById('modalImage').alt = product.name;
+            document.getElementById('modalCategory').textContent = product.category;
+            document.getElementById('modalName').textContent = product.name;
+            document.getElementById('modalPrice').textContent = product.price;
+            document.getElementById('modalDesc').textContent = product.desc;
+
+            document.getElementById('productModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('productModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('productModal')) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function selectSize(btn) {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function addToCart() {
+            const btn = document.querySelector('.modal-add-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'AGREGADO!';
+            btn.style.background = '#333';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        }
+
+        // ========== MOBILE MENU ==========
+        const menuBtn = document.getElementById('menuBtn');
+        const navCenter = document.querySelector('.nav-center');
+        let menuOpen = false;
+
+        menuBtn.addEventListener('click', () => {
+            menuOpen = !menuOpen;
+            if (menuOpen) {
+                navCenter.style.display = 'flex';
+                navCenter.style.position = 'fixed';
+                navCenter.style.top = '60px';
+                navCenter.style.left = '0';
+                navCenter.style.width = '100%';
+                navCenter.style.flexDirection = 'column';
+                navCenter.style.background = 'var(--bg-primary)';
+                navCenter.style.padding = '2rem';
+                navCenter.style.gap = '1.5rem';
+                navCenter.style.borderBottom = '1px solid var(--border-color)';
+                navCenter.style.zIndex = '999';
+            } else {
+                navCenter.style = '';
+            }
+        });
+
+        // ========== SMOOTH ANCHOR SCROLL ==========
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Close mobile menu if open
+                    if (menuOpen) {
+                        menuOpen = false;
+                        navCenter.style = '';
+                    }
                 }
             });
-        }, { threshold: 0.5 });
-
-        document.querySelectorAll('.stat-number').forEach(el => counterObserver.observe(el));
+        });
     </script>
 </body>
 </html>
