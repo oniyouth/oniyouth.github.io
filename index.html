@@ -207,10 +207,21 @@
             width: 40px;
         }
 
-        /* ===== HORIZONTAL SCROLL PRODUCTS ===== */
-        .collection {
+        /* ===== HORIZONTAL SCROLL SECTION ===== */
+        .collection-wrapper {
+            /* This creates the scroll space */
             position: relative;
-            padding: 5rem 0 3rem;
+        }
+
+        .collection-sticky {
+            /* This sticks and lets us transform horizontal */
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
         }
 
         .collection-header {
@@ -234,7 +245,7 @@
             letter-spacing: -1px;
         }
 
-        .scroll-hint-text {
+        .collection-scroll-hint {
             font-size: 0.65rem;
             letter-spacing: 3px;
             text-transform: uppercase;
@@ -242,16 +253,45 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            transition: opacity 0.5s;
         }
 
-        .scroll-hint-text svg {
-            width: 20px;
-            animation: slideRight 1.5s ease-in-out infinite;
+        .collection-scroll-hint svg {
+            width: 18px;
+            animation: slideDown 1.5s ease-in-out infinite;
         }
 
-        @keyframes slideRight {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(6px); }
+        @keyframes slideDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+
+        /* Progress bar */
+        .collection-progress {
+            padding: 0 3rem;
+            margin-top: 2rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 300px;
+            height: 1px;
+            background: var(--border);
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--text);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .progress-text {
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            color: var(--text3);
+            margin-top: 0.5rem;
         }
 
         /* Horizontal scroll track */
@@ -259,21 +299,13 @@
             display: flex;
             gap: 1.5rem;
             padding: 0 3rem;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            cursor: grab;
+            will-change: transform;
         }
-
-        .products-track:active { cursor: grabbing; }
-        .products-track::-webkit-scrollbar { display: none; }
 
         /* Product card */
         .product-card {
             flex: 0 0 auto;
             width: 300px;
-            scroll-snap-align: start;
             transition: transform 0.4s;
         }
 
@@ -365,7 +397,7 @@
             border: 1px solid var(--border);
         }
 
-        /* ===== LOOKBOOK (full height) ===== */
+        /* ===== LOOKBOOK ===== */
         .lookbook {
             width: 100%;
             height: 100vh;
@@ -667,18 +699,6 @@
 
         .add-btn:hover { opacity: 0.85; }
 
-        /* ===== REVEAL ===== */
-        .rv {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .rv.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             nav { padding: 0 1.2rem; }
@@ -689,6 +709,7 @@
             .products-track { padding: 0 1.5rem; gap: 1rem; }
             .product-card { width: 260px; }
             .product-img-wrap { width: 260px; height: 340px; }
+            .collection-progress { padding: 0 1.5rem; }
             .lookbook { height: 80vh; }
             .lookbook-content { left: 5%; right: 5%; max-width: none; }
             .brand { flex-direction: column; text-align: center; height: auto; padding: 5rem 2rem; }
@@ -737,153 +758,155 @@
         </div>
     </section>
 
-    <!-- COLLECTION — Horizontal Scroll -->
-    <section class="collection">
-        <div class="collection-header rv">
-            <div>
-                <div class="collection-label">Coleccion</div>
-                <div class="collection-title">SS26</div>
+    <!-- COLLECTION — Scroll vertical → horizontal -->
+    <div class="collection-wrapper" id="collectionWrapper">
+        <div class="collection-sticky" id="collectionSticky">
+            <div class="collection-header">
+                <div>
+                    <div class="collection-label">Coleccion</div>
+                    <div class="collection-title">SS26</div>
+                </div>
+                <div class="collection-scroll-hint" id="scrollHint">
+                    Scroll
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                </div>
             </div>
-            <div class="scroll-hint-text">
-                Desliza
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+
+            <div class="products-track" id="track">
+                <div class="product-card" data-p="hoodie">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-hoodie.png" alt="Oversized Hoodie">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('hoodie')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Hoodie</div>
+                        <div class="product-name">Oversized Hoodie</div>
+                        <div class="product-price">$89.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#000"></div>
+                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="tshirt">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-tshirt.png" alt="Graphic T-Shirt">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('tshirt')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">T-Shirt</div>
+                        <div class="product-name">Graphic Tee</div>
+                        <div class="product-price">$49.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#000"></div>
+                            <div class="pc-dot" style="background:#333"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="bomber">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-bomber.png" alt="Bomber Jacket">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('bomber')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Jacket</div>
+                        <div class="product-name">Bomber Jacket</div>
+                        <div class="product-price">$129.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#000"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="joggers">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-joggers.png" alt="Tech Joggers">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('joggers')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Pants</div>
+                        <div class="product-name">Tech Joggers</div>
+                        <div class="product-price">$69.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#000"></div>
+                            <div class="pc-dot" style="background:#444"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="hoodie-w">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-hoodie-white.png" alt="Essential Hoodie">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('hoodie-w')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Hoodie</div>
+                        <div class="product-name">Essential Hoodie</div>
+                        <div class="product-price">$84.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="cap">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-cap.png" alt="Logo Cap">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('cap')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Accesorio</div>
+                        <div class="product-name">Logo Cap</div>
+                        <div class="product-price">$34.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#000"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card" data-p="sneakers">
+                    <div class="product-img-wrap">
+                        <img src="assets/images/product-sneakers.png" alt="Streetwear Sneakers">
+                        <div class="product-overlay">
+                            <button class="product-quick" onclick="openM('sneakers')">Vista Rapida</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-cat">Calzado</div>
+                        <div class="product-name">Streetwear Sneakers</div>
+                        <div class="product-price">$119.99</div>
+                        <div class="product-colors">
+                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collection-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">1 / 7</div>
             </div>
         </div>
-
-        <div class="products-track" id="track">
-            <!-- 1 -->
-            <div class="product-card rv" data-p="hoodie">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-hoodie.png" alt="Oversized Hoodie">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('hoodie')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Hoodie</div>
-                    <div class="product-name">Oversized Hoodie</div>
-                    <div class="product-price">$89.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#000"></div>
-                        <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2 -->
-            <div class="product-card rv" data-p="tshirt">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-tshirt.png" alt="Graphic T-Shirt">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('tshirt')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">T-Shirt</div>
-                    <div class="product-name">Graphic Tee</div>
-                    <div class="product-price">$49.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#000"></div>
-                        <div class="pc-dot" style="background:#333"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3 -->
-            <div class="product-card rv" data-p="bomber">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-bomber.png" alt="Bomber Jacket">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('bomber')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Jacket</div>
-                    <div class="product-name">Bomber Jacket</div>
-                    <div class="product-price">$129.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#000"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4 -->
-            <div class="product-card rv" data-p="joggers">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-joggers.png" alt="Tech Joggers">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('joggers')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Pants</div>
-                    <div class="product-name">Tech Joggers</div>
-                    <div class="product-price">$69.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#000"></div>
-                        <div class="pc-dot" style="background:#444"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5 -->
-            <div class="product-card rv" data-p="hoodie-w">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-hoodie-white.png" alt="Essential Hoodie">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('hoodie-w')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Hoodie</div>
-                    <div class="product-name">Essential Hoodie</div>
-                    <div class="product-price">$84.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6 -->
-            <div class="product-card rv" data-p="cap">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-cap.png" alt="Logo Cap">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('cap')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Accesorio</div>
-                    <div class="product-name">Logo Cap</div>
-                    <div class="product-price">$34.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#000"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7 -->
-            <div class="product-card rv" data-p="sneakers">
-                <div class="product-img-wrap">
-                    <img src="assets/images/product-sneakers.png" alt="Streetwear Sneakers">
-                    <div class="product-overlay">
-                        <button class="product-quick" onclick="openM('sneakers')">Vista Rapida</button>
-                    </div>
-                </div>
-                <div class="product-info">
-                    <div class="product-cat">Calzado</div>
-                    <div class="product-name">Streetwear Sneakers</div>
-                    <div class="product-price">$119.99</div>
-                    <div class="product-colors">
-                        <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    </div>
 
     <!-- LOOKBOOK -->
-    <section class="lookbook rv">
+    <section class="lookbook">
         <img src="assets/images/hero-model-2.png" alt="Lookbook">
         <div class="lookbook-gradient"></div>
         <div class="lookbook-content">
@@ -897,7 +920,7 @@
     </section>
 
     <!-- BRAND -->
-    <section class="brand rv">
+    <section class="brand">
         <img src="assets/images/logo.png" alt="OniYouth" class="brand-logo">
         <div class="brand-info">
             <h2>MAS QUE ROPA</h2>
@@ -954,13 +977,13 @@
 
     <script>
         // Theme
-        const t = document.getElementById('toggle');
-        const h = document.documentElement;
+        const tgl = document.getElementById('toggle');
+        const html = document.documentElement;
         const saved = localStorage.getItem('oy-theme') || 'dark';
-        h.dataset.theme = saved;
-        t.onclick = () => {
-            const next = h.dataset.theme === 'dark' ? 'light' : 'dark';
-            h.dataset.theme = next;
+        html.dataset.theme = saved;
+        tgl.onclick = () => {
+            const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+            html.dataset.theme = next;
             localStorage.setItem('oy-theme', next);
         };
 
@@ -993,32 +1016,62 @@
             slides.forEach(s => s.style.transform = `scale(1.05) translateY(${y * 0.12}px)`);
         });
 
-        // Drag to scroll horizontal
+        // ========== HORIZONTAL SCROLL ON VERTICAL SCROLL ==========
+        const wrapper = document.getElementById('collectionWrapper');
+        const sticky = document.getElementById('collectionSticky');
         const track = document.getElementById('track');
-        let isDown = false, startX, scrollL;
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const scrollHint = document.getElementById('scrollHint');
 
-        track.addEventListener('mousedown', e => {
-            isDown = true;
-            startX = e.pageX - track.offsetLeft;
-            scrollL = track.scrollLeft;
-            track.style.cursor = 'grabbing';
+        // Calculate how much scroll space we need
+        // Total scroll = track width - viewport width (the amount we need to translate)
+        function calcScrollSpace() {
+            const trackWidth = track.scrollWidth;
+            const viewportWidth = window.innerWidth;
+            const scrollDistance = trackWidth - viewportWidth;
+            return Math.max(scrollDistance, 0);
+        }
+
+        // Set the wrapper height to create enough scroll space
+        function setWrapperHeight() {
+            const scrollDistance = calcScrollSpace();
+            // Add viewport height so the sticky section occupies its own space too
+            wrapper.style.height = (scrollDistance + window.innerHeight) + 'px';
+        }
+
+        setWrapperHeight();
+        window.addEventListener('resize', setWrapperHeight);
+
+        // On scroll, translate the track horizontally
+        window.addEventListener('scroll', () => {
+            const rect = wrapper.getBoundingClientRect();
+            const scrollDistance = calcScrollSpace();
+
+            // How far we've scrolled into the wrapper
+            const scrolledInto = -rect.top;
+
+            // Clamp between 0 and scrollDistance
+            const progress = Math.max(0, Math.min(scrolledInto, scrollDistance));
+
+            // Translate the track
+            track.style.transform = `translateX(${-progress}px)`;
+
+            // Update progress bar
+            const pct = scrollDistance > 0 ? (progress / scrollDistance) * 100 : 0;
+            progressFill.style.width = pct + '%';
+
+            // Update progress text
+            const currentCard = Math.min(Math.floor((progress / (scrollDistance || 1)) * 7) + 1, 7);
+            progressText.textContent = `${currentCard} / 7`;
+
+            // Hide scroll hint once scrolling
+            if (progress > 50) {
+                scrollHint.style.opacity = '0';
+            } else {
+                scrollHint.style.opacity = '1';
+            }
         });
-
-        track.addEventListener('mouseleave', () => { isDown = false; track.style.cursor = 'grab'; });
-        track.addEventListener('mouseup', () => { isDown = false; track.style.cursor = 'grab'; });
-        track.addEventListener('mousemove', e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - track.offsetLeft;
-            track.scrollLeft = scrollL - (x - startX) * 1.5;
-        });
-
-        // Reveal
-        const obs = new IntersectionObserver(entries => {
-            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('show'); });
-        }, { threshold: 0.1 });
-
-        document.querySelectorAll('.rv').forEach(el => obs.observe(el));
 
         // Modal
         const data = {
