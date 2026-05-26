@@ -131,24 +131,19 @@
             overflow: hidden;
         }
 
-        .hero-slideshow {
+        .hero-video-wrap {
             position: absolute;
             inset: 0;
+            overflow: hidden;
         }
 
-        .hero-slide {
-            position: absolute;
-            inset: 0;
+        .hero-video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center 15%;
-            opacity: 0;
-            transition: opacity 1.5s;
-            filter: grayscale(20%) contrast(1.05);
+            object-position: center;
+            filter: grayscale(20%) contrast(1.1);
         }
-
-        .hero-slide.active { opacity: 1; }
 
         .hero-gradient {
             position: absolute;
@@ -184,27 +179,46 @@
             letter-spacing: -3px;
         }
 
-        .hero-dots {
+        .hero-scroll-hint {
             position: absolute;
-            bottom: 10%;
-            right: 5%;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 3;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .hero-dot {
-            width: 25px;
-            height: 2px;
-            background: rgba(255,255,255,0.25);
-            cursor: pointer;
-            transition: all 0.4s;
+        .hero-scroll-hint span {
+            font-size: 0.6rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
         }
 
-        .hero-dot.active {
+        .hero-scroll-line {
+            width: 1px;
+            height: 35px;
+            background: rgba(255,255,255,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-scroll-line::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            width: 100%;
+            height: 50%;
             background: #fff;
-            width: 40px;
+            animation: scrollDown 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollDown {
+            0% { top: -50%; }
+            100% { top: 150%; }
         }
 
         /* ===== HORIZONTAL SCROLL SECTION ===== */
@@ -704,7 +718,7 @@
             nav { padding: 0 1.2rem; }
             .hero-content { left: 5%; right: 5%; bottom: 8%; }
             .hero-title { letter-spacing: -1px; }
-            .hero-dots { display: none; }
+            .hero-scroll-hint span { font-size: 0.5rem; }
             .collection-header { padding: 0 1.5rem; }
             .products-track { padding: 0 1.5rem; gap: 1rem; }
             .product-card { width: 260px; }
@@ -741,20 +755,19 @@
 
     <!-- HERO -->
     <section class="hero">
-        <div class="hero-slideshow">
-            <img src="assets/images/hero-model-1.png" alt="" class="hero-slide active">
-            <img src="assets/images/hero-model-2.png" alt="" class="hero-slide">
-            <img src="assets/images/hero-model-3.png" alt="" class="hero-slide">
+        <div class="hero-video-wrap">
+            <video class="hero-video" autoplay muted loop playsinline preload="auto">
+                <source src="assets/images/hero-video.mp4" type="video/mp4">
+            </video>
         </div>
         <div class="hero-gradient"></div>
         <div class="hero-content">
             <div class="hero-tag">SS26 Collection</div>
             <h1 class="hero-title">ONI<br>YOUTH</h1>
         </div>
-        <div class="hero-dots">
-            <div class="hero-dot active" data-i="0"></div>
-            <div class="hero-dot" data-i="1"></div>
-            <div class="hero-dot" data-i="2"></div>
+        <div class="hero-scroll-hint">
+            <span>Scroll</span>
+            <div class="hero-scroll-line"></div>
         </div>
     </section>
 
@@ -987,33 +1000,11 @@
             localStorage.setItem('oy-theme', next);
         };
 
-        // Hero slideshow
-        const slides = document.querySelectorAll('.hero-slide');
-        const dots = document.querySelectorAll('.hero-dot');
-        let cur = 0;
-
-        function goSlide(i) {
-            slides.forEach(s => s.classList.remove('active'));
-            dots.forEach(d => d.classList.remove('active'));
-            slides[i].classList.add('active');
-            dots[i].classList.add('active');
-            cur = i;
-        }
-
-        let autoSlide = setInterval(() => goSlide((cur + 1) % slides.length), 4000);
-
-        dots.forEach(d => {
-            d.onclick = () => {
-                clearInterval(autoSlide);
-                goSlide(+d.dataset.i);
-                autoSlide = setInterval(() => goSlide((cur + 1) % slides.length), 4000);
-            };
-        });
-
-        // Parallax
+        // Hero video parallax
+        const heroVideo = document.querySelector('.hero-video');
         window.addEventListener('scroll', () => {
             const y = window.scrollY;
-            slides.forEach(s => s.style.transform = `scale(1.05) translateY(${y * 0.12}px)`);
+            if (heroVideo) heroVideo.style.transform = `scale(1.05) translateY(${y * 0.12}px)`;
         });
 
         // ========== HORIZONTAL SCROLL ON VERTICAL SCROLL ==========
