@@ -715,43 +715,44 @@
 
         const staggerOrder = getStaggerOrder();
 
-        function tilesIn(callback) {
-            if (isTransitioning) return;
-            isTransitioning = true;
+        // Tiles cover the screen (from center outward)
+        function tilesCover(callback) {
             let revealed = 0;
             const total = tilesElements.length;
 
             staggerOrder.forEach((idx, order) => {
-                const delay = order * 18; // stagger speed
+                const delay = order * 15;
                 setTimeout(() => {
                     tilesElements[idx].classList.remove('fade-out');
                     tilesElements[idx].classList.add('active');
                     revealed++;
-                    if (revealed === total) {
-                        setTimeout(callback, 100);
+                    if (revealed === total && callback) {
+                        setTimeout(callback, 80);
                     }
                 }, delay);
             });
         }
 
-        function tilesOut(callback) {
-            const reverseOrder = [...staggerOrder].reverse();
+        // Tiles desglosan (open up / dissolve away from center outward)
+        function tilesReveal(callback) {
             let hidden = 0;
             const total = tilesElements.length;
 
-            reverseOrder.forEach((idx, order) => {
-                const delay = order * 12;
+            staggerOrder.forEach((idx, order) => {
+                const delay = order * 18;
                 setTimeout(() => {
                     tilesElements[idx].classList.remove('active');
                     tilesElements[idx].classList.add('fade-out');
                     hidden++;
                     if (hidden === total) {
                         // Reset all tiles
-                        tilesElements.forEach(t => {
-                            t.classList.remove('active', 'fade-out');
-                        });
-                        isTransitioning = false;
-                        if (callback) callback();
+                        setTimeout(() => {
+                            tilesElements.forEach(t => {
+                                t.classList.remove('active', 'fade-out');
+                            });
+                            isTransitioning = false;
+                            if (callback) callback();
+                        }, 100);
                     }
                 }, delay);
             });
@@ -770,23 +771,22 @@
 
         function openM(id) {
             if (isTransitioning) return;
+            isTransitioning = true;
             const p = data[id]; if (!p) return;
 
-            // Set modal content first (hidden behind tiles)
-            document.getElementById('mImg').src = p.img;
-            document.getElementById('mCat').textContent = p.cat;
-            document.getElementById('mName').textContent = p.name;
-            document.getElementById('mPrice').textContent = p.price;
-            document.getElementById('mDesc').textContent = p.desc;
+            // Step 1: Tiles cover the screen (transition IN)
+            tilesCover(() => {
+                // Step 2: Screen is covered — now swap content behind the tiles
+                document.getElementById('mImg').src = p.img;
+                document.getElementById('mCat').textContent = p.cat;
+                document.getElementById('mName').textContent = p.name;
+                document.getElementById('mPrice').textContent = p.price;
+                document.getElementById('mDesc').textContent = p.desc;
+                document.getElementById('modal').classList.add('open');
+                document.body.style.overflow = 'hidden';
 
-            // Show modal behind the tiles
-            document.getElementById('modal').classList.add('open');
-            document.body.style.overflow = 'hidden';
-
-            // Tiles cover the screen, then reveal the modal underneath
-            tilesIn(() => {
-                // After all tiles are shown (screen is covered), remove them to reveal modal
-                tilesOut();
+                // Step 3: Tiles desglosan (open up) — revealing modal content through the squares
+                tilesReveal();
             });
         }
 
@@ -794,26 +794,14 @@
             if (isTransitioning) return;
             isTransitioning = true;
 
-            // Tiles cover again
-            let revealed = 0;
-            const total = tilesElements.length;
+            // Step 1: Tiles cover the screen again (hiding the modal)
+            tilesCover(() => {
+                // Step 2: Screen is covered — hide the modal behind tiles
+                document.getElementById('modal').classList.remove('open');
+                document.body.style.overflow = '';
 
-            staggerOrder.forEach((idx, order) => {
-                const delay = order * 15;
-                setTimeout(() => {
-                    tilesElements[idx].classList.remove('fade-out');
-                    tilesElements[idx].classList.add('active');
-                    revealed++;
-                    if (revealed === total) {
-                        // Hide modal
-                        document.getElementById('modal').classList.remove('open');
-                        document.body.style.overflow = '';
-                        // Remove tiles
-                        tilesOut(() => {
-                            isTransitioning = false;
-                        });
-                    }
-                }, delay);
+                // Step 3: Tiles desglosan — revealing the page underneath
+                tilesReveal();
             });
         }
 
