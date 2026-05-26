@@ -14,27 +14,17 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #000;
-            --bg2: #0a0a0a;
-            --bg-card: #111;
-            --text: #fff;
-            --text2: #888;
-            --text3: #555;
-            --border: #222;
-            --accent: #fff;
+            --bg: #000; --bg2: #0a0a0a; --bg-card: #111;
+            --text: #fff; --text2: #888; --text3: #555;
+            --border: #222; --accent: #fff;
             --logo-filter: brightness(0) invert(1);
             --nav-bg: rgba(0,0,0,0.85);
         }
 
         [data-theme="light"] {
-            --bg: #fff;
-            --bg2: #f5f5f5;
-            --bg-card: #f0f0f0;
-            --text: #000;
-            --text2: #666;
-            --text3: #aaa;
-            --border: #e0e0e0;
-            --accent: #000;
+            --bg: #fff; --bg2: #f5f5f5; --bg-card: #f0f0f0;
+            --text: #000; --text2: #666; --text3: #aaa;
+            --border: #e0e0e0; --accent: #000;
             --logo-filter: none;
             --nav-bg: rgba(255,255,255,0.9);
         }
@@ -51,666 +41,253 @@
 
         /* ===== NAV ===== */
         nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            height: 60px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 2rem;
-            z-index: 1000;
+            position: fixed; top: 0; width: 100%; height: 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 2rem; z-index: 1000;
             background: var(--nav-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
             transition: background 0.5s, border-color 0.5s;
         }
 
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            text-decoration: none;
-        }
+        .nav-logo { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
+        .nav-logo img { width: 30px; height: 30px; filter: var(--logo-filter); transition: filter 0.5s; }
+        .nav-logo span { font-weight: 800; font-size: 1.1rem; letter-spacing: 3px; color: var(--text); text-transform: uppercase; transition: color 0.5s; }
 
-        .nav-logo img {
-            width: 30px;
-            height: 30px;
-            filter: var(--logo-filter);
-            transition: filter 0.5s;
-        }
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
 
-        .nav-logo span {
-            font-weight: 800;
-            font-size: 1.1rem;
-            letter-spacing: 3px;
-            color: var(--text);
-            text-transform: uppercase;
-            transition: color 0.5s;
+        /* Audio toggle */
+        .audio-btn {
+            width: 34px; height: 34px; border: 1px solid var(--border);
+            background: transparent; color: var(--text3); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; padding: 0;
         }
+        .audio-btn:hover { border-color: var(--text); color: var(--text); }
+        .audio-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .audio-btn .icon-muted { display: block; }
+        .audio-btn .icon-unmuted { display: none; }
+        .audio-btn.on .icon-muted { display: none; }
+        .audio-btn.on .icon-unmuted { display: block; }
 
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
+        /* Theme toggle */
         .theme-toggle {
-            width: 42px;
-            height: 22px;
-            background: var(--border);
-            border-radius: 11px;
-            position: relative;
-            cursor: pointer;
-            border: none;
-            transition: background 0.3s;
+            width: 42px; height: 22px; background: var(--border);
+            border-radius: 11px; position: relative; cursor: pointer;
+            border: none; transition: background 0.3s;
         }
-
         .theme-toggle::after {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 16px;
-            height: 16px;
-            background: var(--text);
-            border-radius: 50%;
-            transition: all 0.3s;
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 16px; height: 16px; background: var(--text);
+            border-radius: 50%; transition: all 0.3s;
         }
-
-        [data-theme="light"] .theme-toggle::after {
-            transform: translateX(20px);
-        }
+        [data-theme="light"] .theme-toggle::after { transform: translateX(20px); }
 
         /* ===== HERO ===== */
-        .hero {
-            width: 100%;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-        }
+        .hero { width: 100%; height: 100vh; position: relative; overflow: hidden; }
 
-        .hero-video-wrap {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-        }
-
+        .hero-video-wrap { position: absolute; inset: 0; overflow: hidden; }
         .hero-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
+            width: 100%; height: 100%; object-fit: cover; object-position: center;
             filter: grayscale(20%) contrast(1.1);
         }
 
         .hero-gradient {
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background: linear-gradient(to bottom,
-                rgba(0,0,0,0.2) 0%,
-                rgba(0,0,0,0) 30%,
-                rgba(0,0,0,0.5) 70%,
-                rgba(0,0,0,0.95) 100%);
+                rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 30%,
+                rgba(0,0,0,0.5) 70%, rgba(0,0,0,0.95) 100%);
             z-index: 2;
         }
 
-        .hero-content {
-            position: absolute;
-            bottom: 10%;
-            left: 5%;
-            z-index: 3;
-        }
-
-        .hero-tag {
-            font-size: 0.65rem;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 1rem;
-        }
-
-        .hero-title {
-            font-size: clamp(4rem, 12vw, 9rem);
-            font-weight: 800;
-            line-height: 0.9;
-            color: #fff;
-            letter-spacing: -3px;
-        }
+        .hero-content { position: absolute; bottom: 10%; left: 5%; z-index: 3; }
+        .hero-tag { font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
+        .hero-title { font-size: clamp(4rem, 12vw, 9rem); font-weight: 800; line-height: 0.9; color: #fff; letter-spacing: -3px; }
 
         .hero-scroll-hint {
-            position: absolute;
-            bottom: 3%;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
+            position: absolute; bottom: 3%; left: 50%; transform: translateX(-50%);
+            z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
         }
-
-        .hero-scroll-hint span {
-            font-size: 0.6rem;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
-        }
-
-        .hero-scroll-line {
-            width: 1px;
-            height: 35px;
-            background: rgba(255,255,255,0.15);
-            position: relative;
-            overflow: hidden;
-        }
-
+        .hero-scroll-hint span { font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+        .hero-scroll-line { width: 1px; height: 35px; background: rgba(255,255,255,0.15); position: relative; overflow: hidden; }
         .hero-scroll-line::after {
-            content: '';
-            position: absolute;
-            top: -100%;
-            width: 100%;
-            height: 50%;
-            background: #fff;
-            animation: scrollDown 2s ease-in-out infinite;
+            content: ''; position: absolute; top: -100%; width: 100%; height: 50%;
+            background: #fff; animation: scrollDown 2s ease-in-out infinite;
         }
+        @keyframes scrollDown { 0% { top: -50%; } 100% { top: 150%; } }
 
-        @keyframes scrollDown {
-            0% { top: -50%; }
-            100% { top: 150%; }
-        }
-
-        /* ===== HORIZONTAL SCROLL SECTION ===== */
-        .collection-wrapper {
-            /* This creates the scroll space */
-            position: relative;
-        }
-
+        /* ===== COLLECTION ===== */
+        .collection-wrapper { position: relative; }
         .collection-sticky {
-            /* This sticks and lets us transform horizontal */
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+        }
+        .collection-header { padding: 0 3rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
+        .collection-label { font-size: 0.6rem; letter-spacing: 5px; text-transform: uppercase; color: var(--text3); }
+        .collection-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -1px; }
+        .collection-scroll-hint { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; gap: 0.5rem; transition: opacity 0.5s; }
+        .collection-scroll-hint svg { width: 18px; animation: slideDown 1.5s ease-in-out infinite; }
+        @keyframes slideDown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+        .collection-progress { padding: 0 3rem; margin-top: 2rem; }
+        .progress-bar { width: 100%; max-width: 300px; height: 1px; background: var(--border); }
+        .progress-fill { height: 100%; background: var(--text); width: 0%; transition: width 0.1s linear; }
+        .progress-text { font-size: 0.6rem; letter-spacing: 2px; color: var(--text3); margin-top: 0.5rem; }
+
+        .products-track { display: flex; gap: 1.5rem; padding: 0 3rem; will-change: transform; }
+        .product-card { flex: 0 0 auto; width: 300px; transition: transform 0.4s; }
+        .product-card:hover { transform: translateY(-6px); }
+        .product-img-wrap { position: relative; width: 300px; height: 400px; overflow: hidden; background: var(--bg-card); transition: background 0.5s; }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s, filter 0.4s; filter: grayscale(15%); }
+        .product-card:hover .product-img-wrap img { transform: scale(1.06); filter: grayscale(0%); }
+        .product-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 1.5rem; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
+        .product-card:hover .product-overlay { opacity: 1; }
+        .product-quick { padding: 0.6rem 1.2rem; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; }
+        .product-info { padding: 1rem 0; }
+        .product-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
+        .product-cat { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); margin-bottom: 0.4rem; }
+        .product-price { font-weight: 700; font-size: 1rem; }
+        .product-colors { display: flex; gap: 5px; margin-top: 0.4rem; }
+        .pc-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); }
+
+        /* ===== LOOKBOOK ===== */
+        .lookbook { width: 100%; height: 100vh; position: relative; overflow: hidden; }
+        .lookbook img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(30%) contrast(1.05); }
+        .lookbook-gradient { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.65), transparent 55%); z-index: 2; }
+        .lookbook-content { position: absolute; top: 50%; left: 5%; transform: translateY(-50%); z-index: 3; max-width: 450px; }
+        .lookbook-content h2 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; color: #fff; line-height: 0.95; letter-spacing: -2px; margin-bottom: 1.5rem; }
+        .lookbook-content p { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; }
+        .lookbook-btn { display: inline-flex; align-items: center; gap: 0.8rem; padding: 0.9rem 2rem; border: 1px solid rgba(255,255,255,0.35); color: #fff; text-decoration: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s; }
+        .lookbook-btn:hover { background: #fff; color: #000; border-color: #fff; }
+
+        /* ===== BRAND - TILE REVEAL ===== */
+        .brand {
+            width: 100%; height: 100vh; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; padding: 3rem;
+        }
+
+        .brand-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 700px;
+            aspect-ratio: 6/4;
+        }
+
+        .brand-tile {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
         }
 
-        .collection-header {
-            padding: 0 3rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
+        .brand-tile.revealed {
+            transform: scale(1);
+            opacity: 1;
         }
 
-        .collection-label {
-            font-size: 0.6rem;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: var(--text3);
+        /* Logo tile spans 2x2 */
+        .brand-tile.tile-logo {
+            grid-column: span 2;
+            grid-row: span 2;
         }
 
-        .collection-title {
-            font-size: clamp(2rem, 5vw, 3.5rem);
+        .brand-tile.tile-logo img {
+            width: 80%; height: 80%;
+            object-fit: contain;
+            filter: var(--logo-filter);
+            transition: filter 0.5s;
+        }
+
+        /* Text tiles */
+        .brand-tile.tile-title {
+            grid-column: span 2;
+            font-size: clamp(1.2rem, 3vw, 2rem);
             font-weight: 800;
             letter-spacing: -1px;
         }
 
-        .collection-scroll-hint {
+        .brand-tile.tile-subtitle {
+            grid-column: span 2;
             font-size: 0.65rem;
             letter-spacing: 3px;
             text-transform: uppercase;
             color: var(--text3);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: opacity 0.5s;
         }
 
-        .collection-scroll-hint svg {
-            width: 18px;
-            animation: slideDown 1.5s ease-in-out infinite;
-        }
-
-        @keyframes slideDown {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(4px); }
-        }
-
-        /* Progress bar */
-        .collection-progress {
-            padding: 0 3rem;
-            margin-top: 2rem;
-        }
-
-        .progress-bar {
-            width: 100%;
-            max-width: 300px;
-            height: 1px;
-            background: var(--border);
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--text);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-
-        .progress-text {
-            font-size: 0.6rem;
-            letter-spacing: 2px;
-            color: var(--text3);
-            margin-top: 0.5rem;
-        }
-
-        /* Horizontal scroll track */
-        .products-track {
-            display: flex;
-            gap: 1.5rem;
-            padding: 0 3rem;
-            will-change: transform;
-        }
-
-        /* Product card */
-        .product-card {
-            flex: 0 0 auto;
-            width: 300px;
-            transition: transform 0.4s;
-        }
-
-        .product-card:hover { transform: translateY(-6px); }
-
-        .product-img-wrap {
-            position: relative;
-            width: 300px;
-            height: 400px;
-            overflow: hidden;
-            background: var(--bg-card);
-            transition: background 0.5s;
-        }
-
-        .product-img-wrap img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.6s, filter 0.4s;
-            filter: grayscale(15%);
-        }
-
-        .product-card:hover .product-img-wrap img {
-            transform: scale(1.06);
-            filter: grayscale(0%);
-        }
-
-        .product-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 1.5rem;
-            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .product-card:hover .product-overlay { opacity: 1; }
-
-        .product-quick {
-            padding: 0.6rem 1.2rem;
-            background: #fff;
-            color: #000;
-            font-family: 'Syne', sans-serif;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            border: none;
-            cursor: pointer;
-        }
-
-        .product-info {
-            padding: 1rem 0;
-        }
-
-        .product-name {
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .product-cat {
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--text3);
-            margin-bottom: 0.4rem;
-        }
-
-        .product-price {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .product-colors {
-            display: flex;
-            gap: 5px;
-            margin-top: 0.4rem;
-        }
-
-        .pc-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-        }
-
-        /* ===== LOOKBOOK ===== */
-        .lookbook {
-            width: 100%;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .lookbook img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(30%) contrast(1.05);
-        }
-
-        .lookbook-gradient {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to right, rgba(0,0,0,0.65), transparent 55%);
-            z-index: 2;
-        }
-
-        .lookbook-content {
-            position: absolute;
-            top: 50%;
-            left: 5%;
-            transform: translateY(-50%);
-            z-index: 3;
-            max-width: 450px;
-        }
-
-        .lookbook-content h2 {
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 800;
-            color: #fff;
-            line-height: 0.95;
-            letter-spacing: -2px;
-            margin-bottom: 1.5rem;
-        }
-
-        .lookbook-content p {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
-
-        .lookbook-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.9rem 2rem;
-            border: 1px solid rgba(255,255,255,0.35);
-            color: #fff;
-            text-decoration: none;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            transition: all 0.3s;
-        }
-
-        .lookbook-btn:hover {
-            background: #fff;
-            color: #000;
-            border-color: #fff;
-        }
-
-        /* ===== BRAND ===== */
-        .brand {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4rem;
-            padding: 3rem;
-        }
-
-        .brand-logo {
-            width: 200px;
-            height: 200px;
-            filter: var(--logo-filter);
-            transition: filter 0.5s;
-            animation: float 5s ease-in-out infinite;
-            flex-shrink: 0;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-        }
-
-        .brand-info { max-width: 400px; }
-
-        .brand-info h2 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 1.5rem;
-        }
-
-        .brand-info p {
+        .brand-tile.tile-desc {
+            grid-column: span 3;
+            font-size: 0.8rem;
             color: var(--text2);
-            line-height: 1.7;
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
+            line-height: 1.5;
+            padding: 0.6rem;
+            text-align: center;
         }
 
-        .brand-stats {
-            display: flex;
-            gap: 2.5rem;
+        .brand-tile.tile-stat {
+            flex-direction: column;
+            gap: 0.2rem;
         }
 
-        .brand-stat-num {
-            font-size: 2rem;
+        .brand-tile.tile-stat .stat-num {
+            font-size: 1.6rem;
             font-weight: 800;
         }
 
-        .brand-stat-label {
-            font-size: 0.6rem;
+        .brand-tile.tile-stat .stat-label {
+            font-size: 0.5rem;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: var(--text3);
-            margin-top: 0.3rem;
+        }
+
+        /* Accent tiles (decorative) */
+        .brand-tile.tile-accent {
+            background: var(--text);
+            border-color: var(--text);
+        }
+
+        .brand-tile.tile-accent-dark {
+            background: var(--border);
+        }
+
+        .brand-tile.tile-word {
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         /* ===== FOOTER ===== */
-        footer {
-            padding: 3rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: border-color 0.5s;
-        }
-
-        footer p {
-            color: var(--text3);
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-        }
-
-        .footer-socials {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .footer-socials a {
-            width: 34px;
-            height: 34px;
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text3);
-            text-decoration: none;
-            font-size: 0.7rem;
-            font-weight: 700;
-            transition: all 0.3s;
-        }
-
-        .footer-socials a:hover {
-            border-color: var(--text);
-            color: var(--text);
-        }
+        footer { padding: 3rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.5s; }
+        footer p { color: var(--text3); font-size: 0.75rem; letter-spacing: 1px; }
+        .footer-socials { display: flex; gap: 1rem; }
+        .footer-socials a { width: 34px; height: 34px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text3); text-decoration: none; font-size: 0.7rem; font-weight: 700; transition: all 0.3s; }
+        .footer-socials a:hover { border-color: var(--text); color: var(--text); }
 
         /* ===== MODAL ===== */
-        .modal-bg {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 5000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
         .modal-bg.open { opacity: 1; visibility: visible; }
-
-        .modal-box {
-            background: var(--bg);
-            width: 90%;
-            max-width: 850px;
-            max-height: 85vh;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            overflow: hidden;
-            transition: background 0.5s;
-        }
-
-        .modal-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .modal-body {
-            padding: 2.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            overflow-y: auto;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 36px;
-            height: 36px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: #fff;
-            font-size: 1.3rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: background 0.3s;
-        }
-
+        .modal-box { background: var(--bg); width: 90%; max-width: 850px; max-height: 85vh; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; transition: background 0.5s; }
+        .modal-box img { width: 100%; height: 100%; object-fit: cover; }
+        .modal-body { padding: 2.5rem; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; width: 36px; height: 36px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: background 0.3s; }
         .modal-close:hover { background: rgba(255,255,255,0.2); }
-
-        .modal-cat {
-            font-size: 0.6rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: var(--text3);
-            margin-bottom: 0.8rem;
-        }
-
-        .modal-name {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 0.3rem;
-        }
-
-        .modal-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-desc {
-            color: var(--text2);
-            font-size: 0.85rem;
-            line-height: 1.7;
-            margin-bottom: 1.5rem;
-        }
-
-        .sizes-label {
-            font-size: 0.6rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 0.6rem;
-        }
-
-        .sizes {
-            display: flex;
-            gap: 0.4rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .sz {
-            width: 40px;
-            height: 40px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text);
-            font-family: 'Syne', sans-serif;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .sz:hover, .sz.sel {
-            background: var(--text);
-            color: var(--bg);
-        }
-
-        .add-btn {
-            width: 100%;
-            padding: 1rem;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-
+        .modal-cat { font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 0.8rem; }
+        .modal-name { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.3rem; }
+        .modal-price { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; }
+        .modal-desc { color: var(--text2); font-size: 0.85rem; line-height: 1.7; margin-bottom: 1.5rem; }
+        .sizes-label { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.6rem; }
+        .sizes { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; }
+        .sz { width: 40px; height: 40px; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: 'Syne', sans-serif; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+        .sz:hover, .sz.sel { background: var(--text); color: var(--bg); }
+        .add-btn { width: 100%; padding: 1rem; background: var(--accent); color: var(--bg); border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.3s; }
         .add-btn:hover { opacity: 0.85; }
 
         /* ===== RESPONSIVE ===== */
@@ -726,9 +303,10 @@
             .collection-progress { padding: 0 1.5rem; }
             .lookbook { height: 80vh; }
             .lookbook-content { left: 5%; right: 5%; max-width: none; }
-            .brand { flex-direction: column; text-align: center; height: auto; padding: 5rem 2rem; }
-            .brand-logo { width: 140px; height: 140px; }
-            .brand-stats { justify-content: center; }
+            .brand { padding: 2rem; }
+            .brand-grid { max-width: 100%; }
+            .brand-tile.tile-title { font-size: 1rem; }
+            .brand-tile.tile-stat .stat-num { font-size: 1.2rem; }
             .modal-box { grid-template-columns: 1fr; }
             .modal-box img { height: 45vh; }
             footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
@@ -737,6 +315,7 @@
         @media (max-width: 480px) {
             .product-card { width: 230px; }
             .product-img-wrap { width: 230px; height: 300px; }
+            .brand-grid { gap: 4px; }
         }
     </style>
 </head>
@@ -749,6 +328,10 @@
             <span>OniYouth</span>
         </a>
         <div class="nav-right">
+            <button class="audio-btn" id="audioBtn" title="Sonido">
+                <svg class="icon-muted" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                <svg class="icon-unmuted" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
             <button class="theme-toggle" id="toggle"></button>
         </div>
     </nav>
@@ -756,7 +339,7 @@
     <!-- HERO -->
     <section class="hero">
         <div class="hero-video-wrap">
-            <video class="hero-video" autoplay muted loop playsinline preload="auto">
+            <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto">
                 <source src="assets/images/hero-video.mp4" type="video/mp4">
             </video>
         </div>
@@ -771,7 +354,7 @@
         </div>
     </section>
 
-    <!-- COLLECTION — Scroll vertical → horizontal -->
+    <!-- COLLECTION -->
     <div class="collection-wrapper" id="collectionWrapper">
         <div class="collection-sticky" id="collectionSticky">
             <div class="collection-header">
@@ -789,130 +372,91 @@
                 <div class="product-card" data-p="hoodie">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-hoodie.png" alt="Oversized Hoodie">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('hoodie')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('hoodie')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Hoodie</div>
                         <div class="product-name">Oversized Hoodie</div>
                         <div class="product-price">$89.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#000"></div>
-                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="tshirt">
                     <div class="product-img-wrap">
-                        <img src="assets/images/product-tshirt.png" alt="Graphic T-Shirt">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('tshirt')">Vista Rapida</button>
-                        </div>
+                        <img src="assets/images/product-tshirt.png" alt="Graphic Tee">
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('tshirt')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">T-Shirt</div>
                         <div class="product-name">Graphic Tee</div>
                         <div class="product-price">$49.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#000"></div>
-                            <div class="pc-dot" style="background:#333"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div><div class="pc-dot" style="background:#333"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="bomber">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-bomber.png" alt="Bomber Jacket">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('bomber')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('bomber')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Jacket</div>
                         <div class="product-name">Bomber Jacket</div>
                         <div class="product-price">$129.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#000"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="joggers">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-joggers.png" alt="Tech Joggers">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('joggers')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('joggers')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Pants</div>
                         <div class="product-name">Tech Joggers</div>
                         <div class="product-price">$69.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#000"></div>
-                            <div class="pc-dot" style="background:#444"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div><div class="pc-dot" style="background:#444"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="hoodie-w">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-hoodie-white.png" alt="Essential Hoodie">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('hoodie-w')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('hoodie-w')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Hoodie</div>
                         <div class="product-name">Essential Hoodie</div>
                         <div class="product-price">$84.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="cap">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-cap.png" alt="Logo Cap">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('cap')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('cap')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Accesorio</div>
                         <div class="product-name">Logo Cap</div>
                         <div class="product-price">$34.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#000"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
                     </div>
                 </div>
-
                 <div class="product-card" data-p="sneakers">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-sneakers.png" alt="Streetwear Sneakers">
-                        <div class="product-overlay">
-                            <button class="product-quick" onclick="openM('sneakers')">Vista Rapida</button>
-                        </div>
+                        <div class="product-overlay"><button class="product-quick" onclick="openM('sneakers')">Vista Rapida</button></div>
                     </div>
                     <div class="product-info">
                         <div class="product-cat">Calzado</div>
                         <div class="product-name">Streetwear Sneakers</div>
                         <div class="product-price">$119.99</div>
-                        <div class="product-colors">
-                            <div class="pc-dot" style="background:#fff;border-color:#ccc"></div>
-                        </div>
+                        <div class="product-colors"><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
                     </div>
                 </div>
             </div>
 
             <div class="collection-progress">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
                 <div class="progress-text" id="progressText">1 / 7</div>
             </div>
         </div>
@@ -932,26 +476,65 @@
         </div>
     </section>
 
-    <!-- BRAND -->
-    <section class="brand">
-        <img src="assets/images/logo.png" alt="OniYouth" class="brand-logo">
-        <div class="brand-info">
-            <h2>MAS QUE ROPA</h2>
-            <p>La "O" con cuernos: energia rebelde, comunidad, unidad. Streetwear para quienes crean su propio camino.</p>
-            <div class="brand-stats">
-                <div>
-                    <div class="brand-stat-num">100%</div>
-                    <div class="brand-stat-label">Organico</div>
-                </div>
-                <div>
-                    <div class="brand-stat-num">0</div>
-                    <div class="brand-stat-label">Compromiso</div>
-                </div>
-                <div>
-                    <div class="brand-stat-num">&infin;</div>
-                    <div class="brand-stat-label">Actitud</div>
-                </div>
+    <!-- BRAND — TILE REVEAL -->
+    <section class="brand" id="brandSection">
+        <div class="brand-grid" id="brandGrid">
+            <!-- Row 1-2: Logo 2x2 + Title + Subtitle -->
+            <div class="brand-tile tile-logo" data-delay="0">
+                <img src="assets/images/logo.png" alt="OniYouth">
             </div>
+            <div class="brand-tile tile-title" data-delay="3">
+                MAS QUE ROPA
+            </div>
+            <div class="brand-tile tile-accent" data-delay="6"></div>
+            <div class="brand-tile tile-subtitle" data-delay="1">
+                Streetwear Culture
+            </div>
+            <div class="brand-tile tile-accent-dark" data-delay="7"></div>
+
+            <!-- Row 2: fill + desc -->
+            <div class="brand-tile tile-word" data-delay="2">
+                Rebeldia
+            </div>
+            <div class="brand-tile tile-desc" data-delay="4">
+                La "O" con cuernos: energia rebelde, comunidad, unidad.
+            </div>
+            <div class="brand-tile tile-word" data-delay="8">
+                Actitud
+            </div>
+
+            <!-- Row 3: stats + deco -->
+            <div class="brand-tile tile-stat" data-delay="5">
+                <div class="stat-num">100%</div>
+                <div class="stat-label">Organico</div>
+            </div>
+            <div class="brand-tile tile-accent-dark" data-delay="9"></div>
+            <div class="brand-tile tile-stat" data-delay="6">
+                <div class="stat-num">0</div>
+                <div class="stat-label">Compromiso</div>
+            </div>
+            <div class="brand-tile tile-word" data-delay="10">
+                Sin Limite
+            </div>
+            <div class="brand-tile tile-accent" data-delay="11"></div>
+            <div class="brand-tile tile-stat" data-delay="7">
+                <div class="stat-num">&infin;</div>
+                <div class="stat-label">Actitud</div>
+            </div>
+
+            <!-- Row 4: deco + words -->
+            <div class="brand-tile tile-word" data-delay="8">
+                Cultura
+            </div>
+            <div class="brand-tile tile-accent" data-delay="12"></div>
+            <div class="brand-tile tile-word" data-delay="9">
+                Comunidad
+            </div>
+            <div class="brand-tile tile-accent-dark" data-delay="13"></div>
+            <div class="brand-tile tile-word" data-delay="10">
+                Calle
+            </div>
+            <div class="brand-tile tile-accent" data-delay="14"></div>
         </div>
     </section>
 
@@ -1000,69 +583,71 @@
             localStorage.setItem('oy-theme', next);
         };
 
+        // Audio toggle
+        const audioBtn = document.getElementById('audioBtn');
+        const heroVideo = document.getElementById('heroVideo');
+        let isMuted = true;
+
+        audioBtn.onclick = () => {
+            isMuted = !isMuted;
+            heroVideo.muted = isMuted;
+            audioBtn.classList.toggle('on', !isMuted);
+        };
+
         // Hero video parallax
-        const heroVideo = document.querySelector('.hero-video');
         window.addEventListener('scroll', () => {
             const y = window.scrollY;
             if (heroVideo) heroVideo.style.transform = `scale(1.05) translateY(${y * 0.12}px)`;
         });
 
-        // ========== HORIZONTAL SCROLL ON VERTICAL SCROLL ==========
+        // ========== HORIZONTAL SCROLL ==========
         const wrapper = document.getElementById('collectionWrapper');
-        const sticky = document.getElementById('collectionSticky');
         const track = document.getElementById('track');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const scrollHint = document.getElementById('scrollHint');
 
-        // Calculate how much scroll space we need
-        // Total scroll = track width - viewport width (the amount we need to translate)
         function calcScrollSpace() {
-            const trackWidth = track.scrollWidth;
-            const viewportWidth = window.innerWidth;
-            const scrollDistance = trackWidth - viewportWidth;
-            return Math.max(scrollDistance, 0);
+            return Math.max(track.scrollWidth - window.innerWidth, 0);
         }
 
-        // Set the wrapper height to create enough scroll space
         function setWrapperHeight() {
-            const scrollDistance = calcScrollSpace();
-            // Add viewport height so the sticky section occupies its own space too
-            wrapper.style.height = (scrollDistance + window.innerHeight) + 'px';
+            wrapper.style.height = (calcScrollSpace() + window.innerHeight) + 'px';
         }
 
         setWrapperHeight();
         window.addEventListener('resize', setWrapperHeight);
 
-        // On scroll, translate the track horizontally
         window.addEventListener('scroll', () => {
             const rect = wrapper.getBoundingClientRect();
             const scrollDistance = calcScrollSpace();
-
-            // How far we've scrolled into the wrapper
-            const scrolledInto = -rect.top;
-
-            // Clamp between 0 and scrollDistance
-            const progress = Math.max(0, Math.min(scrolledInto, scrollDistance));
-
-            // Translate the track
+            const progress = Math.max(0, Math.min(-rect.top, scrollDistance));
             track.style.transform = `translateX(${-progress}px)`;
-
-            // Update progress bar
             const pct = scrollDistance > 0 ? (progress / scrollDistance) * 100 : 0;
             progressFill.style.width = pct + '%';
-
-            // Update progress text
             const currentCard = Math.min(Math.floor((progress / (scrollDistance || 1)) * 7) + 1, 7);
             progressText.textContent = `${currentCard} / 7`;
-
-            // Hide scroll hint once scrolling
-            if (progress > 50) {
-                scrollHint.style.opacity = '0';
-            } else {
-                scrollHint.style.opacity = '1';
-            }
+            if (progress > 50) scrollHint.style.opacity = '0';
+            else scrollHint.style.opacity = '1';
         });
+
+        // ========== BRAND TILE REVEAL ==========
+        const brandTiles = document.querySelectorAll('.brand-tile');
+        let brandRevealed = false;
+
+        const brandObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !brandRevealed) {
+                    brandRevealed = true;
+                    brandTiles.forEach((tile, i) => {
+                        const delay = parseInt(tile.dataset.delay || 0) * 80;
+                        setTimeout(() => tile.classList.add('revealed'), delay + 100);
+                    });
+                }
+            });
+        }, { threshold: 0.3 });
+
+        brandObserver.observe(document.getElementById('brandSection'));
 
         // Modal
         const data = {
@@ -1076,8 +661,7 @@
         };
 
         function openM(id) {
-            const p = data[id];
-            if (!p) return;
+            const p = data[id]; if (!p) return;
             document.getElementById('mImg').src = p.img;
             document.getElementById('mCat').textContent = p.cat;
             document.getElementById('mName').textContent = p.name;
@@ -1094,16 +678,8 @@
 
         document.getElementById('modal').onclick = e => { if (e.target.id === 'modal') closeM(); };
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeM(); });
-
-        function selSz(btn) {
-            document.querySelectorAll('.sz').forEach(b => b.classList.remove('sel'));
-            btn.classList.add('sel');
-        }
-
-        function addCart(btn) {
-            btn.textContent = 'AGREGADO!';
-            setTimeout(() => btn.textContent = 'Agregar al Carrito', 1800);
-        }
+        function selSz(btn) { document.querySelectorAll('.sz').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); }
+        function addCart(btn) { btn.textContent = 'AGREGADO!'; setTimeout(() => btn.textContent = 'Agregar al Carrito', 1800); }
     </script>
 </body>
 </html>
