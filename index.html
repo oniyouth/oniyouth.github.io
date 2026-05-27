@@ -410,16 +410,10 @@
             transition: transform 0.25s ease;
         }
 
-        /* Zoom state per slide */
-        .fs-slide.zoomed {
+        /* Zoom: controlled via JS inline transform — no binary class */
+        .fs-slide.scrollable {
             overflow: auto;
             -webkit-overflow-scrolling: touch;
-        }
-        .fs-slide.zoomed img {
-            transform: scale(1.8);
-            transform-origin: center center;
-            max-width: none;
-            max-height: none;
         }
 
         .fs-gallery-bottom {
@@ -968,22 +962,54 @@
         let fsCurrent = 0;
         let fsSlideCount = 0;
         let fsIsOpen = false;
-        let fsZoomed = false;
-        let fsZoomedSlide = null;
+
+        // Progressive zoom state — scale is continuous from 1.0 to 3.0
+        const ZOOM_MIN = 1.0;
+        const ZOOM_MAX = 3.0;
+        const ZOOM_STEP = 0.2;      // per scroll tick
+        const ZOOM_DOUBLE_TAP = 2.0; // target scale on double-tap
+        let fsScales = [];            // scale per slide
 
         // Pinch zoom state
         let pinchStartDist = 0;
         let pinchStartScale = 1;
-        let currentPinchScale = 1;
+        let isPinching = false;
+
+        // Get/set scale for current slide
+        function fsGetScale(i) { return fsScales[i] || 1; }
+        function fsSetScale(i, scale) {
+            scale = Math.min(Math.max(scale, ZOOM_MIN), ZOOM_MAX);
+            fsScales[i] = scale;
+            const slide = fsTrack.children[i];
+            if (!slide) return;
+            const img = slide.querySelector('img');
+            if (scale > 1.0) {
+                img.style.transform = `scale(${scale})`;
+                slide.classList.add('scrollable');
+            } else {
+                img.style.transform = '';
+                img.style.transformOrigin = '';
+                slide.classList.remove('scrollable');
+            }
+        }
+
+        // Reset scale for a slide
+        function fsResetScale(i) {
+            fsScales[i] = 1;
+            const slide = fsTrack.children[i];
+            if (!slide) return;
+            const img = slide.querySelector('img');
+            img.style.transform = '';
+            img.style.transformOrigin = '';
+            slide.classList.remove('scrollable');
+        }
 
         function openGallery() {
             if (!currentProductData || fsIsOpen) return;
             fsIsOpen = true;
-            fsCurrent = currentSlide; // start from the slide user was on
+            fsCurrent = currentSlide;
             fsSlideCount = currentProductData.slides.length;
-            fsZoomed = false;
-            fsZoomedSlide = null;
-            currentPinchScale = 1;
+            fsScales = new Array(fsSlideCount).fill(1);
 
             // Build slides
             fsTrack.innerHTML = '';
@@ -1015,25 +1041,17 @@
         function closeGallery() {
             if (!fsIsOpen) return;
             fsIsOpen = false;
-            fsZoomed = false;
-            fsZoomedSlide = null;
-            currentPinchScale = 1;
+            // Reset all scales
+            for (let i = 0; i < fsSlideCount; i++) fsResetScale(i);
             fsGallery.classList.remove('active');
-            // Unzoom all slides
-            fsTrack.querySelectorAll('.fs-slide').forEach(s => s.classList.remove('zoomed'));
         }
 
         function fsGoTo(index) {
             if (index < 0) index = fsSlideCount - 1;
             if (index >= fsSlideCount) index = 0;
 
-            // Unzoom current before moving
-            if (fsZoomedSlide) {
-                fsZoomedSlide.classList.remove('zoomed');
-                fsZoomed = false;
-                fsZoomedSlide = null;
-                currentPinchScale = 1;
-            }
+            // Reset zoom on current slide before moving
+            fsResetScale(fsCurrent);
 
             fsCurrent = index;
             fsTrack.style.transform = `translateX(-${fsCurrent * 100}%)`;
@@ -1052,13 +1070,18 @@
             fsCounter.textContent = `${fsCurrent + 1} / ${fsSlideCount}`;
         }
 
+        function fsIsZoomed() {
+            return fsGetScale(fsCurrent) > 1.05;
+        }
+
         // Swipe navigation in gallery
         let fsTouchStartX = 0;
         let fsTouchStartY = 0;
         let fsDragging = false;
 
         fsSlidesWrap.addEventListener('touchstart', e => {
-            if (fsZoomed) return;
+            if (e.touches.length !== 1) return;
+            if (fsIsZoomed()) return;
             fsTouchStartX = e.touches[0].clientX;
             fsTouchStartY = e.touches[0].clientY;
             fsDragging = true;
@@ -1066,10 +1089,10 @@
         }, { passive: true });
 
         fsSlidesWrap.addEventListener('touchmove', e => {
-            if (!fsDragging || fsZoomed) return;
+            if (!fsDragging || fsIsZoomed()) return;
+            if (e.touches.length !== 1) return;
             const dx = e.touches[0].clientX - fsTouchStartX;
             const dy = e.touches[0].clientY - fsTouchStartY;
-            // Only horizontal swipe
             if (Math.abs(dx) > Math.abs(dy)) {
                 const offset = -fsCurrent * window.innerWidth + dx;
                 fsTrack.style.transform = `translateX(${offset}px)`;
@@ -1077,7 +1100,7 @@
         }, { passive: true });
 
         fsSlidesWrap.addEventListener('touchend', e => {
-            if (!fsDragging || fsZoomed) return;
+            if (!fsDragging || fsIsZoomed()) return;
             fsDragging = false;
             fsTrack.classList.remove('no-transition');
             const diff = fsTouchStartX - e.changedTouches[0].clientX;
@@ -1088,46 +1111,48 @@
             }
         }, { passive: true });
 
-        // Double-tap zoom in gallery
+        // Double-tap zoom in gallery — animates smoothly to 2x or back to 1x
         let fsLastTap = 0;
         fsSlidesWrap.addEventListener('touchend', e => {
+            if (e.touches.length > 0) return; // still fingers on screen
             const now = Date.now();
             if (now - fsLastTap < 300) {
-                // Double tap → toggle zoom
                 const slide = fsTrack.children[fsCurrent];
                 if (!slide) return;
-                if (fsZoomed && fsZoomedSlide === slide) {
-                    // Unzoom
-                    slide.classList.remove('zoomed');
-                    fsZoomed = false;
-                    fsZoomedSlide = null;
-                    currentPinchScale = 1;
+                const img = slide.querySelector('img');
+                const currentScale = fsGetScale(fsCurrent);
+
+                if (currentScale > 1.05) {
+                    // Zoom back to 1x — smooth animate
+                    img.style.transition = 'transform 0.3s ease';
+                    fsSetScale(fsCurrent, 1);
+                    setTimeout(() => { img.style.transition = ''; }, 300);
                 } else {
-                    // Unzoom previous
-                    if (fsZoomedSlide) fsZoomedSlide.classList.remove('zoomed');
-                    // Zoom into tap point
+                    // Zoom to double-tap target at tap point
                     const rect = slide.getBoundingClientRect();
                     const tapX = (e.changedTouches[0].clientX - rect.left) / rect.width * 100;
                     const tapY = (e.changedTouches[0].clientY - rect.top) / rect.height * 100;
-                    const img = slide.querySelector('img');
+                    img.style.transition = 'transform 0.3s ease';
                     img.style.transformOrigin = `${tapX}% ${tapY}%`;
-                    slide.classList.add('zoomed');
-                    fsZoomed = true;
-                    fsZoomedSlide = slide;
-                    currentPinchScale = 1.8;
+                    fsSetScale(fsCurrent, ZOOM_DOUBLE_TAP);
+                    setTimeout(() => { img.style.transition = ''; }, 300);
                 }
             }
             fsLastTap = now;
         });
 
-        // Pinch-to-zoom in gallery
+        // Pinch-to-zoom in gallery — smooth progressive
         fsSlidesWrap.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
+                isPinching = true;
                 pinchStartDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                pinchStartScale = currentPinchScale;
+                pinchStartScale = fsGetScale(fsCurrent);
+                // Remove transition for direct finger tracking
+                const slide = fsTrack.children[fsCurrent];
+                if (slide) slide.querySelector('img').style.transition = 'none';
             }
         }, { passive: true });
 
@@ -1138,8 +1163,7 @@
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const scale = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), 1), 4);
-                currentPinchScale = scale;
+                const scale = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), ZOOM_MIN), ZOOM_MAX);
                 const slide = fsTrack.children[fsCurrent];
                 if (!slide) return;
                 const img = slide.querySelector('img');
@@ -1150,61 +1174,80 @@
                 const pctX = (midX - rect.left) / rect.width * 100;
                 const pctY = (midY - rect.top) / rect.height * 100;
                 img.style.transformOrigin = `${pctX}% ${pctY}%`;
-                img.style.transform = `scale(${scale})`;
-
-                if (scale > 1.1) {
-                    if (fsZoomedSlide && fsZoomedSlide !== slide) fsZoomedSlide.classList.remove('zoomed');
-                    fsZoomed = true;
-                    fsZoomedSlide = slide;
-                    slide.style.overflow = 'auto';
-                    slide.classList.add('zoomed');
-                    // Override the CSS scale with our pinch scale
-                    img.style.transform = `scale(${scale})`;
-                } else if (scale <= 1.05) {
-                    fsZoomed = false;
-                    if (fsZoomedSlide) fsZoomedSlide.classList.remove('zoomed');
-                    fsZoomedSlide = null;
-                    slide.style.overflow = '';
-                    img.style.transform = '';
-                    currentPinchScale = 1;
-                }
+                fsSetScale(fsCurrent, scale);
             }
         }, { passive: false });
 
-        // Mouse wheel zoom in gallery (desktop)
+        fsSlidesWrap.addEventListener('touchend', e => {
+            if (isPinching && e.touches.length < 2) {
+                isPinching = false;
+                const slide = fsTrack.children[fsCurrent];
+                if (slide) slide.querySelector('img').style.transition = '';
+                // If scale is very close to 1, snap back
+                if (fsGetScale(fsCurrent) < 1.08) {
+                    fsResetScale(fsCurrent);
+                }
+            }
+        }, { passive: true });
+
+        // Mouse wheel zoom in gallery (desktop) — progressive step by step
         fsSlidesWrap.addEventListener('wheel', e => {
             e.preventDefault();
             const slide = fsTrack.children[fsCurrent];
             if (!slide) return;
             const img = slide.querySelector('img');
+            const currentScale = fsGetScale(fsCurrent);
 
+            let newScale;
             if (e.deltaY < 0) {
-                // Zoom in
-                if (!fsZoomed) {
-                    const rect = slide.getBoundingClientRect();
-                    const pctX = (e.clientX - rect.left) / rect.width * 100;
-                    const pctY = (e.clientY - rect.top) / rect.height * 100;
-                    img.style.transformOrigin = `${pctX}% ${pctY}%`;
-                    slide.classList.add('zoomed');
-                    fsZoomed = true;
-                    fsZoomedSlide = slide;
-                    currentPinchScale = 1.8;
-                }
+                // Zoom in — increment
+                newScale = currentScale + ZOOM_STEP;
             } else {
-                // Zoom out
-                if (fsZoomed) {
-                    slide.classList.remove('zoomed');
-                    img.style.transform = '';
-                    fsZoomed = false;
-                    fsZoomedSlide = null;
-                    currentPinchScale = 1;
-                }
+                // Zoom out — decrement
+                newScale = currentScale - ZOOM_STEP;
             }
+
+            // Set origin to cursor position on first zoom in
+            if (currentScale <= 1.05 && newScale > 1.05) {
+                const rect = slide.getBoundingClientRect();
+                const pctX = (e.clientX - rect.left) / rect.width * 100;
+                const pctY = (e.clientY - rect.top) / rect.height * 100;
+                img.style.transformOrigin = `${pctX}% ${pctY}%`;
+            }
+
+            // Smooth transition
+            img.style.transition = 'transform 0.15s ease';
+            fsSetScale(fsCurrent, newScale);
+            setTimeout(() => { img.style.transition = ''; }, 150);
         }, { passive: false });
 
-        // Click navigation in gallery (desktop)
+        // Double-click zoom on desktop
+        fsSlidesWrap.addEventListener('dblclick', e => {
+            const slide = fsTrack.children[fsCurrent];
+            if (!slide) return;
+            const img = slide.querySelector('img');
+            const currentScale = fsGetScale(fsCurrent);
+
+            if (currentScale > 1.05) {
+                // Zoom back to 1x
+                img.style.transition = 'transform 0.3s ease';
+                fsSetScale(fsCurrent, 1);
+                setTimeout(() => { img.style.transition = ''; }, 300);
+            } else {
+                // Zoom to 2x at click point
+                const rect = slide.getBoundingClientRect();
+                const pctX = (e.clientX - rect.left) / rect.width * 100;
+                const pctY = (e.clientY - rect.top) / rect.height * 100;
+                img.style.transition = 'transform 0.3s ease';
+                img.style.transformOrigin = `${pctX}% ${pctY}%`;
+                fsSetScale(fsCurrent, ZOOM_DOUBLE_TAP);
+                setTimeout(() => { img.style.transition = ''; }, 300);
+            }
+        });
+
+        // Click navigation in gallery (desktop) — only when not zoomed
         fsSlidesWrap.addEventListener('click', e => {
-            if (fsZoomed) return;
+            if (fsIsZoomed()) return;
             if (e.target.closest('.fs-close')) return;
             const rect = fsSlidesWrap.getBoundingClientRect();
             const x = e.clientX - rect.left;
