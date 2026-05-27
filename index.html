@@ -163,42 +163,42 @@
         /* ===== PRODUCT DETAIL — CORTEIZ STYLE ===== */
         .product-detail {
             position: fixed; inset: 0; z-index: 8000;
-            background: var(--bg);
+            background: #000;
             display: none;
             overflow-y: auto;
-            transition: background 0.5s;
         }
         .product-detail.active { display: block; }
 
-        /* Close button */
+        /* Close button — raw, square, Corteiz style */
         .pd-close {
-            position: fixed; top: 1.2rem; left: 1.5rem;
-            width: 44px; height: 44px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text); font-size: 1.3rem;
+            position: fixed; top: 1rem; left: 1.5rem;
+            width: 40px; height: 40px;
+            background: #000;
+            border: none;
+            color: #A20000; font-size: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            z-index: 8020; transition: all 0.3s;
+            z-index: 8020; transition: color 0.2s;
         }
-        .pd-close:hover { background: var(--text); color: var(--bg); }
+        .pd-close:hover { color: #FFD500; }
 
-        /* Layout: image left, info right */
+        /* Layout: 50/50 split like Corteiz */
         .pd-layout {
             display: flex;
             min-height: 100vh;
             padding-top: 0;
         }
 
-        /* LEFT: Main image + thumbnails */
+        /* LEFT: Main image + thumbnails — 50% */
         .pd-images {
-            flex: 1 1 60%;
+            flex: 0 0 50%;
+            max-width: 50%;
             display: flex;
             flex-direction: column;
-            padding: 4.5rem 1rem 1rem 1rem;
+            padding: 5rem 1.5rem 1.5rem 1.5rem;
             position: sticky;
             top: 0;
             height: 100vh;
-            overflow: hidden;
         }
 
         .pd-main-img-wrap {
@@ -219,107 +219,133 @@
             -webkit-user-drag: none;
         }
 
-        /* Thumbnails row */
+        /* Thumbnails — square, no border-radius like Corteiz */
         .pd-thumbs {
             display: flex;
-            gap: 0.5rem;
-            padding: 1rem 0 0;
+            gap: 8px;
+            padding: 16px 0 0;
             justify-content: center;
             flex-shrink: 0;
         }
 
         .pd-thumb {
-            width: 60px; height: 75px;
-            border: 2px solid transparent;
+            width: 60px; height: 60px;
+            border: none;
+            outline: 2px solid transparent;
             cursor: pointer;
             overflow: hidden;
-            transition: border-color 0.2s;
-            opacity: 0.5;
-            background: var(--bg-card);
+            transition: outline-color 0.2s, opacity 0.2s;
+            opacity: 0.4;
+            background: #111;
         }
 
         .pd-thumb.active {
-            border-color: var(--text);
+            outline-color: #FFD500;
             opacity: 1;
         }
 
-        .pd-thumb:hover { opacity: 0.8; }
+        .pd-thumb:hover { opacity: 0.7; }
 
         .pd-thumb img {
             width: 100%; height: 100%;
             object-fit: cover;
         }
 
-        /* RIGHT: Product info */
+        /* RIGHT: Product info — 50% like Corteiz */
         .pd-info {
-            flex: 0 0 40%;
-            max-width: 40%;
-            padding: 5rem 2.5rem 3rem;
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 5rem 2.5rem 3rem 2rem;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
         }
 
-        .pd-cat { font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; color: var(--text3); margin-bottom: 0.8rem; }
-        .pd-name { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.8rem; line-height: 1.1; }
-        .pd-price { font-size: 1.3rem; font-weight: 700; margin-bottom: 2rem; }
+        /* Corteiz typography: Courier New, yellow, uppercase */
+        .pd-cat {
+            font: 700 11px 'Courier New', Courier, monospace;
+            color: #FFD500; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 0.6rem;
+        }
+        .pd-name {
+            font: 400 25px 'Courier New', Courier, monospace;
+            color: #FFD500; text-transform: uppercase;
+            line-height: 1.4; margin-bottom: 0.8rem;
+        }
+        .pd-price {
+            font: 700 16px 'Courier New', Courier, monospace;
+            color: #FFD500;
+            margin-bottom: 2rem;
+        }
 
-        .pd-desc { color: var(--text2); font-size: 0.85rem; line-height: 1.7; margin-bottom: 2rem; }
+        .pd-desc {
+            font: 400 12px 'Courier New', Courier, monospace;
+            color: #FFD500; line-height: 1.6;
+            margin-bottom: 2rem;
+        }
 
-        .pd-sizes-label { font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 0.8rem; }
-        .pd-sizes { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .pd-sizes-label {
+            font: 700 11px 'Courier New', Courier, monospace;
+            color: #FFD500; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 0.6rem;
+        }
+
+        /* Size buttons: 66x66 square, no border, outline on select like Corteiz */
+        .pd-sizes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 66px);
+            gap: 6px;
+            margin-bottom: 1.5rem;
+        }
         .pd-sz {
-            min-width: 44px; height: 44px; padding: 0 0.6rem;
-            border: 1px solid var(--border);
-            background: transparent; color: var(--text);
-            font-family: 'Syne', sans-serif; font-size: 0.75rem;
-            cursor: pointer; transition: all 0.2s;
+            width: 66px; height: 66px;
+            border: none; background: transparent;
+            color: #FFD500;
+            font: 700 12px 'Courier New', Courier, monospace;
+            cursor: pointer; transition: all 0.15s;
             display: flex; align-items: center; justify-content: center;
+            outline: 1px solid #333;
         }
-        .pd-sz:hover { border-color: var(--text); }
-        .pd-sz.sel { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .pd-sz:hover { outline-color: #FFD500; }
+        .pd-sz.sel {
+            outline: 2px solid #FFD500;
+            background: transparent;
+            color: #FFD500;
+        }
 
+        /* Add to cart button: dark red text, transparent bg like Corteiz */
         .pd-add-btn {
-            width: 100%; padding: 1.1rem; background: var(--accent); color: var(--bg);
-            border: none; font-family: 'Syne', sans-serif; font-weight: 700;
-            font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
-            cursor: pointer; transition: opacity 0.3s;
+            width: 100%; padding: 14px;
+            background: transparent;
+            color: #A20000;
+            border: none;
+            font: 700 12px 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: color 0.2s;
         }
-        .pd-add-btn:hover { opacity: 0.85; }
+        .pd-add-btn:hover { color: #FFD500; }
 
-        /* Image nav arrows (on main image) */
+        /* Image nav arrows — dark red like Corteiz */
         .pd-img-nav {
             position: absolute;
             top: 50%; transform: translateY(-50%);
-            width: 40px; height: 40px;
-            background: rgba(128,128,128,0.15);
+            width: 32px; height: 32px;
+            background: transparent;
             border: none;
-            color: var(--text); cursor: pointer;
+            color: #A20000; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            z-index: 5; transition: all 0.3s;
+            z-index: 5; transition: color 0.2s;
             opacity: 0;
         }
         .pd-images:hover .pd-img-nav { opacity: 1; }
-        .pd-img-nav:hover { background: rgba(128,128,128,0.3); }
-        .pd-img-nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .pd-img-nav:hover { color: #FFD500; }
+        .pd-img-nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
         .pd-img-prev { left: 0.5rem; }
         .pd-img-next { right: 0.5rem; }
 
-        /* Hint text on main image */
-        .pd-tap-hint {
-            position: absolute;
-            bottom: 1rem; left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.55rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.25);
-            pointer-events: none;
-            z-index: 4;
-            transition: opacity 0.5s;
-        }
-
-        /* ===== FULL-SCREEN GALLERY ===== */
+        /* ===== FULL-SCREEN GALLERY — CORTEIZ STYLE ===== */
         .fs-gallery {
             position: fixed; inset: 0; z-index: 9500;
             background: #000;
@@ -334,20 +360,20 @@
             display: flex; justify-content: space-between; align-items: center;
             padding: 1rem 1.5rem;
             z-index: 10;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
         }
         .fs-close {
-            width: 44px; height: 44px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #fff; font-size: 1.4rem;
+            width: 40px; height: 40px;
+            background: transparent;
+            border: none;
+            color: #A20000; font-size: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s; border-radius: 50%;
+            transition: color 0.2s;
         }
-        .fs-close:hover { background: rgba(255,255,255,0.2); }
+        .fs-close:hover { color: #FFD500; }
         .fs-counter {
-            color: rgba(255,255,255,0.5); font-size: 0.7rem;
-            letter-spacing: 2px;
+            font: 400 12px 'Courier New', Courier, monospace;
+            color: #FFD500; letter-spacing: 2px;
         }
 
         .fs-slides-wrap {
@@ -399,25 +425,24 @@
         .fs-gallery-bottom {
             position: absolute; bottom: 0; left: 0; right: 0;
             display: flex; justify-content: center; align-items: center;
-            gap: 0.6rem;
-            padding: 1.2rem;
+            gap: 8px;
+            padding: 1rem;
             z-index: 10;
-            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
         }
         .fs-dot {
             width: 8px; height: 8px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.25);
-            transition: all 0.3s;
+            border-radius: 0; /* Square dots like Corteiz */
+            background: rgba(255,213,0,0.2);
+            transition: all 0.2s;
             cursor: pointer;
         }
         .fs-dot.active {
-            background: #fff;
-            transform: scale(1.3);
+            background: #FFD500;
+            outline: 1px solid #FFD500;
         }
 
         @media (max-width: 900px) {
-            .fs-close { width: 38px; height: 38px; font-size: 1.2rem; }
+            .fs-close { width: 36px; height: 36px; font-size: 1.2rem; }
         }
 
         /* ===== RESPONSIVE ===== */
@@ -443,40 +468,41 @@
             .pd-layout { flex-direction: column; }
             .pd-images {
                 flex: none;
+                max-width: 100%;
                 height: auto;
-                min-height: 55vh;
-                padding: 4rem 0.5rem 0.5rem;
+                min-height: 50vh;
+                padding: 4rem 1rem 1rem;
                 position: relative;
-                max-height: 60vh;
             }
             .pd-info {
                 flex: none;
                 max-width: 100%;
                 padding: 1.5rem 1.5rem 3rem;
             }
-            .pd-close { top: 0.8rem; left: 0.8rem; width: 40px; height: 40px; }
-            .pd-thumb { width: 50px; height: 62px; }
+            .pd-close { top: 0.8rem; left: 0.8rem; width: 36px; height: 36px; }
+            .pd-thumb { width: 50px; height: 50px; }
             .pd-img-nav { opacity: 1; }
+            .pd-name { font-size: 20px; }
+            .pd-sz { width: 54px; height: 54px; font-size: 11px; }
         }
 
         @media (max-width: 480px) {
             .product-card { width: 230px; }
             .product-img-wrap { width: 230px; height: 300px; }
             .brand-grid { gap: 4px; }
-            .pd-images { min-height: 45vh; max-height: 50vh; }
+            .pd-images { min-height: 40vh; }
             .pd-info { padding: 1.2rem 1.2rem 2.5rem; }
-            .pd-name { font-size: 1.4rem; }
-            .pd-price { font-size: 1.1rem; margin-bottom: 1.5rem; }
-            .pd-desc { font-size: 0.8rem; margin-bottom: 1.5rem; }
-            .pd-sz { min-width: 38px; height: 38px; font-size: 0.7rem; }
-            .pd-thumb { width: 44px; height: 55px; }
+            .pd-name { font-size: 18px; }
+            .pd-price { font-size: 14px; }
+            .pd-sz { width: 48px; height: 48px; font-size: 10px; }
+            .pd-thumb { width: 44px; height: 44px; }
         }
 
         /* Landscape phones */
         @media (max-height: 500px) and (orientation: landscape) {
             .pd-layout { flex-direction: row; }
-            .pd-images { height: 100vh; flex: 1 1 55%; }
-            .pd-info { flex: 0 0 45%; max-width: 45%; padding: 3rem 1.5rem; overflow-y: auto; }
+            .pd-images { height: 100vh; flex: 0 0 50%; max-width: 50%; }
+            .pd-info { flex: 0 0 50%; max-width: 50%; padding: 3rem 1.5rem; overflow-y: auto; }
         }
     </style>
 </head>
@@ -675,7 +701,6 @@
             <div class="pd-images" id="pdImages">
                 <div class="pd-main-img-wrap" id="pdMainImgWrap">
                     <img class="pd-main-img" id="pdMainImg" src="" alt="">
-                    <span class="pd-tap-hint" id="pdTapHint">Doble tap para ver todo</span>
                     <button class="pd-img-nav pd-img-prev" onclick="event.stopPropagation(); switchSlide(-1)">
                         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
                     </button>
@@ -691,7 +716,6 @@
                 <div class="pd-cat" id="pdCat"></div>
                 <div class="pd-name" id="pdName"></div>
                 <div class="pd-price" id="pdPrice"></div>
-                <div class="pd-desc" id="pdDesc"></div>
                 <div class="pd-sizes-label">Talla</div>
                 <div class="pd-sizes" id="pdSizes">
                     <button class="pd-sz" onclick="selSz(this)">XS</button>
@@ -700,7 +724,8 @@
                     <button class="pd-sz" onclick="selSz(this)">L</button>
                     <button class="pd-sz" onclick="selSz(this)">XL</button>
                 </div>
-                <button class="pd-add-btn" onclick="addCart(this)">Agregar al Carrito</button>
+                <button class="pd-add-btn" id="pdAddBtn" onclick="addCart(this)">SELECCIONAR TALLA</button>
+                <div class="pd-desc" id="pdDesc"></div>
             </div>
         </div>
     </div>
@@ -839,7 +864,12 @@
             slideCount = p.slides.length;
             currentSlide = 0;
             isZoomed = false;
+            sizeSelected = true; // M is pre-selected
             currentProductData = p;
+
+            // Reset add to cart button — M is pre-selected so show ADD TO CART
+            const addBtn = document.getElementById('pdAddBtn');
+            if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
 
             // Set main image
             document.getElementById('pdMainImg').src = p.slides[0];
@@ -859,8 +889,7 @@
             });
 
             // Show tap hint briefly
-            const hint = document.getElementById('pdTapHint');
-            if (hint) { hint.style.opacity = '1'; setTimeout(() => hint.style.opacity = '0', 3500); }
+            // No tap hint anymore
         }
 
         function goToSlide(index) {
@@ -1198,8 +1227,24 @@
         });
 
         // Helpers
-        function selSz(btn) { document.querySelectorAll('.pd-sz').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); }
-        function addCart(btn) { btn.textContent = 'AGREGADO!'; setTimeout(() => btn.textContent = 'Agregar al Carrito', 1800); }
+        let sizeSelected = false;
+        function selSz(btn) {
+            document.querySelectorAll('.pd-sz').forEach(b => b.classList.remove('sel'));
+            btn.classList.add('sel');
+            sizeSelected = true;
+            const addBtn = document.getElementById('pdAddBtn');
+            if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
+        }
+        function addCart(btn) {
+            if (!sizeSelected) {
+                // Pulse the size buttons to indicate selection needed
+                document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = '#A20000'; setTimeout(() => s.style.outlineColor = '', 600); });
+                return;
+            }
+            btn.textContent = 'AGREGADO!';
+            btn.style.color = '#FFD500';
+            setTimeout(() => { btn.textContent = 'AGREGAR AL CARRITO'; btn.style.color = ''; }, 1800);
+        }
     </script>
 </body>
 </html>
