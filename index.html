@@ -42,18 +42,18 @@
 
         /* ===== NAV ===== */
         nav {
-            position: fixed; top: 0; width: 100%; height: 60px;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 2rem; z-index: 1000;
-            background: var(--nav-bg);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            transition: background 0.5s, border-color 0.5s;
+            position: fixed; top: 0; width: 100%; height: 50px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            background: transparent;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            border-bottom: none;
+            transition: none;
         }
-        .nav-logo { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; }
-        .nav-logo img { width: 30px; height: 30px; filter: var(--logo-filter); transition: filter 0.5s; }
-        .nav-logo span { font-weight: 800; font-size: 1.1rem; letter-spacing: 3px; color: var(--text); text-transform: uppercase; transition: color 0.5s; }
-        .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .nav-logo { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .nav-logo img { width: 36px; height: 36px; filter: var(--logo-filter); transition: filter 0.5s; }
+        .nav-logo span { display: none; }
+        .nav-right { display: none; }
         .audio-btn {
             width: 34px; height: 34px; border: 1px solid var(--border);
             background: transparent; color: var(--text3); cursor: pointer;
@@ -496,7 +496,6 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
-            nav { padding: 0 1.2rem; }
             .hero-content { left: 5%; right: 5%; bottom: 8%; }
             .hero-title { letter-spacing: -1px; }
             .collection-header { padding: 0 1.5rem; }
@@ -557,132 +556,10 @@
             .pd-info { flex: 0 0 50%; max-width: 50%; padding: 3rem 1.5rem; overflow-y: auto; }
         }
 
-        /* ===== PASSWORD GATE — CORTEIZ LOCK SCREEN ===== */
-        .pw-gate {
-            position: fixed; inset: 0; z-index: 99999;
-            background: #000;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            transition: opacity 0.6s ease, visibility 0.6s ease;
-        }
-        .pw-gate.unlocked {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        .pw-gate-logo {
-            width: 80px; height: 80px;
-            filter: brightness(0) invert(1);
-            margin-bottom: 2rem;
-            animation: pwPulse 3s ease-in-out infinite;
-        }
-        @keyframes pwPulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-        .pw-gate-title {
-            font: 800 clamp(1.8rem, 6vw, 3.5rem) 'Syne', sans-serif;
-            color: #fff;
-            letter-spacing: -2px;
-            text-align: center;
-            line-height: 0.95;
-            margin-bottom: 0.5rem;
-        }
-        .pw-gate-subtitle {
-            font: 400 11px 'Courier New', Courier, monospace;
-            color: #FFD500;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        .pw-gate-form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            width: 90%;
-            max-width: 320px;
-        }
-        .pw-input {
-            width: 100%;
-            height: 50px;
-            background: transparent;
-            border: none;
-            border-bottom: 1px solid #333;
-            color: #FFD500;
-            font: 400 16px 'Courier New', Courier, monospace;
-            letter-spacing: 4px;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.3s;
-            caret-color: #FFD500;
-        }
-        .pw-input::placeholder {
-            color: #333;
-            letter-spacing: 2px;
-        }
-        .pw-input:focus {
-            border-bottom-color: #FFD500;
-        }
-        .pw-submit {
-            width: 100%;
-            height: 50px;
-            background: transparent;
-            border: 1px solid #333;
-            color: #A20000;
-            font: 700 12px 'Courier New', Courier, monospace;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .pw-submit:hover {
-            border-color: #FFD500;
-            color: #FFD500;
-        }
-        .pw-error {
-            font: 400 11px 'Courier New', Courier, monospace;
-            color: #A20000;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            min-height: 1.4em;
-            transition: opacity 0.3s;
-            opacity: 0;
-        }
-        .pw-error.show {
-            opacity: 1;
-        }
-        .pw-hint {
-            position: absolute;
-            bottom: 2rem;
-            font: 400 10px 'Courier New', Courier, monospace;
-            color: #222;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        @media (max-width: 480px) {
-            .pw-gate-logo { width: 60px; height: 60px; margin-bottom: 1.5rem; }
-            .pw-gate-subtitle { font-size: 9px; letter-spacing: 3px; margin-bottom: 2rem; }
-            .pw-input { height: 44px; font-size: 14px; }
-            .pw-submit { height: 44px; }
-        }
+
     </style>
 </head>
 <body>
-
-    <!-- PASSWORD GATE -->
-    <div class="pw-gate" id="pwGate">
-        <img class="pw-gate-logo" src="assets/images/logo.png" alt="OniYouth">
-        <div class="pw-gate-title">ONIYOUTH</div>
-        <div class="pw-gate-subtitle">Acceso Restringido</div>
-        <form class="pw-gate-form" id="pwForm" onsubmit="return false">
-            <input class="pw-input" type="password" id="pwInput" placeholder="Contraseña" autocomplete="off" spellcheck="false">
-            <button class="pw-submit" type="submit" id="pwSubmit">Entrar</button>
-            <div class="pw-error" id="pwError">Acceso Denegado</div>
-        </form>
-        <div class="pw-hint">Solo miembros</div>
-    </div>
 
     <!-- NAV -->
     <nav>
@@ -934,47 +811,6 @@
     </div>
 
     <script>
-        // ===== PASSWORD GATE =====
-        const PW_KEY = 'oy-access';
-        const PW_SECRET = 'oni2026';
-        const pwGate = document.getElementById('pwGate');
-        const pwForm = document.getElementById('pwForm');
-        const pwInput = document.getElementById('pwInput');
-        const pwSubmit = document.getElementById('pwSubmit');
-        const pwError = document.getElementById('pwError');
-
-        // Check if already authenticated this session
-        if (sessionStorage.getItem(PW_KEY) === '1') {
-            pwGate.classList.add('unlocked');
-        }
-
-        pwForm.addEventListener('submit', e => {
-            e.preventDefault();
-            attemptLogin();
-        });
-
-        pwSubmit.addEventListener('click', e => {
-            e.preventDefault();
-            attemptLogin();
-        });
-
-        function attemptLogin() {
-            const val = pwInput.value.trim().toLowerCase();
-            if (val === PW_SECRET) {
-                sessionStorage.setItem(PW_KEY, '1');
-                pwError.classList.remove('show');
-                pwGate.classList.add('unlocked');
-            } else {
-                pwError.classList.add('show');
-                pwInput.value = '';
-                pwInput.style.borderBottomColor = '#A20000';
-                setTimeout(() => {
-                    pwInput.style.borderBottomColor = '';
-                    pwError.classList.remove('show');
-                }, 2000);
-            }
-        }
-
         // ===== THEME =====
         const tgl = document.getElementById('toggle');
         const html = document.documentElement;
