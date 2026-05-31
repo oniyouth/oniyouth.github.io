@@ -199,45 +199,87 @@
         }
         .pd-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
 
-        /* Layout: single column, images stacked vertical */
+        /* Layout: side-by-side on desktop, stacked on mobile */
         .pd-layout {
             display: flex;
-            flex-direction: column;
             min-height: 100vh;
             padding-top: 0;
         }
 
-        /* Images — full width, stacked vertical */
+        /* Left: Main image carousel */
         .pd-images {
+            flex: 1 1 55%;
             display: flex;
             flex-direction: column;
-            gap: 0;
-            padding: 4.5rem 0 0;
-            width: 100%;
+            align-items: center;
+            justify-content: center;
+            padding: 4.5rem 2rem 1rem;
+            position: relative;
         }
 
-        .pd-img-full {
+        .pd-main-img-wrap {
+            position: relative;
             width: 100%;
+            max-width: 500px;
+            aspect-ratio: 4/5;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
         }
 
-        .pd-img-full img {
+        .pd-main-img-wrap img {
             width: 100%;
-            height: auto;
+            height: 100%;
             object-fit: contain;
-            display: block;
+            transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        /* Product info — full width below images */
+        /* Nav arrows */
+        .pd-img-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px; height: 36px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-size: 1rem;
+            font-family: 'Syne', sans-serif; font-weight: 300;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; border-radius: 50%; z-index: 5;
+        }
+        .pd-img-nav:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+        .pd-nav-prev { left: -0.5rem; }
+        .pd-nav-next { right: -0.5rem; }
+
+        /* Thumbnail strip */
+        .pd-thumbs {
+            display: flex;
+            gap: 8px;
+            margin-top: 1.2rem;
+            justify-content: center;
+        }
+        .pd-thumb {
+            width: 48px; height: 60px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+        }
+        .pd-thumb img { width: 100%; height: 100%; object-fit: contain; }
+        .pd-thumb.active { opacity: 1; border-color: #fff; }
+        .pd-thumb:hover { opacity: 0.8; }
+
+        /* Right: Product info */
         .pd-info {
-            width: 100%;
-            padding: 2rem 1.5rem 3rem;
+            flex: 1 1 45%;
+            padding: 5rem 2.5rem 3rem;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
         }
 
         /* OniYouth typography: Syne, clean, minimal */
@@ -309,26 +351,28 @@
         }
         .pd-add-btn:hover { background: rgba(255,255,255,0.85); }
 
-        /* Image nav arrows — hidden (no carousel) */
-        .pd-img-nav { display: none; }
+        /* Image nav arrows */
+        .pd-img-nav { display: flex; }
 
-        /* ===== FULL-SCREEN GALLERY ===== */
+        /* ===== FULL-SCREEN GALLERY — Vertical Stack ===== */
         .fs-gallery {
             position: fixed; inset: 0; z-index: 9500;
             background: #000;
             visibility: hidden;
             opacity: 0;
             flex-direction: column;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             transition: opacity 0.5s ease, visibility 0.5s;
         }
         .fs-gallery.active { visibility: visible; opacity: 1; }
 
         .fs-gallery-top {
-            position: absolute; top: 0; left: 0; right: 0;
+            position: fixed; top: 0; left: 0; right: 0;
             display: flex; justify-content: space-between; align-items: center;
             padding: 1rem 1.5rem;
             z-index: 10;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
         }
         .fs-close {
             width: 40px; height: 40px;
@@ -346,59 +390,27 @@
             color: rgba(255,255,255,0.5); letter-spacing: 3px;
         }
 
-        .fs-slides-wrap {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            touch-action: pan-y;
-        }
-
-        .fs-slides-track {
-            display: flex;
-            height: 100%;
-            transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            will-change: transform;
-        }
-        .fs-slides-track.no-transition { transition: none; }
-
-        .fs-slide {
-            flex: 0 0 100%;
+        /* Vertical stack of images — full width, large */
+        .fs-vertical-scroll {
+            padding: 5rem 0 0;
             width: 100%;
-            height: 100%;
+        }
+
+        .fs-img-block {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
-        .fs-slide img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            user-select: none;
-            -webkit-user-drag: none;
-            /* NO CSS transition — JS handles all zoom animation for native photo feel */
-            will-change: transform;
         }
 
-        .fs-gallery-bottom {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            display: flex; justify-content: center; align-items: center;
-            gap: 8px;
-            padding: 1rem;
-            z-index: 10;
+        .fs-img-block img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
         }
-        .fs-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .fs-dot.active {
-            background: #fff;
-            outline: 1px solid #fff;
-        }
+
+        .fs-gallery-bottom { display: none; }
 
         @media (max-width: 900px) {
             .fs-close { width: 36px; height: 36px; font-size: 1.2rem; }
@@ -419,10 +431,12 @@
                 padding: 4rem 1rem 1rem;
                 position: relative;
             }
+            .pd-main-img-wrap { max-width: 100%; }
             .pd-info {
                 flex: none;
                 max-width: 100%;
                 padding: 1.5rem 1.5rem 3rem;
+                justify-content: flex-start;
             }
             .pd-close { top: 0.8rem; left: 0.8rem; width: 36px; height: 36px; }
             .pd-name { font-size: 20px; }
@@ -434,11 +448,6 @@
             .pd-name { font-size: 18px; }
             .pd-price { font-size: 14px; }
             .pd-sz { width: 44px; height: 44px; font-size: 0.65rem; }
-        }
-
-        /* Landscape phones — keep vertical scroll */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .pd-img-full img { max-height: 80vh; }
         }
 
 
@@ -570,11 +579,17 @@
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <div class="pd-layout">
-            <!-- Images stacked vertically -->
-            <div class="pd-images" id="pdImages">
+            <!-- Left: Image carousel -->
+            <div class="pd-images">
+                <div class="pd-main-img-wrap" id="pdMainImgWrap">
+                    <img id="pdMainImg" src="" alt="">
+                    <button class="pd-img-nav pd-nav-prev" onclick="switchSlide(-1)">&#8249;</button>
+                    <button class="pd-img-nav pd-nav-next" onclick="switchSlide(1)">&#8250;</button>
+                </div>
+                <div class="pd-thumbs" id="pdThumbs"></div>
             </div>
 
-            <!-- RIGHT: Product info -->
+            <!-- Right: Product info -->
             <div class="pd-info">
                 <div class="pd-cat" id="pdCat"></div>
                 <div class="pd-name" id="pdName"></div>
@@ -593,16 +608,13 @@
         </div>
     </div>
 
-    <!-- FULL-SCREEN GALLERY -->
+    <!-- FULL-SCREEN GALLERY — Vertical Stack -->
     <div class="fs-gallery" id="fsGallery">
         <div class="fs-gallery-top">
             <button class="fs-close" onclick="closeGallery()">&times;</button>
-            <span class="fs-counter" id="fsCounter">1 / 4</span>
+            <span class="fs-counter" id="fsCounter"></span>
         </div>
-        <div class="fs-slides-wrap" id="fsSlidesWrap">
-            <div class="fs-slides-track" id="fsTrack"></div>
-        </div>
-        <div class="fs-gallery-bottom" id="fsDots"></div>
+        <div class="fs-vertical-scroll" id="fsVerticalScroll"></div>
     </div>
 
     <script>
@@ -656,9 +668,59 @@
             sneakers: { name: 'Streetwear Sneakers', cat: 'Calzado', price: '$119.99', desc: 'Suela premium amortiguada. Diseno minimalista versatil. Comfort todo el dia. Materiales sustainables.', slides: ['assets/images/product-sneakers.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] }
         };
 
-        // ===== PRODUCT DETAIL =====
+    <script>
+        // ===== THEME =====
+        const tgl = document.getElementById('toggle');
+        const html = document.documentElement;
+        const saved = localStorage.getItem('oy-theme') || 'dark';
+        html.dataset.theme = saved;
+        tgl.onclick = () => { const next = html.dataset.theme === 'dark' ? 'light' : 'dark'; html.dataset.theme = next; localStorage.setItem('oy-theme', next); };
+
+        // ===== AUDIO =====
+        const audioBtn = document.getElementById('audioBtn');
+        const heroImg = document.getElementById('heroImg');
+        let isMuted = true;
+        audioBtn.onclick = () => { isMuted = !isMuted; audioBtn.classList.toggle('on', !isMuted); };
+
+        // ===== HERO PARALLAX =====
+        window.addEventListener('scroll', () => { if (heroImg) heroImg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
+
+        // ===== SHOP PAGE (overlay) =====
+        const shopPage = document.getElementById('shopPage');
+        let shopIsOpen = false;
+
+        function openShop() {
+            shopPage.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            shopPage.scrollTop = 0;
+            shopIsOpen = true;
+            history.pushState({ shopOpen: true }, '');
+        }
+
+        function closeShop() {
+            shopPage.classList.remove('active');
+            document.body.style.overflow = '';
+            shopIsOpen = false;
+            if (history.state && history.state.shopOpen) {
+                history.back();
+            }
+        }
+
+        // ===== PRODUCT DATA =====
+        const data = {
+            hoodie: { name: 'Oversized Hoodie', cat: 'Hoodie', price: '$89.99', desc: 'Algodon organico 400gsm. Logo bordado en pecho. Interior afelpado ultra suave. Corte oversized con capucha doble capa.', slides: ['assets/images/product-hoodie.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] },
+            tshirt: { name: 'No Stairs To Heaven', cat: 'T-Shirt', price: '$49.99', desc: 'Algodon 100% 220gsm. Corte boxy oversize. Estampa serigrafiada de alta definicion. Cuello ribeteado. Diseño exclusivo OniYouth.', slides: ['assets/images/product-nostairs-front.png','assets/images/product-nostairs-back.png','assets/images/product-nostairs-detail.png'] },
+            bomber: { name: 'Bomber Jacket', cat: 'Jacket', price: '$129.99', desc: 'Acabado satinado premium. Forro interior estampado. Cierre YKK de alta resistencia. Puños y borde elastico.', slides: ['assets/images/product-bomber.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
+            joggers: { name: 'Tech Joggers', cat: 'Pants', price: '$69.99', desc: 'Tejido tech de secado rapido. Tapered fit moderno. Bolsillos con cierre zip. Cintura elastica con cordones.', slides: ['assets/images/product-joggers.png','assets/images/hero-model-1.png','assets/images/hero-model-3.png','assets/images/hero-model-2.png'] },
+            'hoodie-w': { name: 'Essential Hoodie', cat: 'Hoodie', price: '$84.99', desc: 'Blanco roto premium. Logo tono sobre tono bordado. Algodon organico suave. Interior afelpado.', slides: ['assets/images/product-hoodie-white.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png'] },
+            cap: { name: 'Logo Cap', cat: 'Accesorio', price: '$34.99', desc: '6 paneles estructurados. Logo bordado frontal. Hebilla metalica ajustable. Visera curva clasica.', slides: ['assets/images/product-cap.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
+            sneakers: { name: 'Streetwear Sneakers', cat: 'Calzado', price: '$119.99', desc: 'Suela premium amortiguada. Diseno minimalista versatil. Comfort todo el dia. Materiales sustainables.', slides: ['assets/images/product-sneakers.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] }
+        };
+
+        // ===== PRODUCT DETAIL (Carousel) =====
         const productDetail = document.getElementById('productDetail');
-        // (carousel state removed — vertical stack)
+        let currentSlide = 0;
+        let slideCount = 0;
         let currentProductData = null;
 
         function openProduct(id) {
@@ -679,23 +741,18 @@
             }
         }
 
-        // Back button / popstate — close overlays like Ctrl+Z
+        // Back button / popstate
         window.addEventListener('popstate', function(e) {
-            // If full-screen gallery is open, close it (don't call history.back since popstate already did)
             if (fsIsOpen) {
                 fsIsOpen = false;
-                if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-                for (let i = 0; i < fsSlideCount; i++) fsResetZoom(i);
                 fsGallery.classList.remove('active');
                 return;
             }
-            // If product detail is open, close it
             if (productDetail.classList.contains('active')) {
                 productDetail.classList.remove('active');
                 document.body.style.overflow = '';
                 return;
             }
-            // If shop page is open, close it
             if (shopIsOpen) {
                 shopPage.classList.remove('active');
                 document.body.style.overflow = '';
@@ -711,602 +768,138 @@
             document.getElementById('pdDesc').textContent = p.desc;
             document.querySelectorAll('.pd-sz').forEach((s, i) => { s.classList.remove('sel'); if (i === 2) s.classList.add('sel'); });
 
-            // (carousel state reset removed — vertical stack)
-            sizeSelected = true; // M is pre-selected
+            slideCount = p.slides.length;
+            currentSlide = 0;
+            sizeSelected = true;
             currentProductData = p;
 
-            // Reset add to cart button — M is pre-selected so show ADD TO CART
             const addBtn = document.getElementById('pdAddBtn');
             if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
 
-            // Build stacked vertical images
-            const imagesEl = document.getElementById('pdImages');
-            imagesEl.innerHTML = '';
+            // Set main image
+            document.getElementById('pdMainImg').src = p.slides[0];
+            document.getElementById('pdMainImg').alt = p.name;
+
+            // Build thumbnails
+            const thumbsEl = document.getElementById('pdThumbs');
+            thumbsEl.innerHTML = '';
             p.slides.forEach((src, i) => {
-                const wrap = document.createElement('div');
-                wrap.className = 'pd-img-full';
-                wrap.onclick = () => openGallery(i);
+                const thumb = document.createElement('div');
+                thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
+                thumb.onclick = () => goToSlide(i);
                 const img = document.createElement('img');
                 img.src = src;
                 img.alt = p.name + ' ' + (i + 1);
-                wrap.appendChild(img);
-                imagesEl.appendChild(wrap);
+                thumb.appendChild(img);
+                thumbsEl.appendChild(thumb);
             });
         }
 
-        // (Carousel code removed — images are now stacked vertically, each clickable to open gallery)
+        function goToSlide(index) {
+            if (index < 0) index = slideCount - 1;
+            if (index >= slideCount) index = 0;
+            currentSlide = index;
 
-        // ===== FULL-SCREEN GALLERY =====
+            if (currentProductData) {
+                document.getElementById('pdMainImg').src = currentProductData.slides[currentSlide];
+            }
+            document.querySelectorAll('.pd-thumb').forEach((t, i) => t.classList.toggle('active', i === currentSlide));
+        }
+
+        function switchSlide(dir) { goToSlide(currentSlide + dir); }
+
+        // ===== DOUBLE-TAP & LONG-PRESS -> OPEN GALLERY =====
+        const mainImgWrap = document.getElementById('pdMainImgWrap');
+        let lastTapTime = 0;
+        let longPressTimer = null;
+        let longPressTriggered = false;
+
+        mainImgWrap.addEventListener('click', e => {
+            if (e.target.closest('.pd-img-nav')) return;
+            const now = Date.now();
+            if (now - lastTapTime < 350) {
+                openGallery(currentSlide);
+                lastTapTime = 0;
+            } else {
+                lastTapTime = now;
+            }
+        });
+
+        mainImgWrap.addEventListener('touchstart', e => {
+            if (e.target.closest('.pd-img-nav')) return;
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                openGallery(currentSlide);
+            }, 500);
+        }, { passive: true });
+
+        mainImgWrap.addEventListener('touchmove', () => { clearTimeout(longPressTimer); }, { passive: true });
+        mainImgWrap.addEventListener('touchend', () => { clearTimeout(longPressTimer); }, { passive: true });
+
+        // Swipe on main image
+        let pdTouchStartX = 0;
+        mainImgWrap.addEventListener('touchstart', e => {
+            if (e.target.closest('.pd-img-nav')) return;
+            pdTouchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        mainImgWrap.addEventListener('touchend', e => {
+            if (e.target.closest('.pd-img-nav')) return;
+            if (longPressTriggered) return;
+            const diff = pdTouchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 60) {
+                if (diff > 0) switchSlide(1);
+                else switchSlide(-1);
+            }
+        }, { passive: true });
+
+        // ===== FULL-SCREEN GALLERY (Vertical Stack) =====
         const fsGallery = document.getElementById('fsGallery');
-        const fsTrack = document.getElementById('fsTrack');
-        const fsDots = document.getElementById('fsDots');
+        const fsVerticalScroll = document.getElementById('fsVerticalScroll');
         const fsCounter = document.getElementById('fsCounter');
-        const fsSlidesWrap = document.getElementById('fsSlidesWrap');
-        let fsCurrent = 0;
-        let fsSlideCount = 0;
         let fsIsOpen = false;
-
-        // ── Native Photo Viewer Zoom ──
-        // Each slide has its own zoom state: scale, translateX, translateY, origin
-        const ZOOM_MIN = 1.0;
-        const ZOOM_MAX = 3.0;
-        const ZOOM_DOUBLE_TAP = 2.5;
-        const ZOOM_WHEEL_STEP = 0.08;  // small steps for smooth feel
-        let fsZoomStates = [];  // { scale, tx, ty } per slide
-
-        // Animation frame ID for double-tap zoom
-        let zoomAnimId = null;
-
-        function fsGetZoom(i) { return fsZoomStates[i] || { scale: 1, tx: 0, ty: 0 }; }
-
-        function fsApplyZoom(i) {
-            const slide = fsTrack.children[i];
-            if (!slide) return;
-            const img = slide.querySelector('img');
-            if (!img) return;
-            const z = fsGetZoom(i);
-            if (z.scale <= 1.001) {
-                img.style.transform = '';
-                img.style.transformOrigin = '';
-            } else {
-                img.style.transformOrigin = '0 0';
-                img.style.transform = `translate(${z.tx}px, ${z.ty}px) scale(${z.scale})`;
-            }
-        }
-
-        function fsSetZoom(i, scale, tx, ty) {
-            scale = Math.min(Math.max(scale, ZOOM_MIN), ZOOM_MAX);
-            fsZoomStates[i] = { scale, tx: tx || 0, ty: ty || 0 };
-            fsApplyZoom(i);
-        }
-
-        function fsResetZoom(i) {
-            fsZoomStates[i] = { scale: 1, tx: 0, ty: 0 };
-            const slide = fsTrack.children[i];
-            if (!slide) return;
-            const img = slide.querySelector('img');
-            if (!img) return;
-            img.style.transform = '';
-            img.style.transformOrigin = '';
-        }
-
-        function fsIsZoomed() {
-            const z = fsGetZoom(fsCurrent);
-            return z.scale > 1.05;
-        }
-
-        // Clamp pan so image doesn't go outside viewport bounds
-        function clampPan(scale, tx, ty, slideEl) {
-            if (scale <= 1.001) return { tx: 0, ty: 0 };
-            const img = slideEl.querySelector('img');
-            if (!img || !img.naturalWidth) return { tx, ty };
-            const vw = slideEl.clientWidth;
-            const vh = slideEl.clientHeight;
-            // object-fit: contain centers the image — calculate actual rendered size
-            const imgAspect = img.naturalWidth / img.naturalHeight;
-            const viewAspect = vw / vh;
-            let renderedW, renderedH;
-            if (imgAspect > viewAspect) {
-                renderedW = vw;
-                renderedH = vw / imgAspect;
-            } else {
-                renderedH = vh;
-                renderedW = vh * imgAspect;
-            }
-            const iw = renderedW * scale;
-            const ih = renderedH * scale;
-            // The image is centered at scale=1, offset from slide origin
-            const offsetX = (vw - renderedW) / 2;
-            const offsetY = (vh - renderedH) / 2;
-            // At scale, the center of the zoomed image should be at:
-            // centerX = offsetX + renderedW/2  (in slide coords)
-            // When we apply translate(tx, ty) + scale with origin 0,0:
-            //   center of image moves to: offsetX*scale + tx + renderedW*scale/2
-            // We want it to stay centered: offsetX*scale + tx + iw/2 = vw/2
-            // So tx = vw/2 - iw/2 - offsetX*scale
-            // But we want to allow panning within bounds:
-            const maxPanX = Math.max(0, (iw - vw) / 2);
-            const maxPanY = Math.max(0, (ih - vh) / 2);
-            // Default centered position
-            const centeredTx = (vw - iw) / 2 - offsetX * scale;
-            const centeredTy = (vh - ih) / 2 - offsetY * scale;
-            // If image is smaller than viewport, center it
-            if (iw <= vw) {
-                tx = centeredTx;
-            } else {
-                // Allow pan within bounds relative to centered position
-                tx = Math.min(Math.max(tx, centeredTx - maxPanX), centeredTx + maxPanX);
-            }
-            if (ih <= vh) {
-                ty = centeredTy;
-            } else {
-                ty = Math.min(Math.max(ty, centeredTy - maxPanY), centeredTy + maxPanY);
-            }
-            return { tx, ty };
-        }
-
-        // Smooth animate zoom (for double-tap / double-click)
-        function fsAnimateZoom(i, targetScale, targetTx, targetTy, duration) {
-            if (zoomAnimId) cancelAnimationFrame(zoomAnimId);
-            const start = { ...fsGetZoom(i) };
-            const startTime = performance.now();
-            duration = duration || 350;
-
-            function ease(t) {
-                // ease-out cubic
-                return 1 - Math.pow(1 - t, 3);
-            }
-
-            function step(now) {
-                const elapsed = now - startTime;
-                const t = Math.min(elapsed / duration, 1);
-                const et = ease(t);
-                const s = start.scale + (targetScale - start.scale) * et;
-                const tx = start.tx + (targetTx - start.tx) * et;
-                const ty = start.ty + (targetTy - start.ty) * et;
-                fsSetZoom(i, s, tx, ty);
-                if (t < 1) {
-                    zoomAnimId = requestAnimationFrame(step);
-                } else {
-                    zoomAnimId = null;
-                }
-            }
-            zoomAnimId = requestAnimationFrame(step);
-        }
-
-        // Calculate centered position for a given scale (for zoom-to-point)
-        function getCenteredTx(slideEl, scale) {
-            const img = slideEl.querySelector('img');
-            if (!img || !img.naturalWidth) return 0;
-            const vw = slideEl.clientWidth;
-            const vh = slideEl.clientHeight;
-            const imgAspect = img.naturalWidth / img.naturalHeight;
-            const viewAspect = vw / vh;
-            let renderedW, renderedH;
-            if (imgAspect > viewAspect) {
-                renderedW = vw; renderedH = vw / imgAspect;
-            } else {
-                renderedH = vh; renderedW = vh * imgAspect;
-            }
-            const iw = renderedW * scale;
-            const offsetX = (vw - renderedW) / 2;
-            return (vw - iw) / 2 - offsetX * scale;
-        }
-
-        function getCenteredTy(slideEl, scale) {
-            const img = slideEl.querySelector('img');
-            if (!img || !img.naturalWidth) return 0;
-            const vw = slideEl.clientWidth;
-            const vh = slideEl.clientHeight;
-            const imgAspect = img.naturalWidth / img.naturalHeight;
-            const viewAspect = vw / vh;
-            let renderedW, renderedH;
-            if (imgAspect > viewAspect) {
-                renderedW = vw; renderedH = vw / imgAspect;
-            } else {
-                renderedH = vh; renderedW = vh * imgAspect;
-            }
-            const ih = renderedH * scale;
-            const offsetY = (vh - renderedH) / 2;
-            return (vh - ih) / 2 - offsetY * scale;
-        }
-
-        // Zoom to a focal point (for scroll wheel & pinch)
-        function fsZoomToPoint(i, newScale, pointX, pointY) {
-            const slide = fsTrack.children[i];
-            if (!slide) return;
-            const z = fsGetZoom(i);
-            const oldScale = z.scale;
-            newScale = Math.min(Math.max(newScale, ZOOM_MIN), ZOOM_MAX);
-
-            // pointX, pointY are relative to slide
-            // We want the point under the cursor to stay under the cursor
-            let newTx, newTy;
-            if (oldScale <= 1.001) {
-                // Zooming from 1x — focus on the cursor point
-                newTx = pointX * (1 - newScale);
-                newTy = pointY * (1 - newScale);
-            } else {
-                newTx = pointX - (pointX - z.tx) * (newScale / oldScale);
-                newTy = pointY - (pointY - z.ty) * (newScale / oldScale);
-            }
-
-            const clamped = clampPan(newScale, newTx, newTy, slide);
-            fsSetZoom(i, newScale, clamped.tx, clamped.ty);
-        }
 
         function openGallery(startIdx) {
             if (!currentProductData || fsIsOpen) return;
             fsIsOpen = true;
-            fsCurrent = (typeof startIdx === 'number') ? startIdx : 0;
-            // Push state so back button closes gallery first
             history.pushState({ galleryOpen: true }, '');
-            fsSlideCount = currentProductData.slides.length;
-            fsZoomStates = [];
-            for (let i = 0; i < fsSlideCount; i++) fsZoomStates.push({ scale: 1, tx: 0, ty: 0 });
 
-            // Build slides
-            fsTrack.innerHTML = '';
+            // Build vertical stack
+            fsVerticalScroll.innerHTML = '';
             currentProductData.slides.forEach((src, i) => {
-                const slide = document.createElement('div');
-                slide.className = 'fs-slide';
+                const block = document.createElement('div');
+                block.className = 'fs-img-block';
                 const img = document.createElement('img');
                 img.src = src;
                 img.alt = currentProductData.name + ' ' + (i + 1);
-                img.draggable = false;
-                slide.appendChild(img);
-                fsTrack.appendChild(slide);
+                block.appendChild(img);
+                fsVerticalScroll.appendChild(block);
             });
 
-            // Build dots
-            fsDots.innerHTML = '';
-            for (let i = 0; i < fsSlideCount; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'fs-dot' + (i === fsCurrent ? ' active' : '');
-                dot.onclick = () => fsGoTo(i);
-                fsDots.appendChild(dot);
-            }
-
-            fsUpdateCounter();
-            fsTrack.style.transform = `translateX(-${fsCurrent * 100}%)`;
+            fsCounter.textContent = currentProductData.slides.length + ' fotos';
             fsGallery.classList.add('active');
+            fsGallery.scrollTop = 0;
         }
 
         function closeGallery() {
             if (!fsIsOpen) return;
             fsIsOpen = false;
-            if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-            for (let i = 0; i < fsSlideCount; i++) fsResetZoom(i);
             fsGallery.classList.remove('active');
-            // Go back to remove the gallery history entry (only if triggered by close button, not popstate)
             if (history.state && history.state.galleryOpen) {
                 history.back();
             }
         }
 
-        function fsGoTo(index) {
-            if (index < 0) index = fsSlideCount - 1;
-            if (index >= fsSlideCount) index = 0;
-
-            // Reset zoom on current slide before moving
-            if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-            fsResetZoom(fsCurrent);
-
-            fsCurrent = index;
-            fsTrack.style.transform = `translateX(-${fsCurrent * 100}%)`;
-            fsUpdateDots();
-            fsUpdateCounter();
-        }
-
-        function fsUpdateDots() {
-            fsDots.querySelectorAll('.fs-dot').forEach((d, i) => d.classList.toggle('active', i === fsCurrent));
-        }
-
-        function fsUpdateCounter() {
-            fsCounter.textContent = `${fsCurrent + 1} / ${fsSlideCount}`;
-        }
-
-        // ── Swipe navigation in gallery (when NOT zoomed) ──
-        let fsTouchStartX = 0;
-        let fsTouchStartY = 0;
-        let fsDragging = false;
-
-        fsSlidesWrap.addEventListener('touchstart', e => {
-            if (e.touches.length !== 1) return;
-            if (fsIsZoomed()) return;
-            fsTouchStartX = e.touches[0].clientX;
-            fsTouchStartY = e.touches[0].clientY;
-            fsDragging = true;
-            fsTrack.classList.add('no-transition');
-        }, { passive: true });
-
-        fsSlidesWrap.addEventListener('touchmove', e => {
-            if (!fsDragging || fsIsZoomed()) return;
-            if (e.touches.length !== 1) return;
-            const dx = e.touches[0].clientX - fsTouchStartX;
-            const dy = e.touches[0].clientY - fsTouchStartY;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                const offset = -fsCurrent * window.innerWidth + dx;
-                fsTrack.style.transform = `translateX(${offset}px)`;
-            }
-        }, { passive: true });
-
-        fsSlidesWrap.addEventListener('touchend', e => {
-            if (!fsDragging || fsIsZoomed()) return;
-            fsDragging = false;
-            fsTrack.classList.remove('no-transition');
-            const diff = fsTouchStartX - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 60) {
-                fsGoTo(fsCurrent + (diff > 0 ? 1 : -1));
-            } else {
-                fsTrack.style.transform = `translateX(-${fsCurrent * 100}%)`;
-            }
-        }, { passive: true });
-
-        // ── Double-tap zoom (mobile) — smooth native photo animation ──
-        let fsLastTap = 0;
-        fsSlidesWrap.addEventListener('touchend', e => {
-            if (e.touches.length > 0) return; // still fingers on screen
-            if (isPinching) return;
-            const now = Date.now();
-            if (now - fsLastTap < 300) {
-                const slide = fsTrack.children[fsCurrent];
-                if (!slide) return;
-                const z = fsGetZoom(fsCurrent);
-
-                if (z.scale > 1.05) {
-                    // Zoom back to 1x — smooth animate
-                    fsAnimateZoom(fsCurrent, 1, 0, 0, 300);
-                } else {
-                    // Zoom to double-tap target centered on tap point
-                    const rect = slide.getBoundingClientRect();
-                    const tapX = e.changedTouches[0].clientX - rect.left;
-                    const tapY = e.changedTouches[0].clientY - rect.top;
-                    // Calculate what tx/ty would center the tap point in view
-                    const cTx = getCenteredTx(slide, ZOOM_DOUBLE_TAP);
-                    const cTy = getCenteredTy(slide, ZOOM_DOUBLE_TAP);
-                    // Shift to focus on tap point instead of center
-                    const focusShiftX = (rect.width / 2 - tapX) * 0.7;
-                    const focusShiftY = (rect.height / 2 - tapY) * 0.7;
-                    const targetTx = cTx + focusShiftX;
-                    const targetTy = cTy + focusShiftY;
-                    const clamped = clampPan(ZOOM_DOUBLE_TAP, targetTx, targetTy, slide);
-                    fsAnimateZoom(fsCurrent, ZOOM_DOUBLE_TAP, clamped.tx, clamped.ty, 350);
-                }
-            }
-            fsLastTap = now;
-        });
-
-        // ── Pinch-to-zoom (mobile) — follows fingers exactly like native photos ──
-        let pinchStartDist = 0;
-        let pinchStartScale = 1;
-        let pinchStartTx = 0;
-        let pinchStartTy = 0;
-        let pinchStartMidX = 0;
-        let pinchStartMidY = 0;
-        let isPinching = false;
-
-        fsSlidesWrap.addEventListener('touchstart', e => {
-            if (e.touches.length === 2) {
-                isPinching = true;
-                if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-                pinchStartDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const z = fsGetZoom(fsCurrent);
-                pinchStartScale = z.scale;
-                pinchStartTx = z.tx;
-                pinchStartTy = z.ty;
-                pinchStartMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                pinchStartMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            }
-        }, { passive: true });
-
-        fsSlidesWrap.addEventListener('touchmove', e => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                const slide = fsTrack.children[fsCurrent];
-                if (!slide) return;
-
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const newScale = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), ZOOM_MIN), ZOOM_MAX);
-
-                // Pan to follow the midpoint movement
-                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                const dx = midX - pinchStartMidX;
-                const dy = midY - pinchStartMidY;
-
-                let newTx = pinchStartTx + dx;
-                let newTy = pinchStartTy + dy;
-
-                // If starting from 1x, focus zoom on midpoint
-                if (pinchStartScale <= 1.01) {
-                    const rect = slide.getBoundingClientRect();
-                    const localX = pinchStartMidX - rect.left;
-                    const localY = pinchStartMidY - rect.top;
-                    newTx = localX * (1 - newScale) + dx;
-                    newTy = localY * (1 - newScale) + dy;
-                }
-
-                const clamped = clampPan(newScale, newTx, newTy, slide);
-                fsSetZoom(fsCurrent, newScale, clamped.tx, clamped.ty);
-            }
-        }, { passive: false });
-
-        fsSlidesWrap.addEventListener('touchend', e => {
-            if (isPinching && e.touches.length < 2) {
-                isPinching = false;
-                // If scale is very close to 1, snap back smoothly
-                const z = fsGetZoom(fsCurrent);
-                if (z.scale < 1.15) {
-                    fsAnimateZoom(fsCurrent, 1, 0, 0, 200);
-                }
-            }
-        }, { passive: true });
-
-        // ── Pan/drag when zoomed (single finger touch) ──
-        let panStartX = 0, panStartY = 0;
-        let panStartTx = 0, panStartTy = 0;
-        let isPanning = false;
-
-        fsSlidesWrap.addEventListener('touchstart', e => {
-            if (e.touches.length !== 1) return;
-            if (!fsIsZoomed()) return;
-            if (isPinching) return;
-            isPanning = true;
-            if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-            panStartX = e.touches[0].clientX;
-            panStartY = e.touches[0].clientY;
-            const z = fsGetZoom(fsCurrent);
-            panStartTx = z.tx;
-            panStartTy = z.ty;
-        }, { passive: true });
-
-        fsSlidesWrap.addEventListener('touchmove', e => {
-            if (!isPanning) return;
-            if (e.touches.length !== 1) return;
-            e.preventDefault();
-            const slide = fsTrack.children[fsCurrent];
-            if (!slide) return;
-            const dx = e.touches[0].clientX - panStartX;
-            const dy = e.touches[0].clientY - panStartY;
-            const z = fsGetZoom(fsCurrent);
-            const newTx = panStartTx + dx;
-            const newTy = panStartTy + dy;
-            const clamped = clampPan(z.scale, newTx, newTy, slide);
-            fsSetZoom(fsCurrent, z.scale, clamped.tx, clamped.ty);
-        }, { passive: false });
-
-        fsSlidesWrap.addEventListener('touchend', e => {
-            if (isPanning) {
-                isPanning = false;
-            }
-        }, { passive: true });
-
-        // ── Mouse wheel zoom (desktop) — smooth, gradual like native photo viewer ──
-        fsSlidesWrap.addEventListener('wheel', e => {
-            e.preventDefault();
-            const slide = fsTrack.children[fsCurrent];
-            if (!slide) return;
-
-            const rect = slide.getBoundingClientRect();
-            const pointX = e.clientX - rect.left;
-            const pointY = e.clientY - rect.top;
-            const z = fsGetZoom(fsCurrent);
-
-            let newScale;
-            if (e.deltaY < 0) {
-                newScale = z.scale + ZOOM_WHEEL_STEP;
-            } else {
-                newScale = z.scale - ZOOM_WHEEL_STEP;
-            }
-            newScale = Math.min(Math.max(newScale, ZOOM_MIN), ZOOM_MAX);
-
-            // Zoom toward cursor point
-            let newTx, newTy;
-            if (z.scale <= 1.001) {
-                // Starting from 1x — center on the cursor position
-                const cTx = getCenteredTx(slide, newScale);
-                const cTy = getCenteredTy(slide, newScale);
-                // Shift to focus on cursor
-                const focusShiftX = (rect.width / 2 - pointX) * 0.5;
-                const focusShiftY = (rect.height / 2 - pointY) * 0.5;
-                newTx = cTx + focusShiftX;
-                newTy = cTy + focusShiftY;
-            } else {
-                newTx = pointX - (pointX - z.tx) * (newScale / z.scale);
-                newTy = pointY - (pointY - z.ty) * (newScale / z.scale);
-            }
-
-            const clamped = clampPan(newScale, newTx, newTy, slide);
-            // Direct set — no CSS transition, feels like native photo zoom
-            fsSetZoom(fsCurrent, newScale, clamped.tx, clamped.ty);
-        }, { passive: false });
-
-        // ── Mouse drag/pan when zoomed (desktop) ──
-        let mousePanning = false;
-        let mousePanStartX = 0, mousePanStartY = 0;
-        let mousePanStartTx = 0, mousePanStartTy = 0;
-
-        fsSlidesWrap.addEventListener('mousedown', e => {
-            if (!fsIsZoomed()) return;
-            mousePanning = true;
-            if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
-            mousePanStartX = e.clientX;
-            mousePanStartY = e.clientY;
-            const z = fsGetZoom(fsCurrent);
-            mousePanStartTx = z.tx;
-            mousePanStartTy = z.ty;
-            e.preventDefault();
-        });
-
-        window.addEventListener('mousemove', e => {
-            if (!mousePanning) return;
-            const slide = fsTrack.children[fsCurrent];
-            if (!slide) return;
-            const dx = e.clientX - mousePanStartX;
-            const dy = e.clientY - mousePanStartY;
-            const z = fsGetZoom(fsCurrent);
-            const newTx = mousePanStartTx + dx;
-            const newTy = mousePanStartTy + dy;
-            const clamped = clampPan(z.scale, newTx, newTy, slide);
-            fsSetZoom(fsCurrent, z.scale, clamped.tx, clamped.ty);
-        });
-
-        window.addEventListener('mouseup', () => {
-            mousePanning = false;
-        });
-
-        // ── Double-click zoom (desktop) — smooth native photo animation ──
-        fsSlidesWrap.addEventListener('dblclick', e => {
-            const slide = fsTrack.children[fsCurrent];
-            if (!slide) return;
-            const z = fsGetZoom(fsCurrent);
-
-            if (z.scale > 1.05) {
-                // Zoom back to 1x
-                fsAnimateZoom(fsCurrent, 1, 0, 0, 300);
-            } else {
-                // Zoom to 2.5x focused on click point
-                const rect = slide.getBoundingClientRect();
-                const pointX = e.clientX - rect.left;
-                const pointY = e.clientY - rect.top;
-                const cTx = getCenteredTx(slide, ZOOM_DOUBLE_TAP);
-                const cTy = getCenteredTy(slide, ZOOM_DOUBLE_TAP);
-                const focusShiftX = (rect.width / 2 - pointX) * 0.7;
-                const focusShiftY = (rect.height / 2 - pointY) * 0.7;
-                const targetTx = cTx + focusShiftX;
-                const targetTy = cTy + focusShiftY;
-                const clamped = clampPan(ZOOM_DOUBLE_TAP, targetTx, targetTy, slide);
-                fsAnimateZoom(fsCurrent, ZOOM_DOUBLE_TAP, clamped.tx, clamped.ty, 350);
-            }
-        });
-
-        // Click navigation in gallery (desktop) — only when not zoomed
-        fsSlidesWrap.addEventListener('click', e => {
-            if (fsIsZoomed()) return;
-            if (e.target.closest('.fs-close')) return;
-            const rect = fsSlidesWrap.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const width = rect.width;
-            if (x < width * 0.3) fsGoTo(fsCurrent - 1);
-            else if (x > width * 0.7) fsGoTo(fsCurrent + 1);
-        });
-
         // Keyboard
         document.addEventListener('keydown', e => {
             if (fsIsOpen) {
                 if (e.key === 'Escape') { closeGallery(); return; }
-                if (e.key === 'ArrowRight') { fsGoTo(fsCurrent + 1); return; }
-                if (e.key === 'ArrowLeft') { fsGoTo(fsCurrent - 1); return; }
             }
             if (!productDetail.classList.contains('active')) return;
             if (e.key === 'Escape') closeProduct();
+            if (e.key === 'ArrowRight') switchSlide(1);
+            if (e.key === 'ArrowLeft') switchSlide(-1);
         });
 
         // Helpers
@@ -1320,7 +913,6 @@
         }
         function addCart(btn) {
             if (!sizeSelected) {
-                // Pulse the size buttons to indicate selection needed
                 document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
                 return;
             }
