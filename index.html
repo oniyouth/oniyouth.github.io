@@ -634,57 +634,6 @@
         // ===== HERO PARALLAX =====
         window.addEventListener('scroll', () => { if (heroImg) heroImg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
 
-
-
-        // ===== SHOP PAGE (overlay) =====
-        const shopPage = document.getElementById('shopPage');
-        let shopIsOpen = false;
-
-        function openShop() {
-            shopPage.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            shopPage.scrollTop = 0;
-            shopIsOpen = true;
-            history.pushState({ shopOpen: true }, '');
-        }
-
-        function closeShop() {
-            shopPage.classList.remove('active');
-            document.body.style.overflow = '';
-            shopIsOpen = false;
-            if (history.state && history.state.shopOpen) {
-                history.back();
-            }
-        }
-
-        // ===== PRODUCT DATA =====
-        const data = {
-            hoodie: { name: 'Oversized Hoodie', cat: 'Hoodie', price: '$89.99', desc: 'Algodon organico 400gsm. Logo bordado en pecho. Interior afelpado ultra suave. Corte oversized con capucha doble capa.', slides: ['assets/images/product-hoodie.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] },
-            tshirt: { name: 'No Stairs To Heaven', cat: 'T-Shirt', price: '$49.99', desc: 'Algodon 100% 220gsm. Corte boxy oversize. Estampa serigrafiada de alta definicion. Cuello ribeteado. Diseño exclusivo OniYouth.', slides: ['assets/images/product-nostairs-front.png','assets/images/product-nostairs-back.png','assets/images/product-nostairs-detail.png'] },
-            bomber: { name: 'Bomber Jacket', cat: 'Jacket', price: '$129.99', desc: 'Acabado satinado premium. Forro interior estampado. Cierre YKK de alta resistencia. Puños y borde elastico.', slides: ['assets/images/product-bomber.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
-            joggers: { name: 'Tech Joggers', cat: 'Pants', price: '$69.99', desc: 'Tejido tech de secado rapido. Tapered fit moderno. Bolsillos con cierre zip. Cintura elastica con cordones.', slides: ['assets/images/product-joggers.png','assets/images/hero-model-1.png','assets/images/hero-model-3.png','assets/images/hero-model-2.png'] },
-            'hoodie-w': { name: 'Essential Hoodie', cat: 'Hoodie', price: '$84.99', desc: 'Blanco roto premium. Logo tono sobre tono bordado. Algodon organico suave. Interior afelpado.', slides: ['assets/images/product-hoodie-white.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png'] },
-            cap: { name: 'Logo Cap', cat: 'Accesorio', price: '$34.99', desc: '6 paneles estructurados. Logo bordado frontal. Hebilla metalica ajustable. Visera curva clasica.', slides: ['assets/images/product-cap.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
-            sneakers: { name: 'Streetwear Sneakers', cat: 'Calzado', price: '$119.99', desc: 'Suela premium amortiguada. Diseno minimalista versatil. Comfort todo el dia. Materiales sustainables.', slides: ['assets/images/product-sneakers.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] }
-        };
-
-    <script>
-        // ===== THEME =====
-        const tgl = document.getElementById('toggle');
-        const html = document.documentElement;
-        const saved = localStorage.getItem('oy-theme') || 'dark';
-        html.dataset.theme = saved;
-        tgl.onclick = () => { const next = html.dataset.theme === 'dark' ? 'light' : 'dark'; html.dataset.theme = next; localStorage.setItem('oy-theme', next); };
-
-        // ===== AUDIO =====
-        const audioBtn = document.getElementById('audioBtn');
-        const heroImg = document.getElementById('heroImg');
-        let isMuted = true;
-        audioBtn.onclick = () => { isMuted = !isMuted; audioBtn.classList.toggle('on', !isMuted); };
-
-        // ===== HERO PARALLAX =====
-        window.addEventListener('scroll', () => { if (heroImg) heroImg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
-
         // ===== SHOP PAGE (overlay) =====
         const shopPage = document.getElementById('shopPage');
         let shopIsOpen = false;
