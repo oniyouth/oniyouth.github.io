@@ -106,8 +106,9 @@
         .product-card { flex: 0 0 auto; width: 280px; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s; cursor: pointer; }
         .product-card:hover { transform: translateY(-10px); }
         .product-img-wrap { position: relative; width: 280px; height: 350px; overflow: visible; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; }
-        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s; filter: grayscale(15%) drop-shadow(0 15px 30px rgba(0,0,0,0.6)); mix-blend-mode: normal; }
-        .product-card:hover .product-img-wrap img { transform: scale(1.08) translateY(-10px); filter: grayscale(0%) drop-shadow(0 25px 45px rgba(0,0,0,0.7)); }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s; filter: grayscale(15%) drop-shadow(0 15px 30px rgba(0,0,0,0.6)); mix-blend-mode: multiply; }
+        .product-card:hover .product-img-wrap img { transform: scale(1.08) translateY(-10px); filter: grayscale(0%) drop-shadow(0 25px 45px rgba(0,0,0,0.7)); mix-blend-mode: multiply; }
+        [data-theme="light"] .product-img-wrap img { mix-blend-mode: normal; }
         .product-overlay { position: absolute; bottom: -10px; left: 0; width: 100%; padding: 1.5rem 0; background: transparent; opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
         .product-card:hover .product-overlay { opacity: 1; }
         .product-quick { padding: 0.6rem 1.2rem; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; border-radius: 0; }
@@ -125,7 +126,8 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: #000;
+            background: var(--bg);
+            transition: background 0.5s;
         }
 
         .lookbook-content {
@@ -134,10 +136,10 @@
             padding: 5rem 5% 2rem;
             max-width: 450px;
         }
-        .lookbook-content h2 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; color: #fff; line-height: 0.95; letter-spacing: -2px; margin-bottom: 1.5rem; }
-        .lookbook-content p { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; }
-        .lookbook-btn { display: inline-flex; align-items: center; gap: 0.8rem; padding: 0.9rem 2rem; border: 1px solid rgba(255,255,255,0.35); color: #fff; text-decoration: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s; }
-        .lookbook-btn:hover { background: #fff; color: #000; border-color: #fff; }
+        .lookbook-content h2 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; color: var(--text); line-height: 0.95; letter-spacing: -2px; margin-bottom: 1.5rem; }
+        .lookbook-content p { color: var(--text2); font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; }
+        .lookbook-btn { display: inline-flex; align-items: center; gap: 0.8rem; padding: 0.9rem 2rem; border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s; }
+        .lookbook-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
 
         /* Marquee image strip */
         .lookbook-marquee {
@@ -184,11 +186,11 @@
         }
         .lookbook-marquee::before {
             left: 0;
-            background: linear-gradient(to right, #000, transparent);
+            background: linear-gradient(to right, var(--bg), transparent);
         }
         .lookbook-marquee::after {
             right: 0;
-            background: linear-gradient(to left, #000, transparent);
+            background: linear-gradient(to left, var(--bg), transparent);
         }
 
         /* ===== BRAND - TILE REVEAL ===== */
@@ -835,8 +837,8 @@
         function calcScrollSpace() { return Math.max(track.scrollWidth - window.innerWidth, 0); }
         function setWrapperHeight() {
             const scrollDist = calcScrollSpace();
-            // Cap the wrapper height to avoid huge black gaps, especially on mobile
-            const maxHeight = window.innerHeight * 3;
+            // Keep it tight — 2x viewport max to prevent black gaps
+            const maxHeight = window.innerHeight * 2;
             const naturalHeight = scrollDist + window.innerHeight;
             wrapper.style.height = Math.min(naturalHeight, maxHeight) + 'px';
         }
