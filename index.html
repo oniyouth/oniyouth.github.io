@@ -856,7 +856,9 @@
             scrollHint.style.opacity = progress > 50 ? '0' : '1';
         });
 
-        // ===== REMOVE WHITE BACKGROUNDS FROM PRODUCT IMAGES =====
+        // ===== IMAGE BACKGROUND REMOVAL (Canvas) =====
+        // Uses canvas to make white/near-white backgrounds transparent
+        // so products appear to float on the dark background
         const bgRemovedCache = {};
         function removeWhiteBg(imgEl) {
             const url = imgEl.getAttribute('data-original-src') || imgEl.src;
@@ -866,30 +868,54 @@
             const tempImg = new Image();
             tempImg.crossOrigin = 'anonymous';
             tempImg.onload = () => {
-                const c = document.createElement('canvas');
-                const ctx = c.getContext('2d', { willReadFrequently: true });
-                c.width = tempImg.naturalWidth;
-                c.height = tempImg.naturalHeight;
-                ctx.drawImage(tempImg, 0, 0);
-                const imgData = ctx.getImageData(0, 0, c.width, c.height);
-                const d = imgData.data;
-                const threshold = 235;
-                const fadeRange = 25;
-                for (let i = 0; i < d.length; i += 4) {
-                    const r = d[i], g = d[i+1], b = d[i+2];
-                    const brightness = r * 0.299 + g * 0.587 + b * 0.114;
-                    const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-                    if (brightness > threshold && saturation < 35) {
-                        d[i+3] = 0;
-                    } else if (brightness > threshold - fadeRange && saturation < 35) {
-                        const alpha = ((threshold - brightness) / fadeRange) * d[i+3];
-                        d[i+3] = Math.round(Math.min(d[i+3], alpha));
+                try {
+                    const c = document.createElement('canvas');
+                    const ctx = c.getContext('2d', { willReadFrequently: true });
+                    c.width = tempImg.naturalWidth;
+                    c.height = tempImg.naturalHeight;
+                    ctx.drawImage(tempImg, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, c.width, c.height);
+                    const d = imgData.data;
+                    // Sample corner pixels to detect the background color
+                    // Corners are almost always background
+                    const cornerSamples = [];
+                    const samplePositions = [
+                        [0, 0], [c.width-1, 0], [0, c.height-1], [c.width-1, c.height-1],
+                        [10, 10], [c.width-11, 10], [10, c.height-11], [c.width-11, c.height-11]
+                    ];
+                    samplePositions.forEach(([sx, sy]) => {
+                        const idx = (sy * c.width + sx) * 4;
+                        cornerSamples.push({ r: d[idx], g: d[idx+1], b: d[idx+2] });
+                    });
+                    // Average background color
+                    let bgR = 0, bgG = 0, bgB = 0;
+                    cornerSamples.forEach(s => { bgR += s.r; bgG += s.g; bgB += s.b; });
+                    bgR = Math.round(bgR / cornerSamples.length);
+                    bgG = Math.round(bgG / cornerSamples.length);
+                    bgB = Math.round(bgB / cornerSamples.length);
+
+                    const tolerance = 40; // Color distance from background to be considered bg
+                    const fadeRange = 15; // Soft edge transition
+
+                    for (let i = 0; i < d.length; i += 4) {
+                        const r = d[i], g = d[i+1], b = d[i+2];
+                        const colorDist = Math.sqrt((r - bgR) ** 2 + (g - bgG) ** 2 + (b - bgB) ** 2);
+                        if (colorDist < tolerance) {
+                            d[i+3] = 0; // Fully transparent (background)
+                        } else if (colorDist < tolerance + fadeRange) {
+                            // Smooth fade between background and foreground
+                            const alpha = ((colorDist - tolerance) / fadeRange);
+                            d[i+3] = Math.round(alpha * 255);
+                        }
+                        // Far from background color → keep original alpha
                     }
+                    ctx.putImageData(imgData, 0, 0);
+                    const dataUrl = c.toDataURL('image/png');
+                    bgRemovedCache[url] = dataUrl;
+                    imgEl.src = dataUrl;
+                } catch(e) {
+                    console.warn('BG removal failed for', url, e);
                 }
-                ctx.putImageData(imgData, 0, 0);
-                const dataUrl = c.toDataURL('image/png');
-                bgRemovedCache[url] = dataUrl;
-                imgEl.src = dataUrl;
                 imgEl.dataset.processing = '';
             };
             tempImg.onerror = () => { imgEl.dataset.processing = ''; };
@@ -922,11 +948,10 @@
             });
         }
 
-        // Run immediately (script is at end of body, DOM is ready)
-        processAllProductImages();
-        // Also run after small delay to catch any late-loaded images
-        setTimeout(processAllProductImages, 2000);
-        setTimeout(processAllProductImages, 4000);
+        // Run after images load — use window.onload to ensure all resources are ready
+        window.addEventListener('load', () => {
+            setTimeout(processAllProductImages, 300);
+        });
 
         // ===== BRAND TILE REVEAL =====
         const brandTiles = document.querySelectorAll('.brand-tile');
