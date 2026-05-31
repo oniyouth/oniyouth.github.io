@@ -82,6 +82,7 @@
         .hero { width: 100%; height: 100vh; position: relative; overflow: hidden; }
         .hero-video-wrap { position: absolute; inset: 0; overflow: hidden; }
         .hero-video { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: grayscale(20%) contrast(1.1); }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: grayscale(20%) contrast(1.1); }
         .hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.5) 70%, rgba(0,0,0,0.95) 100%); z-index: 2; }
         .hero-content { position: absolute; bottom: 10%; left: 5%; z-index: 3; }
         .hero-tag { font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
@@ -542,9 +543,7 @@
             </div>
         </nav>
         <div class="hero-video-wrap">
-            <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto">
-                <source src="assets/images/hero-video.mp4" type="video/mp4">
-            </video>
+            <img class="hero-img" id="heroImg" src="assets/images/hero-bg.jpg" alt="OniYouth">
         </div>
         <div class="hero-gradient"></div>
         <div class="hero-content">
@@ -739,12 +738,12 @@
 
         // ===== AUDIO =====
         const audioBtn = document.getElementById('audioBtn');
-        const heroVideo = document.getElementById('heroVideo');
+        const heroImg = document.getElementById('heroImg');
         let isMuted = true;
-        audioBtn.onclick = () => { isMuted = !isMuted; heroVideo.muted = isMuted; audioBtn.classList.toggle('on', !isMuted); };
+        audioBtn.onclick = () => { isMuted = !isMuted; audioBtn.classList.toggle('on', !isMuted); };
 
         // ===== HERO PARALLAX =====
-        window.addEventListener('scroll', () => { if (heroVideo) heroVideo.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
+        window.addEventListener('scroll', () => { if (heroImg) heroImg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
 
 
 
