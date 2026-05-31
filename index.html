@@ -90,8 +90,8 @@
 
 
         /* ===== COLLECTION ===== */
-        .collection-wrapper { position: relative; }
-        .collection-sticky { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .collection-wrapper { position: relative; background: var(--bg); transition: background 0.5s; }
+        .collection-sticky { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; overflow: hidden; background: var(--bg); transition: background 0.5s; }
         .collection-header { padding: 0 3rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
         .collection-label { font-size: 0.6rem; letter-spacing: 5px; text-transform: uppercase; color: var(--text3); }
         .collection-title { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; letter-spacing: -1px; }
@@ -102,13 +102,13 @@
         .progress-bar { width: 100%; max-width: 300px; height: 1px; background: var(--border); }
         .progress-fill { height: 100%; background: var(--text); width: 0%; transition: width 0.1s linear; }
         .progress-text { font-size: 0.6rem; letter-spacing: 2px; color: var(--text3); margin-top: 0.5rem; }
-        .products-track { display: flex; gap: 1.5rem; padding: 0 3rem; will-change: transform; }
-        .product-card { flex: 0 0 auto; width: 300px; transition: transform 0.4s; cursor: pointer; }
-        .product-card:hover { transform: translateY(-6px); }
-        .product-img-wrap { position: relative; width: 300px; height: 400px; overflow: visible; background: transparent; border-radius: 0; }
-        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s, filter 0.4s; filter: grayscale(15%) drop-shadow(0 20px 40px rgba(0,0,0,0.4)); }
-        .product-card:hover .product-img-wrap img { transform: scale(1.06) translateY(-8px); filter: grayscale(0%) drop-shadow(0 30px 50px rgba(0,0,0,0.5)); }
-        .product-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 1.5rem; background: transparent; opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
+        .products-track { display: flex; gap: 2.5rem; padding: 0 3rem; will-change: transform; align-items: center; }
+        .product-card { flex: 0 0 auto; width: 280px; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s; cursor: pointer; }
+        .product-card:hover { transform: translateY(-10px); }
+        .product-img-wrap { position: relative; width: 280px; height: 350px; overflow: visible; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s; filter: grayscale(15%) drop-shadow(0 15px 30px rgba(0,0,0,0.6)); mix-blend-mode: normal; }
+        .product-card:hover .product-img-wrap img { transform: scale(1.08) translateY(-10px); filter: grayscale(0%) drop-shadow(0 25px 45px rgba(0,0,0,0.7)); }
+        .product-overlay { position: absolute; bottom: -10px; left: 0; width: 100%; padding: 1.5rem 0; background: transparent; opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
         .product-card:hover .product-overlay { opacity: 1; }
         .product-quick { padding: 0.6rem 1.2rem; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; border-radius: 0; }
         .product-info { padding: 1rem 0; }
@@ -501,8 +501,8 @@
             .hero-title { letter-spacing: -1px; }
             .collection-header { padding: 0 1.5rem; }
             .products-track { padding: 0 1.5rem; gap: 1rem; }
-            .product-card { width: 260px; }
-            .product-img-wrap { width: 260px; height: 340px; }
+            .product-card { width: 240px; }
+            .product-img-wrap { width: 240px; height: 320px; }
             .collection-progress { padding: 0 1.5rem; }
             .lookbook-content { padding: 3.5rem 5% 1.2rem; }
             .lookbook-marquee-track img { height: 160px; }
@@ -536,8 +536,8 @@
         }
 
         @media (max-width: 480px) {
-            .product-card { width: 230px; }
-            .product-img-wrap { width: 230px; height: 300px; }
+            .product-card { width: 220px; }
+            .product-img-wrap { width: 220px; height: 290px; }
             .brand-grid { gap: 4px; }
             .lookbook-content { padding: 3rem 5% 1rem; }
             .lookbook-marquee-track img { height: 120px; }
@@ -833,16 +833,24 @@
         const progressText = document.getElementById('progressText');
         const scrollHint = document.getElementById('scrollHint');
         function calcScrollSpace() { return Math.max(track.scrollWidth - window.innerWidth, 0); }
-        function setWrapperHeight() { wrapper.style.height = (calcScrollSpace() + window.innerHeight) + 'px'; }
+        function setWrapperHeight() {
+            const scrollDist = calcScrollSpace();
+            // Cap the wrapper height to avoid huge black gaps, especially on mobile
+            const maxHeight = window.innerHeight * 3;
+            const naturalHeight = scrollDist + window.innerHeight;
+            wrapper.style.height = Math.min(naturalHeight, maxHeight) + 'px';
+        }
         setWrapperHeight();
         window.addEventListener('resize', setWrapperHeight);
         window.addEventListener('scroll', () => {
             const rect = wrapper.getBoundingClientRect();
             const scrollDistance = calcScrollSpace();
-            const progress = Math.max(0, Math.min(-rect.top, scrollDistance));
+            const wrapperScrollable = wrapper.offsetHeight - window.innerHeight;
+            const scrollRatio = wrapperScrollable > 0 ? Math.max(0, Math.min(-rect.top, wrapperScrollable)) / wrapperScrollable : 0;
+            const progress = scrollRatio * scrollDistance;
             track.style.transform = `translateX(${-progress}px)`;
-            progressFill.style.width = (scrollDistance > 0 ? (progress / scrollDistance) * 100 : 0) + '%';
-            const currentCard = Math.min(Math.floor((progress / (scrollDistance || 1)) * 7) + 1, 7);
+            progressFill.style.width = (scrollRatio * 100) + '%';
+            const currentCard = Math.min(Math.floor(scrollRatio * 7) + 1, 7);
             progressText.textContent = `${currentCard} / 7`;
             scrollHint.style.opacity = progress > 50 ? '0' : '1';
         });
