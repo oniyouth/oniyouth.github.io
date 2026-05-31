@@ -219,6 +219,26 @@
         }
         .cart-checkout-btn:hover { background: rgba(255,255,255,0.85); }
 
+        /* MP Payment Brick container */
+        #mpPaymentBrick {
+            margin-top: 1.5rem;
+        }
+        .cart-back-btn {
+            width: 100%; padding: 14px;
+            background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15);
+            font: 700 0.65rem 'Syne', sans-serif;
+            text-transform: uppercase; letter-spacing: 3px;
+            cursor: pointer; transition: all 0.3s;
+            margin-top: 0.8rem;
+        }
+        .cart-back-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+        .checkout-loading {
+            text-align: center; padding: 2rem;
+            color: rgba(255,255,255,0.4);
+            font: 400 0.75rem 'Syne', sans-serif;
+            letter-spacing: 2px; text-transform: uppercase;
+        }
+
         @media (max-width: 900px) {
             .cart-btn { top: 0.8rem; right: 0.8rem; }
             .cart-btn img { width: 28px; height: 28px; }
@@ -809,13 +829,15 @@
                     <span class="cart-total-label">Total</span>
                     <span class="cart-total-amount" id="cartTotal">$0.00</span>
                 </div>
-                <button class="cart-checkout-btn" onclick="checkout()">PAGAR</button>
+                <button class="cart-checkout-btn" id="cartCheckoutBtn" onclick="checkout()">PAGAR</button>
+                <div id="mpPaymentBrick"></div>
+                <button class="cart-back-btn" id="cartBackBtn" style="display:none;" onclick="backToCart()">VOLVER A LA BOLSA</button>
             </div>
         </div>
     </div>
 
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
-        // ===== THEME =====
         const tgl = document.getElementById('toggle');
         const html = document.documentElement;
         const saved = localStorage.getItem('oy-theme') || 'dark';
@@ -1187,6 +1209,8 @@
         }
 
         function closeCart() {
+            // Reset payment brick
+            backToCart();
             const cartPage = document.getElementById('cartPage');
             cartPage.classList.remove('active');
             document.body.style.overflow = '';
@@ -1197,8 +1221,98 @@
             }
         }
 
+        let mpBrickController = null;
+        let mpInitialized = false;
+
         function checkout() {
-            alert('Redirigiendo al checkout...');
+            if (cart.length === 0) return;
+            const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
+
+            // Hide checkout button, show loading
+            document.getElementById('cartCheckoutBtn').style.display = 'none';
+            document.getElementById('mpPaymentBrick').innerHTML = '<div class="checkout-loading">Cargando formulario de pago...</div>';
+
+            // Initialize MP SDK if not yet
+            if (typeof MercadoPago === 'undefined') {
+                document.getElementById('mpPaymentBrick').innerHTML = '<div class="checkout-loading">Error al cargar Mercado Pago. Recarga la pagina.</div>';
+                return;
+            }
+
+            const mp = new MercadoPago('TEST-89d43404-8eb5-4c8e-93b7-94c40c4a87b7', {
+                locale: 'es-PE'
+            });
+
+            // Build items description
+            const desc = cart.map(i => i.name + ' (' + i.size + ')').join(', ');
+
+            // Destroy previous brick if exists
+            if (mpBrickController) {
+                mpBrickController.unmount();
+            }
+
+            // Render Payment Brick
+            mp.bricks().create('payment', 'mpPaymentBrick', {
+                initialization: {
+                    amount: total,
+                    description: desc,
+                    payer: {
+                        email: ''
+                    }
+                },
+                customization: {
+                    visual: {
+                        style: {
+                            theme: 'dark',
+                            customVariables: {
+                                formBackgroundColor: '#000000',
+                                baseColor: '#ffffff'
+                            }
+                        }
+                    },
+                    paymentMethods: {
+                        ticket: 'all',
+                        bankTransfer: 'all',
+                        creditCard: 'all',
+                        debitCard: 'all'
+                    }
+                },
+                callbacks: {
+                    onSubmit: ({ formData }) => {
+                        return new Promise((resolve, reject) => {
+                            console.log('Payment submitted:', formData);
+                            // In production, send formData to your backend
+                            // For now, show success
+                            setTimeout(() => {
+                                alert('Pago en proceso. En produccion, tu backend procesaria este pago con Mercado Pago.');
+                                resolve();
+                            }, 1000);
+                        });
+                    },
+                    onError: (error) => {
+                        console.error('Payment error:', error);
+                    },
+                    onReady: () => {
+                        document.getElementById('mpPaymentBrick').querySelector('.checkout-loading')?.remove();
+                        document.getElementById('cartBackBtn').style.display = 'block';
+                    }
+                }
+            }).then(controller => {
+                mpBrickController = controller;
+            }).catch(err => {
+                document.getElementById('mpPaymentBrick').innerHTML = '<div class="checkout-loading">Error al cargar el formulario de pago.</div>';
+                document.getElementById('cartCheckoutBtn').style.display = 'block';
+                console.error(err);
+            });
+        }
+
+        function backToCart() {
+            if (mpBrickController) {
+                mpBrickController.unmount();
+                mpBrickController = null;
+            }
+            document.getElementById('mpPaymentBrick').innerHTML = '';
+            document.getElementById('cartCheckoutBtn').style.display = 'block';
+            document.getElementById('cartBackBtn').style.display = 'none';
         }
 
         // Keyboard: Escape closes cart
