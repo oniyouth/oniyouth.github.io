@@ -29,7 +29,7 @@
             --nav-bg: rgba(255,255,255,0.9);
         }
 
-        html { scroll-behavior: auto; width: 100%; overflow-x: clip; }
+        html { scroll-behavior: smooth; width: 100%; overflow-x: clip; }
 
         body {
             font-family: 'Syne', sans-serif;
@@ -88,6 +88,31 @@
         .hero-tag { font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
         .hero-title { font-size: clamp(4rem, 12vw, 9rem); font-weight: 800; line-height: 0.9; color: #fff; letter-spacing: -3px; }
 
+
+        .hero-shop-btn {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            padding: 1rem 3rem;
+            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            color: #fff;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.4s;
+        }
+        .hero-shop-btn:hover {
+            background: rgba(255,255,255,0.18);
+            border-color: rgba(255,255,255,0.7);
+        }
 
         /* ===== COLLECTION ===== */
         .collection-wrapper { position: relative; background: var(--bg); transition: background 0.5s; padding: 4rem 0; }
@@ -546,6 +571,7 @@
             <img class="hero-img" id="heroImg" src="assets/images/hero-bg.jpg" alt="OniYouth">
         </div>
         <div class="hero-gradient"></div>
+        <a href="#collection" class="hero-shop-btn">SHOP</a>
     </section>
 
     <!-- LOOKBOOK -->
@@ -574,7 +600,7 @@
     </section>
 
     <!-- COLLECTION -->
-    <div class="collection-wrapper" id="collectionWrapper">
+    <div class="collection-wrapper" id="collection">
         <div class="collection-header">
             <div>
                 <div class="collection-label">Coleccion</div>
