@@ -233,9 +233,19 @@
 
         /* ===== HERO ===== */
         .hero { width: 100%; height: 100vh; position: relative; overflow: hidden; }
-        .hero-video-wrap { position: absolute; inset: 0; overflow: hidden; }
-        .hero-video { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: grayscale(20%) contrast(1.1); }
-        .hero-img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: grayscale(20%) contrast(1.1); }
+        .hero-slideshow { position: absolute; inset: 0; }
+        .hero-slide {
+            position: absolute; inset: 0;
+            opacity: 0;
+            transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity;
+        }
+        .hero-slide.active { opacity: 1; }
+        .hero-slide img {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
+            filter: grayscale(20%) contrast(1.1);
+        }
         .hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.5) 70%, rgba(0,0,0,0.95) 100%); z-index: 2; }
         .hero-content { position: absolute; bottom: 10%; left: 5%; z-index: 3; }
         .hero-tag { font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
@@ -617,8 +627,11 @@
                 <button class="theme-toggle" id="toggle"></button>
             </div>
         </nav>
-        <div class="hero-video-wrap">
-            <img class="hero-img" id="heroImg" src="assets/images/hero-bg.jpg" alt="OniYouth">
+        <div class="hero-slideshow" id="heroSlideshow">
+            <div class="hero-slide active"><img src="assets/images/hero-bg.jpg" alt="OniYouth"></div>
+            <div class="hero-slide"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth"></div>
+            <div class="hero-slide"><img src="assets/images/hero-slide-3.png" alt="OniYouth"></div>
+            <div class="hero-slide"><img src="assets/images/hero-slide-4.png" alt="OniYouth"></div>
         </div>
         <div class="hero-gradient"></div>
         <button class="cart-btn" id="cartBtnHero" onclick="openCart()">
@@ -811,12 +824,21 @@
 
         // ===== AUDIO =====
         const audioBtn = document.getElementById('audioBtn');
-        const heroImg = document.getElementById('heroImg');
         let isMuted = true;
         audioBtn.onclick = () => { isMuted = !isMuted; audioBtn.classList.toggle('on', !isMuted); };
 
         // ===== HERO PARALLAX =====
-        window.addEventListener('scroll', () => { if (heroImg) heroImg.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
+        const heroSlideshow = document.getElementById('heroSlideshow');
+        window.addEventListener('scroll', () => { if (heroSlideshow) heroSlideshow.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
+
+        // ===== HERO SLIDESHOW =====
+        const slides = document.querySelectorAll('.hero-slide');
+        let currentHeroSlide = 0;
+        setInterval(() => {
+            slides[currentHeroSlide].classList.remove('active');
+            currentHeroSlide = (currentHeroSlide + 1) % slides.length;
+            slides[currentHeroSlide].classList.add('active');
+        }, 5000);
 
         // ===== SHOP PAGE (overlay) =====
         const shopPage = document.getElementById('shopPage');
