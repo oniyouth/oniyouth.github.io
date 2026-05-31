@@ -845,26 +845,26 @@
         }
         setWrapperHeight();
         window.addEventListener('resize', setWrapperHeight);
+        // Force initial scroll calculation
+        window.addEventListener('load', () => { window.dispatchEvent(new Event('scroll')); });
         window.addEventListener('scroll', () => {
-            const rect = wrapper.getBoundingClientRect();
-            const scrollDistance = calcScrollSpace();
-            const wrapperScrollable = wrapper.offsetHeight - window.innerHeight;
-            
-            // Show/hide the fixed sticky based on whether wrapper is in viewport
-            const wrapperInView = rect.bottom > 0 && rect.top < window.innerHeight;
-            if (wrapperInView) {
-                sticky.classList.add('active');
-            } else {
-                sticky.classList.remove('active');
-            }
-            
-            const scrollRatio = wrapperScrollable > 0 ? Math.max(0, Math.min(-rect.top, wrapperScrollable)) / wrapperScrollable : 0;
-            const progress = scrollRatio * scrollDistance;
-            track.style.transform = `translateX(${-progress}px)`;
-            progressFill.style.width = (scrollRatio * 100) + '%';
-            const currentCard = Math.min(Math.floor(scrollRatio * 7) + 1, 7);
-            progressText.textContent = `${currentCard} / 7`;
-            scrollHint.style.opacity = progress > 50 ? '0' : '1';
+            requestAnimationFrame(() => {
+                const rect = wrapper.getBoundingClientRect();
+                const scrollDistance = calcScrollSpace();
+                const wrapperScrollable = wrapper.offsetHeight - window.innerHeight;
+                
+                // Show/hide the fixed sticky based on whether wrapper is in viewport
+                const wrapperInView = rect.bottom > 0 && rect.top < window.innerHeight;
+                sticky.classList.toggle('active', wrapperInView);
+                
+                const scrollRatio = wrapperScrollable > 0 ? Math.max(0, Math.min(-rect.top, wrapperScrollable)) / wrapperScrollable : 0;
+                const progress = scrollRatio * scrollDistance;
+                track.style.transform = `translateX(${-progress}px)`;
+                progressFill.style.width = (scrollRatio * 100) + '%';
+                const currentCard = Math.min(Math.floor(scrollRatio * 7) + 1, 7);
+                progressText.textContent = `${currentCard} / 7`;
+                scrollHint.style.opacity = progress > 50 ? '0' : '1';
+            });
         });
 
         // ===== IMAGE BACKGROUND REMOVAL (Canvas) =====
