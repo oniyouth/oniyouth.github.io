@@ -106,9 +106,9 @@
         .product-card { flex: 0 0 auto; width: 280px; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s; cursor: pointer; }
         .product-card:hover { transform: translateY(-10px); }
         .product-img-wrap { position: relative; width: 280px; height: 350px; overflow: visible; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; }
-        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s; filter: grayscale(15%) drop-shadow(0 15px 30px rgba(0,0,0,0.6)); mix-blend-mode: multiply; }
-        .product-card:hover .product-img-wrap img { transform: scale(1.08) translateY(-10px); filter: grayscale(0%) drop-shadow(0 25px 45px rgba(0,0,0,0.7)); mix-blend-mode: multiply; }
-        [data-theme="light"] .product-img-wrap img { mix-blend-mode: normal; }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6)); }
+        .product-card:hover .product-img-wrap img { transform: scale(1.08) translateY(-10px); filter: drop-shadow(0 25px 45px rgba(0,0,0,0.7)); }
+        [data-theme="light"] .product-img-wrap img { filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); }
         .product-overlay { position: absolute; bottom: -10px; left: 0; width: 100%; padding: 1.5rem 0; background: transparent; opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
         .product-card:hover .product-overlay { opacity: 1; }
         .product-quick { padding: 0.6rem 1.2rem; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; border-radius: 0; }
@@ -834,13 +834,13 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const scrollHint = document.getElementById('scrollHint');
+        const SCROLL_SPEED = 2; // 2px horizontal per 1px vertical — faster scroll, less black space
         function calcScrollSpace() { return Math.max(track.scrollWidth - window.innerWidth, 0); }
         function setWrapperHeight() {
             const scrollDist = calcScrollSpace();
-            // Keep it tight — 2x viewport max to prevent black gaps
-            const maxHeight = window.innerHeight * 2;
-            const naturalHeight = scrollDist + window.innerHeight;
-            wrapper.style.height = Math.min(naturalHeight, maxHeight) + 'px';
+            // Exact height so products finish scrolling right as wrapper ends — NO black gap
+            const neededHeight = (scrollDist / SCROLL_SPEED) + window.innerHeight;
+            wrapper.style.height = Math.max(window.innerHeight, neededHeight) + 'px';
         }
         setWrapperHeight();
         window.addEventListener('resize', setWrapperHeight);
@@ -856,6 +856,78 @@
             progressText.textContent = `${currentCard} / 7`;
             scrollHint.style.opacity = progress > 50 ? '0' : '1';
         });
+
+        // ===== REMOVE WHITE BACKGROUNDS FROM PRODUCT IMAGES =====
+        const bgRemovedCache = {};
+        function removeWhiteBg(imgEl) {
+            const url = imgEl.getAttribute('data-original-src') || imgEl.src;
+            if (bgRemovedCache[url]) { imgEl.src = bgRemovedCache[url]; return; }
+            if (imgEl.dataset.processing) return;
+            imgEl.dataset.processing = '1';
+            const tempImg = new Image();
+            tempImg.crossOrigin = 'anonymous';
+            tempImg.onload = () => {
+                const c = document.createElement('canvas');
+                const ctx = c.getContext('2d', { willReadFrequently: true });
+                c.width = tempImg.naturalWidth;
+                c.height = tempImg.naturalHeight;
+                ctx.drawImage(tempImg, 0, 0);
+                const imgData = ctx.getImageData(0, 0, c.width, c.height);
+                const d = imgData.data;
+                const threshold = 235;
+                const fadeRange = 25;
+                for (let i = 0; i < d.length; i += 4) {
+                    const r = d[i], g = d[i+1], b = d[i+2];
+                    const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+                    const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+                    if (brightness > threshold && saturation < 35) {
+                        d[i+3] = 0;
+                    } else if (brightness > threshold - fadeRange && saturation < 35) {
+                        const alpha = ((threshold - brightness) / fadeRange) * d[i+3];
+                        d[i+3] = Math.round(Math.min(d[i+3], alpha));
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+                const dataUrl = c.toDataURL('image/png');
+                bgRemovedCache[url] = dataUrl;
+                imgEl.src = dataUrl;
+                imgEl.dataset.processing = '';
+            };
+            tempImg.onerror = () => { imgEl.dataset.processing = ''; };
+            tempImg.src = url;
+        }
+
+        function processAllProductImages() {
+            document.querySelectorAll('.product-img-wrap img').forEach(img => {
+                if (!img.getAttribute('data-original-src')) {
+                    img.setAttribute('data-original-src', img.src);
+                }
+                if (img.complete && img.naturalWidth > 0) {
+                    removeWhiteBg(img);
+                } else {
+                    img.onload = () => removeWhiteBg(img);
+                }
+            });
+        }
+
+        // Process product detail / gallery images on open
+        function processDynamicImages() {
+            document.querySelectorAll('.pd-main-img, .pd-thumb img, .fs-slide img').forEach(img => {
+                const src = img.getAttribute('data-original-src') || img.src;
+                if (bgRemovedCache[src] && !img.src.startsWith('data:')) {
+                    img.src = bgRemovedCache[src];
+                } else if (!img.src.startsWith('data:') && !img.dataset.processing) {
+                    img.setAttribute('data-original-src', src);
+                    removeWhiteBg(img);
+                }
+            });
+        }
+
+        // Run immediately (script is at end of body, DOM is ready)
+        processAllProductImages();
+        // Also run after small delay to catch any late-loaded images
+        setTimeout(processAllProductImages, 2000);
+        setTimeout(processAllProductImages, 4000);
 
         // ===== BRAND TILE REVEAL =====
         const brandTiles = document.querySelectorAll('.brand-tile');
@@ -948,8 +1020,10 @@
             const addBtn = document.getElementById('pdAddBtn');
             if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
 
-            // Set main image
-            document.getElementById('pdMainImg').src = p.slides[0];
+            // Set main image (use cached bg-removed version if available)
+            const mainImg = document.getElementById('pdMainImg');
+            mainImg.setAttribute('data-original-src', p.slides[0]);
+            mainImg.src = bgRemovedCache[p.slides[0]] || p.slides[0];
 
             // Build thumbnails
             const thumbsEl = document.getElementById('pdThumbs');
@@ -959,7 +1033,8 @@
                 thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
                 thumb.onclick = () => goToSlide(i);
                 const img = document.createElement('img');
-                img.src = src;
+                img.setAttribute('data-original-src', src);
+                img.src = bgRemovedCache[src] || src;
                 img.alt = p.name + ' ' + (i + 1);
                 thumb.appendChild(img);
                 thumbsEl.appendChild(thumb);
@@ -975,7 +1050,10 @@
             currentSlide = index;
 
             if (currentProductData) {
-                document.getElementById('pdMainImg').src = currentProductData.slides[currentSlide];
+                const src = currentProductData.slides[currentSlide];
+                const mainImg = document.getElementById('pdMainImg');
+                mainImg.setAttribute('data-original-src', src);
+                mainImg.src = bgRemovedCache[src] || src;
             }
 
             // Update thumbs
@@ -1249,7 +1327,8 @@
                 const slide = document.createElement('div');
                 slide.className = 'fs-slide';
                 const img = document.createElement('img');
-                img.src = src;
+                img.setAttribute('data-original-src', src);
+                img.src = bgRemovedCache[src] || src;
                 img.alt = currentProductData.name + ' ' + (i + 1);
                 img.draggable = false;
                 slide.appendChild(img);
