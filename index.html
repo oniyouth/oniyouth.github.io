@@ -104,10 +104,11 @@
         .products-track { display: flex; gap: 2.5rem; padding: 0 3rem; will-change: transform; align-items: center; }
         .product-card { flex: 0 0 auto; width: 280px; transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s; cursor: pointer; }
         .product-card:hover { transform: translateY(-10px); }
-        .product-img-wrap { position: relative; width: 280px; height: 350px; overflow: visible; background: transparent; border-radius: 0; display: flex; align-items: center; justify-content: center; }
-        .product-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .product-img-wrap { position: relative; width: 280px; height: 350px; overflow: hidden; background: #1a1a1a; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         .product-card:hover .product-img-wrap img { transform: scale(1.05) translateY(-8px); }
-        [data-theme="light"] .product-img-wrap img { filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
+        [data-theme="light"] .product-img-wrap { background: #f0f0f0; }
+        [data-theme="light"] .product-img-wrap img { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08)); }
         .product-overlay { position: absolute; bottom: -10px; left: 0; width: 100%; padding: 1.5rem 0; background: transparent; opacity: 0; transition: opacity 0.3s; display: flex; justify-content: flex-end; }
         .product-card:hover .product-overlay { opacity: 1; }
         .product-quick { padding: 0.6rem 1.2rem; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; border-radius: 0; }
@@ -223,7 +224,7 @@
             visibility: hidden;
             opacity: 0;
             overflow-y: auto;
-            transition: opacity 0.35s ease, visibility 0.35s;
+            transition: opacity 0.5s ease, visibility 0.5s;
         }
         .product-detail.active { visibility: visible; opacity: 1; }
 
@@ -297,6 +298,7 @@
             transition: outline-color 0.2s, opacity 0.2s;
             opacity: 0.4;
             background: #111;
+            border-radius: 8px;
         }
 
         .pd-thumb.active {
@@ -417,7 +419,7 @@
             opacity: 0;
             flex-direction: column;
             overflow: hidden;
-            transition: opacity 0.35s ease, visibility 0.35s;
+            transition: opacity 0.5s ease, visibility 0.5s;
         }
         .fs-gallery.active { visibility: visible; opacity: 1; }
 
@@ -857,102 +859,7 @@
         window.addEventListener('scroll', () => { requestAnimationFrame(onScroll); });
         window.addEventListener('load', onScroll);
 
-        // ===== IMAGE BACKGROUND REMOVAL (Canvas) =====
-        // Uses canvas to make white/near-white backgrounds transparent
-        // so products appear to float on the dark background
-        const bgRemovedCache = {};
-        function removeWhiteBg(imgEl) {
-            const url = imgEl.getAttribute('data-original-src') || imgEl.src;
-            if (bgRemovedCache[url]) { imgEl.src = bgRemovedCache[url]; return; }
-            if (imgEl.dataset.processing) return;
-            imgEl.dataset.processing = '1';
-            const tempImg = new Image();
-            tempImg.crossOrigin = 'anonymous';
-            tempImg.onload = () => {
-                try {
-                    const c = document.createElement('canvas');
-                    const ctx = c.getContext('2d', { willReadFrequently: true });
-                    c.width = tempImg.naturalWidth;
-                    c.height = tempImg.naturalHeight;
-                    ctx.drawImage(tempImg, 0, 0);
-                    const imgData = ctx.getImageData(0, 0, c.width, c.height);
-                    const d = imgData.data;
-                    // Sample corner pixels to detect the background color
-                    // Corners are almost always background
-                    const cornerSamples = [];
-                    const samplePositions = [
-                        [0, 0], [c.width-1, 0], [0, c.height-1], [c.width-1, c.height-1],
-                        [10, 10], [c.width-11, 10], [10, c.height-11], [c.width-11, c.height-11]
-                    ];
-                    samplePositions.forEach(([sx, sy]) => {
-                        const idx = (sy * c.width + sx) * 4;
-                        cornerSamples.push({ r: d[idx], g: d[idx+1], b: d[idx+2] });
-                    });
-                    // Average background color
-                    let bgR = 0, bgG = 0, bgB = 0;
-                    cornerSamples.forEach(s => { bgR += s.r; bgG += s.g; bgB += s.b; });
-                    bgR = Math.round(bgR / cornerSamples.length);
-                    bgG = Math.round(bgG / cornerSamples.length);
-                    bgB = Math.round(bgB / cornerSamples.length);
 
-                    const tolerance = 40; // Color distance from background to be considered bg
-                    const fadeRange = 15; // Soft edge transition
-
-                    for (let i = 0; i < d.length; i += 4) {
-                        const r = d[i], g = d[i+1], b = d[i+2];
-                        const colorDist = Math.sqrt((r - bgR) ** 2 + (g - bgG) ** 2 + (b - bgB) ** 2);
-                        if (colorDist < tolerance) {
-                            d[i+3] = 0; // Fully transparent (background)
-                        } else if (colorDist < tolerance + fadeRange) {
-                            // Smooth fade between background and foreground
-                            const alpha = ((colorDist - tolerance) / fadeRange);
-                            d[i+3] = Math.round(alpha * 255);
-                        }
-                        // Far from background color → keep original alpha
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                    const dataUrl = c.toDataURL('image/png');
-                    bgRemovedCache[url] = dataUrl;
-                    imgEl.src = dataUrl;
-                } catch(e) {
-                    console.warn('BG removal failed for', url, e);
-                }
-                imgEl.dataset.processing = '';
-            };
-            tempImg.onerror = () => { imgEl.dataset.processing = ''; };
-            tempImg.src = url;
-        }
-
-        function processAllProductImages() {
-            document.querySelectorAll('.product-img-wrap img').forEach(img => {
-                if (!img.getAttribute('data-original-src')) {
-                    img.setAttribute('data-original-src', img.src);
-                }
-                if (img.complete && img.naturalWidth > 0) {
-                    removeWhiteBg(img);
-                } else {
-                    img.onload = () => removeWhiteBg(img);
-                }
-            });
-        }
-
-        // Process product detail / gallery images on open
-        function processDynamicImages() {
-            document.querySelectorAll('.pd-main-img, .pd-thumb img, .fs-slide img').forEach(img => {
-                const src = img.getAttribute('data-original-src') || img.src;
-                if (bgRemovedCache[src] && !img.src.startsWith('data:')) {
-                    img.src = bgRemovedCache[src];
-                } else if (!img.src.startsWith('data:') && !img.dataset.processing) {
-                    img.setAttribute('data-original-src', src);
-                    removeWhiteBg(img);
-                }
-            });
-        }
-
-        // Run after images load — use window.onload to ensure all resources are ready
-        window.addEventListener('load', () => {
-            setTimeout(processAllProductImages, 300);
-        });
 
         // ===== BRAND TILE REVEAL =====
         const brandTiles = document.querySelectorAll('.brand-tile');
