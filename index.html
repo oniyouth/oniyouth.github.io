@@ -834,13 +834,12 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const scrollHint = document.getElementById('scrollHint');
-        const SCROLL_SPEED = 2; // 2px horizontal per 1px vertical — faster scroll, less black space
         function calcScrollSpace() { return Math.max(track.scrollWidth - window.innerWidth, 0); }
         function setWrapperHeight() {
             const scrollDist = calcScrollSpace();
-            // Exact height so products finish scrolling right as wrapper ends — NO black gap
-            const neededHeight = (scrollDist / SCROLL_SPEED) + window.innerHeight;
-            wrapper.style.height = Math.max(window.innerHeight, neededHeight) + 'px';
+            // Natural 1:1 ratio — 1px vertical = 1px horizontal. No arbitrary cap = no black gap.
+            // + viewport because the sticky section occupies one screen height
+            wrapper.style.height = (scrollDist + window.innerHeight) + 'px';
         }
         setWrapperHeight();
         window.addEventListener('resize', setWrapperHeight);
