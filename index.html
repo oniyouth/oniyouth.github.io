@@ -657,11 +657,14 @@
             history.pushState({ shopOpen: true }, '');
         }
 
+        let skipNextPopstate = false;
+
         function closeShop() {
             shopPage.classList.remove('active');
             document.body.style.overflow = '';
             shopIsOpen = false;
             if (history.state && history.state.shopOpen) {
+                skipNextPopstate = true;
                 history.back();
             }
         }
@@ -697,12 +700,17 @@
             productDetail.classList.remove('active');
             document.body.style.overflow = '';
             if (history.state && history.state.productOpen) {
+                skipNextPopstate = true;
                 history.back();
             }
         }
 
         // Back button / popstate
         window.addEventListener('popstate', function(e) {
+            if (skipNextPopstate) {
+                skipNextPopstate = false;
+                return;
+            }
             if (fsIsOpen) {
                 fsIsOpen = false;
                 fsGallery.classList.remove('active');
@@ -847,6 +855,7 @@
             fsIsOpen = false;
             fsGallery.classList.remove('active');
             if (history.state && history.state.galleryOpen) {
+                skipNextPopstate = true;
                 history.back();
             }
         }
