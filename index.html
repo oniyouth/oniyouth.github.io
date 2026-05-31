@@ -125,27 +125,13 @@
             transition: opacity 0.5s ease, visibility 0.5s;
         }
         .shop-page.active { visibility: visible; opacity: 1; }
-        .shop-back {
-            position: fixed; top: 1rem; left: 1.5rem;
-            width: 40px; height: 40px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff; font-size: 1.2rem;
-            font-family: 'Syne', sans-serif; font-weight: 300;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            z-index: 7020; transition: all 0.3s;
-            border-radius: 50%;
-        }
-        .shop-back:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
-
         .shop-logo {
-            position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
-            z-index: 7020; cursor: pointer;
-            transition: opacity 0.3s;
+            position: absolute; top: 0; width: 100%; height: 50px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 7020; pointer-events: auto;
         }
-        .shop-logo img { width: 36px; height: 36px; filter: brightness(0) invert(1); transition: transform 0.3s; }
-        .shop-logo:hover img { transform: scale(1.1); }
+        .shop-logo img { width: 36px; height: 36px; filter: brightness(0) invert(1); cursor: pointer; transition: filter 0.5s, transform 0.3s; }
+        .shop-logo img:hover { transform: scale(1.1); }
         .shop-page .collection-header { padding: 0 3rem; margin-bottom: 3rem; padding-top: 4rem; }
         .shop-page .products-grid { padding: 0 3rem; }
 
@@ -488,9 +474,8 @@
 
     <!-- SHOP PAGE (overlay — same page, no lag) -->
     <div class="shop-page" id="shopPage">
-        <button class="shop-back" onclick="closeShop()">&times;</button>
-        <div class="shop-logo" onclick="closeShop()">
-            <img src="assets/images/logo.png" alt="OniYouth">
+        <div class="shop-logo">
+            <img src="assets/images/logo.png" alt="OniYouth" onclick="closeShop()">
         </div>
         <div class="collection-header">
             <div>
