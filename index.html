@@ -216,20 +216,16 @@
         .footer-socials a { width: 34px; height: 34px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text3); text-decoration: none; font-size: 0.7rem; font-weight: 700; transition: all 0.3s; }
         .footer-socials a:hover { border-color: var(--text); color: var(--text); }
 
-        /* ===== TILES TRANSITION OVERLAY ===== */
-        .tiles-overlay { position: fixed; inset: 0; z-index: 9000; pointer-events: none; display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr); }
-        .tiles-overlay .tile { background: var(--bg); transform: scale(0); opacity: 0; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease; }
-        .tiles-overlay .tile.active { transform: scale(1); opacity: 1; }
-        .tiles-overlay .tile.fade-out { transform: scale(0); opacity: 0; transition: transform 0.25s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.2s ease; }
-
         /* ===== PRODUCT DETAIL — ONIYOUTH STYLE ===== */
         .product-detail {
             position: fixed; inset: 0; z-index: 8000;
             background: #000;
-            display: none;
+            visibility: hidden;
+            opacity: 0;
             overflow-y: auto;
+            transition: opacity 0.2s ease, visibility 0.2s;
         }
-        .product-detail.active { display: block; }
+        .product-detail.active { visibility: visible; opacity: 1; }
 
         /* Close button — OniYouth style */
         .pd-close {
@@ -417,11 +413,13 @@
         .fs-gallery {
             position: fixed; inset: 0; z-index: 9500;
             background: #000;
-            display: none;
+            visibility: hidden;
+            opacity: 0;
             flex-direction: column;
             overflow: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s;
         }
-        .fs-gallery.active { display: flex; }
+        .fs-gallery.active { visibility: visible; opacity: 1; }
 
         .fs-gallery-top {
             position: absolute; top: 0; left: 0; right: 0;
@@ -765,10 +763,7 @@
         <div class="footer-socials"><a href="#">IG</a><a href="#">TK</a><a href="#">X</a></div>
     </footer>
 
-    <!-- TILES TRANSITION OVERLAY -->
-    <div class="tiles-overlay" id="tilesOverlay"></div>
-
-    <!-- PRODUCT DETAIL — CORTEIZ STYLE -->
+    <!-- PRODUCT DETAIL — ONIYOUTH STYLE -->
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <div class="pd-layout">
@@ -978,30 +973,6 @@
             sneakers: { name: 'Streetwear Sneakers', cat: 'Calzado', price: '$119.99', desc: 'Suela premium amortiguada. Diseno minimalista versatil. Comfort todo el dia. Materiales sustainables.', slides: ['assets/images/product-sneakers.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] }
         };
 
-        // ===== TILES TRANSITION =====
-        const tilesOverlay = document.getElementById('tilesOverlay');
-        const COLS = 10, ROWS = 7;
-        let tilesElements = [];
-        let isTransitioning = false;
-        tilesOverlay.style.setProperty('--cols', COLS);
-        tilesOverlay.style.setProperty('--rows', ROWS);
-        for (let i = 0; i < COLS * ROWS; i++) { const tile = document.createElement('div'); tile.classList.add('tile'); tilesOverlay.appendChild(tile); tilesElements.push(tile); }
-
-        function getStaggerOrder() {
-            const centerCol = (COLS - 1) / 2, centerRow = (ROWS - 1) / 2;
-            return tilesElements.map((_, i) => ({ i, d: Math.sqrt((i % COLS - centerCol) ** 2 + (Math.floor(i / COLS) - centerRow) ** 2) })).sort((a, b) => a.d - b.d).map(x => x.i);
-        }
-        const staggerOrder = getStaggerOrder();
-
-        function tilesCover(cb) {
-            let r = 0; const t = tilesElements.length;
-            staggerOrder.forEach((idx, order) => { setTimeout(() => { tilesElements[idx].classList.remove('fade-out'); tilesElements[idx].classList.add('active'); r++; if (r === t && cb) setTimeout(cb, 80); }, order * 15); });
-        }
-        function tilesReveal(cb) {
-            let h = 0; const t = tilesElements.length;
-            staggerOrder.forEach((idx, order) => { setTimeout(() => { tilesElements[idx].classList.remove('active'); tilesElements[idx].classList.add('fade-out'); h++; if (h === t) setTimeout(() => { tilesElements.forEach(tl => tl.classList.remove('active', 'fade-out')); isTransitioning = false; if (cb) cb(); }, 100); }, order * 18); });
-        }
-
         // ===== PRODUCT DETAIL =====
         const productDetail = document.getElementById('productDetail');
         let currentSlide = 0;
@@ -1010,33 +981,21 @@
         let currentProductData = null;
 
         function openProduct(id) {
-            if (isTransitioning) return;
-            isTransitioning = true;
             const p = data[id]; if (!p) return;
             populateProduct(p);
-            tilesCover(() => {
-                productDetail.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                productDetail.scrollTop = 0;
-                // Push state so back button closes the product instead of leaving the page
-                history.pushState({ productOpen: true }, '');
-                tilesReveal();
-            });
+            productDetail.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            productDetail.scrollTop = 0;
+            history.pushState({ productOpen: true }, '');
         }
 
         function closeProduct() {
-            if (isTransitioning) return;
-            isTransitioning = true;
             closeGallery();
-            tilesCover(() => {
-                productDetail.classList.remove('active');
-                document.body.style.overflow = '';
-                // Only go back if we're in a product-open state (avoid double-back)
-                if (history.state && history.state.productOpen) {
-                    history.back();
-                }
-                tilesReveal();
-            });
+            productDetail.classList.remove('active');
+            document.body.style.overflow = '';
+            if (history.state && history.state.productOpen) {
+                history.back();
+            }
         }
 
         // Back button / popstate — close overlays like Ctrl+Z
@@ -1051,13 +1010,9 @@
             }
             // If product detail is open, close it
             if (productDetail.classList.contains('active')) {
-                isTransitioning = false;
                 // Close without calling history.back (popstate already went back)
-                tilesCover(() => {
-                    productDetail.classList.remove('active');
-                    document.body.style.overflow = '';
-                    tilesReveal();
-                });
+                productDetail.classList.remove('active');
+                document.body.style.overflow = '';
                 return;
             }
         });
