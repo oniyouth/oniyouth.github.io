@@ -658,9 +658,7 @@
 
         // ===== PRODUCT DETAIL =====
         const productDetail = document.getElementById('productDetail');
-        let currentSlide = 0;
-        let slideCount = 0;
-        let isZoomed = false;
+        // (carousel state removed — vertical stack)
         let currentProductData = null;
 
         function openProduct(id) {
@@ -713,9 +711,7 @@
             document.getElementById('pdDesc').textContent = p.desc;
             document.querySelectorAll('.pd-sz').forEach((s, i) => { s.classList.remove('sel'); if (i === 2) s.classList.add('sel'); });
 
-            slideCount = p.slides.length;
-            currentSlide = 0;
-            isZoomed = false;
+            // (carousel state reset removed — vertical stack)
             sizeSelected = true; // M is pre-selected
             currentProductData = p;
 
@@ -738,74 +734,7 @@
             });
         }
 
-        function goToSlide(index) {
-            if (index < 0) index = slideCount - 1;
-            if (index >= slideCount) index = 0;
-            currentSlide = index;
-
-            if (currentProductData) {
-                const src = currentProductData.slides[currentSlide];
-                const mainImg = document.getElementById('pdMainImg');
-                mainImg.src = src;
-            }
-
-            // Update thumbs
-            document.querySelectorAll('.pd-thumb').forEach((t, i) => t.classList.toggle('active', i === currentSlide));
-        }
-
-        function switchSlide(dir) { goToSlide(currentSlide + dir); }
-
-        // ===== DOUBLE-TAP & LONG-PRESS → OPEN FULL-SCREEN GALLERY =====
-        const mainImgWrap = document.getElementById('pdMainImgWrap');
-        let lastTapTime = 0;
-        let longPressTimer = null;
-        let longPressTriggered = false;
-
-        // Double-tap detection (mobile & desktop)
-        mainImgWrap.addEventListener('click', e => {
-            // Ignore clicks on nav buttons
-            if (e.target.closest('.pd-img-nav')) return;
-            const now = Date.now();
-            if (now - lastTapTime < 350) {
-                openGallery();
-                lastTapTime = 0;
-            } else {
-                lastTapTime = now;
-            }
-        });
-
-        // Long-press detection (mobile)
-        mainImgWrap.addEventListener('touchstart', e => {
-            if (e.target.closest('.pd-img-nav')) return;
-            longPressTriggered = false;
-            longPressTimer = setTimeout(() => {
-                longPressTriggered = true;
-                openGallery();
-            }, 500);
-        }, { passive: true });
-
-        mainImgWrap.addEventListener('touchmove', () => {
-            clearTimeout(longPressTimer);
-        }, { passive: true });
-
-        mainImgWrap.addEventListener('touchend', () => {
-            clearTimeout(longPressTimer);
-        }, { passive: true });
-
-        // Swipe on main image (product detail — change slides)
-        let pdTouchStartX = 0;
-        mainImgWrap.addEventListener('touchstart', e => {
-            pdTouchStartX = e.touches[0].clientX;
-        }, { passive: true });
-
-        mainImgWrap.addEventListener('touchend', e => {
-            if (longPressTriggered) return;
-            const diff = pdTouchStartX - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 60) {
-                if (diff > 0) switchSlide(1);
-                else switchSlide(-1);
-            }
-        }, { passive: true });
+        // (Carousel code removed — images are now stacked vertically, each clickable to open gallery)
 
         // ===== FULL-SCREEN GALLERY =====
         const fsGallery = document.getElementById('fsGallery');
@@ -1006,10 +935,10 @@
             fsSetZoom(i, newScale, clamped.tx, clamped.ty);
         }
 
-        function openGallery() {
+        function openGallery(startIdx) {
             if (!currentProductData || fsIsOpen) return;
             fsIsOpen = true;
-            fsCurrent = currentSlide;
+            fsCurrent = (typeof startIdx === 'number') ? startIdx : 0;
             // Push state so back button closes gallery first
             history.pushState({ galleryOpen: true }, '');
             fsSlideCount = currentProductData.slides.length;
@@ -1067,9 +996,6 @@
             fsTrack.style.transform = `translateX(-${fsCurrent * 100}%)`;
             fsUpdateDots();
             fsUpdateCounter();
-
-            // Sync back to product detail
-            goToSlide(fsCurrent);
         }
 
         function fsUpdateDots() {
@@ -1381,8 +1307,6 @@
             }
             if (!productDetail.classList.contains('active')) return;
             if (e.key === 'Escape') closeProduct();
-            if (e.key === 'ArrowRight') switchSlide(1);
-            if (e.key === 'ArrowLeft') switchSlide(-1);
         });
 
         // Helpers
