@@ -199,81 +199,42 @@
         }
         .pd-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
 
-        /* Layout: 50/50 split */
+        /* Layout: single column, images stacked vertical */
         .pd-layout {
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
             padding-top: 0;
         }
 
-        /* LEFT: Main image + thumbnails — 50% */
+        /* Images — full width, stacked vertical */
         .pd-images {
-            flex: 0 0 50%;
-            max-width: 50%;
             display: flex;
             flex-direction: column;
-            padding: 5rem 1.5rem 1.5rem 1.5rem;
-            position: sticky;
-            top: 0;
-            height: 100vh;
+            gap: 0;
+            padding: 4.5rem 0 0;
+            width: 100%;
         }
 
-        .pd-main-img-wrap {
-            flex: 1;
+        .pd-img-full {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
             cursor: pointer;
-            position: relative;
         }
 
-        .pd-main-img {
-            max-width: 100%;
-            max-height: 100%;
+        .pd-img-full img {
+            width: 100%;
+            height: auto;
             object-fit: contain;
-            user-select: none;
-            -webkit-user-drag: none;
+            display: block;
         }
 
-        /* Thumbnails — square, clean */
-        .pd-thumbs {
-            display: flex;
-            gap: 8px;
-            padding: 16px 0 0;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .pd-thumb {
-            width: 60px; height: 60px;
-            border: none;
-            outline: 2px solid transparent;
-            cursor: pointer;
-            overflow: hidden;
-            transition: outline-color 0.2s, opacity 0.2s;
-            opacity: 0.4;
-            background: #111;
-            border-radius: 8px;
-        }
-
-        .pd-thumb.active {
-            outline-color: #fff;
-            opacity: 1;
-        }
-
-        .pd-thumb:hover { opacity: 0.7; }
-
-        .pd-thumb img {
-            width: 100%; height: 100%;
-            object-fit: cover;
-        }
-
-        /* RIGHT: Product info — 50% */
+        /* Product info — full width below images */
         .pd-info {
-            flex: 0 0 50%;
-            max-width: 50%;
-            padding: 5rem 2.5rem 3rem 2rem;
+            width: 100%;
+            padding: 2rem 1.5rem 3rem;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -348,24 +309,8 @@
         }
         .pd-add-btn:hover { background: rgba(255,255,255,0.85); }
 
-        /* Image nav arrows — OniYouth style */
-        .pd-img-nav {
-            position: absolute;
-            top: 50%; transform: translateY(-50%);
-            width: 36px; height: 36px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 5; transition: all 0.3s;
-            opacity: 0; border-radius: 50%;
-        }
-        .pd-images:hover .pd-img-nav { opacity: 1; }
-        .pd-img-nav:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); }
-        .pd-img-nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-        .pd-img-prev { left: 0.5rem; }
-        .pd-img-next { right: 0.5rem; }
+        /* Image nav arrows — hidden (no carousel) */
+        .pd-img-nav { display: none; }
 
         /* ===== FULL-SCREEN GALLERY ===== */
         .fs-gallery {
@@ -480,26 +425,20 @@
                 padding: 1.5rem 1.5rem 3rem;
             }
             .pd-close { top: 0.8rem; left: 0.8rem; width: 36px; height: 36px; }
-            .pd-thumb { width: 50px; height: 50px; }
-            .pd-img-nav { opacity: 1; }
             .pd-name { font-size: 20px; }
             .pd-sz { width: 48px; height: 48px; font-size: 0.7rem; }
         }
 
         @media (max-width: 480px) {
-            .pd-images { min-height: 40vh; }
             .pd-info { padding: 1.2rem 1.2rem 2.5rem; }
             .pd-name { font-size: 18px; }
             .pd-price { font-size: 14px; }
             .pd-sz { width: 44px; height: 44px; font-size: 0.65rem; }
-            .pd-thumb { width: 44px; height: 44px; }
         }
 
-        /* Landscape phones */
+        /* Landscape phones — keep vertical scroll */
         @media (max-height: 500px) and (orientation: landscape) {
-            .pd-layout { flex-direction: row; }
-            .pd-images { height: 100vh; flex: 0 0 50%; max-width: 50%; }
-            .pd-info { flex: 0 0 50%; max-width: 50%; padding: 3rem 1.5rem; overflow-y: auto; }
+            .pd-img-full img { max-height: 80vh; }
         }
 
 
@@ -631,18 +570,8 @@
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <div class="pd-layout">
-            <!-- LEFT: Images -->
+            <!-- Images stacked vertically -->
             <div class="pd-images" id="pdImages">
-                <div class="pd-main-img-wrap" id="pdMainImgWrap">
-                    <img class="pd-main-img" id="pdMainImg" src="" alt="">
-                    <button class="pd-img-nav pd-img-prev" onclick="event.stopPropagation(); switchSlide(-1)">
-                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <button class="pd-img-nav pd-img-next" onclick="event.stopPropagation(); switchSlide(1)">
-                        <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
-                    </button>
-                </div>
-                <div class="pd-thumbs" id="pdThumbs"></div>
             </div>
 
             <!-- RIGHT: Product info -->
@@ -794,26 +723,19 @@
             const addBtn = document.getElementById('pdAddBtn');
             if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
 
-            // Set main image
-            const mainImg = document.getElementById('pdMainImg');
-            mainImg.src = p.slides[0];
-
-            // Build thumbnails
-            const thumbsEl = document.getElementById('pdThumbs');
-            thumbsEl.innerHTML = '';
+            // Build stacked vertical images
+            const imagesEl = document.getElementById('pdImages');
+            imagesEl.innerHTML = '';
             p.slides.forEach((src, i) => {
-                const thumb = document.createElement('div');
-                thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
-                thumb.onclick = () => goToSlide(i);
+                const wrap = document.createElement('div');
+                wrap.className = 'pd-img-full';
+                wrap.onclick = () => openGallery(i);
                 const img = document.createElement('img');
                 img.src = src;
                 img.alt = p.name + ' ' + (i + 1);
-                thumb.appendChild(img);
-                thumbsEl.appendChild(thumb);
+                wrap.appendChild(img);
+                imagesEl.appendChild(wrap);
             });
-
-            // Show tap hint briefly
-            // No tap hint anymore
         }
 
         function goToSlide(index) {
