@@ -173,22 +173,7 @@
             background: linear-gradient(to left, var(--bg), transparent);
         }
 
-        /* ===== BRAND - TILE REVEAL ===== */
-        .brand { width: 100%; height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 3rem; }
-        .brand-grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 700px; aspect-ratio: 6/4; }
-        .brand-tile { background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; transform: scale(0); opacity: 0; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s; }
-        .brand-tile.revealed { transform: scale(1); opacity: 1; }
-        .brand-tile.tile-logo { grid-column: span 2; grid-row: span 2; }
-        .brand-tile.tile-logo img { width: 80%; height: 80%; object-fit: contain; filter: var(--logo-filter); transition: filter 0.5s; }
-        .brand-tile.tile-title { grid-column: span 2; font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 800; letter-spacing: -1px; }
-        .brand-tile.tile-subtitle { grid-column: span 2; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); }
-        .brand-tile.tile-desc { grid-column: span 3; font-size: 0.8rem; color: var(--text2); line-height: 1.5; padding: 0.6rem; text-align: center; }
-        .brand-tile.tile-stat { flex-direction: column; gap: 0.2rem; }
-        .brand-tile.tile-stat .stat-num { font-size: 1.6rem; font-weight: 800; }
-        .brand-tile.tile-stat .stat-label { font-size: 0.5rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); }
-        .brand-tile.tile-accent { background: var(--text); border-color: var(--text); }
-        .brand-tile.tile-accent-dark { background: var(--border); }
-        .brand-tile.tile-word { font-weight: 700; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; }
+
 
         /* ===== FOOTER ===== */
         footer { padding: 3rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.5s; }
@@ -492,10 +477,6 @@
             .lookbook-content { padding: 3.5rem 5% 1.2rem; }
             .lookbook-marquee-track img { height: 160px; }
             .lookbook-marquee-track { max-height: 160px; }
-            .brand { padding: 2rem; }
-            .brand-grid { max-width: 100%; }
-            .brand-tile.tile-title { font-size: 1rem; }
-            .brand-tile.tile-stat .stat-num { font-size: 1.2rem; }
             footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
 
             /* Product detail mobile — stack vertically */
@@ -522,7 +503,6 @@
 
         @media (max-width: 480px) {
             .products-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-            .brand-grid { gap: 4px; }
             .lookbook-content { padding: 3rem 5% 1rem; }
             .lookbook-marquee-track img { height: 120px; }
             .lookbook-marquee-track { max-height: 120px; }
@@ -694,32 +674,6 @@
             </div>
     </div>
 
-    <!-- BRAND -->
-    <section class="brand" id="brandSection">
-        <div class="brand-grid" id="brandGrid">
-            <div class="brand-tile tile-logo" data-delay="0"><img src="assets/images/logo.png" alt="OniYouth"></div>
-            <div class="brand-tile tile-title" data-delay="3">MAS QUE ROPA</div>
-            <div class="brand-tile tile-accent" data-delay="6"></div>
-            <div class="brand-tile tile-subtitle" data-delay="1">Streetwear Culture</div>
-            <div class="brand-tile tile-accent-dark" data-delay="7"></div>
-            <div class="brand-tile tile-word" data-delay="2">Rebeldia</div>
-            <div class="brand-tile tile-desc" data-delay="4">La "O" con cuernos: energia rebelde, comunidad, unidad.</div>
-            <div class="brand-tile tile-word" data-delay="8">Actitud</div>
-            <div class="brand-tile tile-stat" data-delay="5"><div class="stat-num">100%</div><div class="stat-label">Organico</div></div>
-            <div class="brand-tile tile-accent-dark" data-delay="9"></div>
-            <div class="brand-tile tile-stat" data-delay="6"><div class="stat-num">0</div><div class="stat-label">Compromiso</div></div>
-            <div class="brand-tile tile-word" data-delay="10">Sin Limite</div>
-            <div class="brand-tile tile-accent" data-delay="11"></div>
-            <div class="brand-tile tile-stat" data-delay="7"><div class="stat-num">&infin;</div><div class="stat-label">Actitud</div></div>
-            <div class="brand-tile tile-word" data-delay="8">Cultura</div>
-            <div class="brand-tile tile-accent" data-delay="12"></div>
-            <div class="brand-tile tile-word" data-delay="9">Comunidad</div>
-            <div class="brand-tile tile-accent-dark" data-delay="13"></div>
-            <div class="brand-tile tile-word" data-delay="10">Calle</div>
-            <div class="brand-tile tile-accent" data-delay="14"></div>
-        </div>
-    </section>
-
     <!-- FOOTER -->
     <footer>
         <p>&copy; 2026 OniYouth</p>
@@ -794,13 +748,6 @@
 
 
 
-        // ===== BRAND TILE REVEAL =====
-        const brandTiles = document.querySelectorAll('.brand-tile');
-        let brandRevealed = false;
-        const brandObserver = new IntersectionObserver(entries => {
-            entries.forEach(entry => { if (entry.isIntersecting && !brandRevealed) { brandRevealed = true; brandTiles.forEach(tile => { setTimeout(() => tile.classList.add('revealed'), parseInt(tile.dataset.delay || 0) * 80 + 100); }); } });
-        }, { threshold: 0.3 });
-        brandObserver.observe(document.getElementById('brandSection'));
 
         // ===== PRODUCT DATA =====
         const data = {
