@@ -170,68 +170,6 @@
         .product-colors { display: flex; gap: 5px; margin-top: 0.4rem; }
         .pc-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border); }
 
-        /* ===== LOOKBOOK ===== */
-        .lookbook {
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg);
-            transition: background 0.5s;
-        }
-
-        /* Marquee image strip */
-        .lookbook-marquee {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: stretch;
-        }
-        .lookbook-marquee-track {
-            display: flex;
-            gap: 0;
-            will-change: transform;
-            animation: marqueeScroll 40s linear infinite;
-        }
-        .lookbook-marquee-track img {
-            height: 300px;
-            width: auto;
-            flex-shrink: 0;
-            object-fit: cover;
-            filter: grayscale(20%) contrast(1.05);
-            max-width: none;
-        }
-        .lookbook-marquee-track {
-            max-height: 300px;
-        }
-        @keyframes marqueeScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-        /* Pause on hover */
-        .lookbook-marquee:hover .lookbook-marquee-track {
-            animation-play-state: paused;
-        }
-        /* Edge fade overlays */
-        .lookbook-marquee::before,
-        .lookbook-marquee::after {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 80px;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .lookbook-marquee::before {
-            left: 0;
-            background: linear-gradient(to right, var(--bg), transparent);
-        }
-        .lookbook-marquee::after {
-            right: 0;
-            background: linear-gradient(to left, var(--bg), transparent);
-        }
 
 
 
@@ -532,8 +470,6 @@
         @media (max-width: 900px) {
             .hero-content { left: 5%; right: 5%; bottom: 8%; }
             .hero-title { letter-spacing: -1px; }
-            .lookbook-marquee-track img { height: 160px; }
-            .lookbook-marquee-track { max-height: 160px; }
             footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
 
             /* Product detail mobile — stack vertically */
@@ -559,8 +495,6 @@
         }
 
         @media (max-width: 480px) {
-            .lookbook-marquee-track img { height: 120px; }
-            .lookbook-marquee-track { max-height: 120px; }
             .pd-images { min-height: 40vh; }
             .pd-info { padding: 1.2rem 1.2rem 2.5rem; }
             .pd-name { font-size: 18px; }
@@ -601,31 +535,6 @@
         </div>
         <div class="hero-gradient"></div>
         <a href="javascript:void(0)" class="hero-shop-btn" onclick="openShop()">SHOP</a>
-    </section>
-
-    <!-- LOOKBOOK -->
-    <section class="lookbook">
-        <div class="lookbook-marquee">
-            <div class="lookbook-marquee-track" id="lookbookTrack">
-                <img src="assets/images/hero-model-1.png" alt="Lookbook 1">
-                <img src="assets/images/hero-model-2.png" alt="Lookbook 2">
-                <img src="assets/images/hero-model-3.png" alt="Lookbook 3">
-                <img src="assets/images/product-hoodie.png" alt="Lookbook 4">
-                <img src="assets/images/product-bomber.png" alt="Lookbook 5">
-                <img src="assets/images/product-tshirt.png" alt="Lookbook 6">
-                <img src="assets/images/product-joggers.png" alt="Lookbook 7">
-                <img src="assets/images/product-hoodie-white.png" alt="Lookbook 8">
-                <!-- Duplicate for seamless loop -->
-                <img src="assets/images/hero-model-1.png" alt="Lookbook 1">
-                <img src="assets/images/hero-model-2.png" alt="Lookbook 2">
-                <img src="assets/images/hero-model-3.png" alt="Lookbook 3">
-                <img src="assets/images/product-hoodie.png" alt="Lookbook 4">
-                <img src="assets/images/product-bomber.png" alt="Lookbook 5">
-                <img src="assets/images/product-tshirt.png" alt="Lookbook 6">
-                <img src="assets/images/product-joggers.png" alt="Lookbook 7">
-                <img src="assets/images/product-hoodie-white.png" alt="Lookbook 8">
-            </div>
-        </div>
     </section>
 
     <!-- SHOP PAGE (overlay — same page, no lag) -->
