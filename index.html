@@ -91,7 +91,7 @@
             padding: 0;
         }
         .cart-btn:hover { transform: scale(1.1); }
-        .cart-btn img { width: 32px; height: 32px; filter: brightness(0) invert(1); pointer-events: none; }
+        .cart-btn img { width: 34px; height: 34px; filter: none; pointer-events: none; }
         .cart-badge {
             position: absolute; top: -2px; right: -6px;
             min-width: 18px; height: 18px;
@@ -221,12 +221,12 @@
 
         @media (max-width: 900px) {
             .cart-btn { top: 0.8rem; right: 0.8rem; }
-            .cart-btn img { width: 26px; height: 26px; }
+            .cart-btn img { width: 28px; height: 28px; }
             .cart-page-content { padding: 4rem 1.5rem 2rem; }
             .cart-item-img { width: 70px; height: 88px; }
         }
         @media (max-width: 480px) {
-            .cart-btn img { width: 24px; height: 24px; }
+            .cart-btn img { width: 26px; height: 26px; }
             .cart-page-content { padding: 3.5rem 1.2rem 2rem; }
             .cart-item-img { width: 60px; height: 75px; }
         }
@@ -622,7 +622,7 @@
         </div>
         <div class="hero-gradient"></div>
         <button class="cart-btn" id="cartBtnHero" onclick="openCart()">
-            <img src="assets/images/cart-icon.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeHero">0</span>
         </button>
         <a href="javascript:void(0)" class="hero-shop-btn" onclick="openShop()">SHOP</a>
@@ -635,7 +635,7 @@
             <img src="assets/images/logo.png" alt="OniYouth" onclick="closeShop()">
         </div>
         <button class="cart-btn" id="cartBtnShop" onclick="openCart()">
-            <img src="assets/images/cart-icon.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeShop">0</span>
         </button>
         <div class="collection-header">
@@ -736,7 +736,7 @@
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <button class="cart-btn" id="cartBtnDetail" onclick="openCart()">
-            <img src="assets/images/cart-icon.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeDetail">0</span>
         </button>
         <div class="pd-layout">
