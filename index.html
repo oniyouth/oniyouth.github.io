@@ -222,7 +222,7 @@
         .tiles-overlay .tile.active { transform: scale(1); opacity: 1; }
         .tiles-overlay .tile.fade-out { transform: scale(0); opacity: 0; transition: transform 0.25s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.2s ease; }
 
-        /* ===== PRODUCT DETAIL — CORTEIZ STYLE ===== */
+        /* ===== PRODUCT DETAIL — ONIYOUTH STYLE ===== */
         .product-detail {
             position: fixed; inset: 0; z-index: 8000;
             background: #000;
@@ -231,20 +231,22 @@
         }
         .product-detail.active { display: block; }
 
-        /* Close button — raw, square, Corteiz style */
+        /* Close button — OniYouth style */
         .pd-close {
             position: fixed; top: 1rem; left: 1.5rem;
             width: 40px; height: 40px;
-            background: #000;
-            border: none;
-            color: #A20000; font-size: 1.5rem;
-            font-family: 'Courier New', Courier, monospace;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-size: 1.2rem;
+            font-family: 'Syne', sans-serif; font-weight: 300;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            z-index: 8020; transition: color 0.2s;
+            z-index: 8020; transition: all 0.3s;
+            border-radius: 50%;
         }
-        .pd-close:hover { color: #FFD500; }
+        .pd-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
 
-        /* Layout: 50/50 split like Corteiz */
+        /* Layout: 50/50 split */
         .pd-layout {
             display: flex;
             min-height: 100vh;
@@ -281,7 +283,7 @@
             -webkit-user-drag: none;
         }
 
-        /* Thumbnails — square, no border-radius like Corteiz */
+        /* Thumbnails — square, clean */
         .pd-thumbs {
             display: flex;
             gap: 8px;
@@ -302,7 +304,7 @@
         }
 
         .pd-thumb.active {
-            outline-color: #FFD500;
+            outline-color: #fff;
             opacity: 1;
         }
 
@@ -313,7 +315,7 @@
             object-fit: cover;
         }
 
-        /* RIGHT: Product info — 50% like Corteiz */
+        /* RIGHT: Product info — 50% */
         .pd-info {
             flex: 0 0 50%;
             max-width: 50%;
@@ -323,91 +325,95 @@
             justify-content: flex-start;
         }
 
-        /* Corteiz typography: Courier New, yellow, uppercase */
+        /* OniYouth typography: Syne, clean, minimal */
         .pd-cat {
-            font: 700 11px 'Courier New', Courier, monospace;
-            color: #FFD500; text-transform: uppercase;
-            letter-spacing: 2px; margin-bottom: 0.6rem;
+            font: 600 0.65rem 'Syne', sans-serif;
+            color: rgba(255,255,255,0.4); text-transform: uppercase;
+            letter-spacing: 4px; margin-bottom: 0.8rem;
         }
         .pd-name {
-            font: 400 25px 'Courier New', Courier, monospace;
-            color: #FFD500; text-transform: uppercase;
-            line-height: 1.4; margin-bottom: 0.8rem;
+            font: 800 2rem 'Syne', sans-serif;
+            color: #fff;
+            line-height: 1.15; margin-bottom: 0.8rem;
+            letter-spacing: -0.5px;
         }
         .pd-price {
-            font: 700 16px 'Courier New', Courier, monospace;
-            color: #FFD500;
+            font: 700 1.2rem 'Syne', sans-serif;
+            color: #fff;
             margin-bottom: 2rem;
+            letter-spacing: -0.5px;
         }
 
         .pd-desc {
-            font: 400 12px 'Courier New', Courier, monospace;
-            color: #FFD500; line-height: 1.6;
+            font: 400 0.85rem 'Syne', sans-serif;
+            color: rgba(255,255,255,0.5); line-height: 1.7;
             margin-bottom: 2rem;
         }
 
         .pd-sizes-label {
-            font: 700 11px 'Courier New', Courier, monospace;
-            color: #FFD500; text-transform: uppercase;
-            letter-spacing: 1px; margin-bottom: 0.6rem;
+            font: 600 0.65rem 'Syne', sans-serif;
+            color: rgba(255,255,255,0.4); text-transform: uppercase;
+            letter-spacing: 3px; margin-bottom: 0.8rem;
         }
 
-        /* Size buttons: 66x66 square, no border, outline on select like Corteiz */
+        /* Size buttons — OniYouth style */
         .pd-sizes {
             display: grid;
-            grid-template-columns: repeat(auto-fill, 66px);
-            gap: 6px;
+            grid-template-columns: repeat(auto-fill, 56px);
+            gap: 8px;
             margin-bottom: 1.5rem;
         }
         .pd-sz {
-            width: 66px; height: 66px;
+            width: 56px; height: 56px;
             border: none; background: transparent;
-            color: #FFD500;
-            font: 700 12px 'Courier New', Courier, monospace;
-            cursor: pointer; transition: all 0.15s;
+            color: rgba(255,255,255,0.5);
+            font: 700 0.75rem 'Syne', sans-serif;
+            cursor: pointer; transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
-            outline: 1px solid #333;
+            outline: 1px solid rgba(255,255,255,0.12);
+            border-radius: 0;
         }
-        .pd-sz:hover { outline-color: #FFD500; }
+        .pd-sz:hover { outline-color: rgba(255,255,255,0.4); color: #fff; }
         .pd-sz.sel {
-            outline: 2px solid #FFD500;
+            outline: 2px solid #fff;
             background: transparent;
-            color: #FFD500;
+            color: #fff;
         }
 
-        /* Add to cart button: dark red text, transparent bg like Corteiz */
+        /* Add to cart button — OniYouth style */
         .pd-add-btn {
-            width: 100%; padding: 14px;
-            background: transparent;
-            color: #A20000;
+            width: 100%; padding: 16px;
+            background: #fff;
+            color: #000;
             border: none;
-            font: 700 12px 'Courier New', Courier, monospace;
+            font: 700 0.7rem 'Syne', sans-serif;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 3px;
             cursor: pointer;
-            transition: color 0.2s;
+            transition: all 0.3s;
         }
-        .pd-add-btn:hover { color: #FFD500; }
+        .pd-add-btn:hover { background: rgba(255,255,255,0.85); }
 
-        /* Image nav arrows — dark red like Corteiz */
+        /* Image nav arrows — OniYouth style */
         .pd-img-nav {
             position: absolute;
             top: 50%; transform: translateY(-50%);
-            width: 32px; height: 32px;
-            background: transparent;
-            border: none;
-            color: #A20000; cursor: pointer;
+            width: 36px; height: 36px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            z-index: 5; transition: color 0.2s;
-            opacity: 0;
+            z-index: 5; transition: all 0.3s;
+            opacity: 0; border-radius: 50%;
         }
         .pd-images:hover .pd-img-nav { opacity: 1; }
-        .pd-img-nav:hover { color: #FFD500; }
+        .pd-img-nav:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); }
         .pd-img-nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
         .pd-img-prev { left: 0.5rem; }
         .pd-img-next { right: 0.5rem; }
 
-        /* ===== FULL-SCREEN GALLERY — CORTEIZ STYLE ===== */
+        /* ===== FULL-SCREEN GALLERY ===== */
         .fs-gallery {
             position: fixed; inset: 0; z-index: 9500;
             background: #000;
@@ -425,17 +431,18 @@
         }
         .fs-close {
             width: 40px; height: 40px;
-            background: transparent;
-            border: none;
-            color: #A20000; font-size: 1.5rem;
-            font-family: 'Courier New', Courier, monospace;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-size: 1.2rem;
+            font-family: 'Syne', sans-serif; font-weight: 300;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: color 0.2s;
+            transition: all 0.3s; border-radius: 50%;
         }
-        .fs-close:hover { color: #FFD500; }
+        .fs-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
         .fs-counter {
-            font: 400 12px 'Courier New', Courier, monospace;
-            color: #FFD500; letter-spacing: 2px;
+            font: 400 0.7rem 'Syne', sans-serif;
+            color: rgba(255,255,255,0.5); letter-spacing: 3px;
         }
 
         .fs-slides-wrap {
@@ -481,15 +488,15 @@
             z-index: 10;
         }
         .fs-dot {
-            width: 8px; height: 8px;
-            border-radius: 0; /* Square dots like Corteiz */
-            background: rgba(255,213,0,0.2);
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
             transition: all 0.2s;
             cursor: pointer;
         }
         .fs-dot.active {
-            background: #FFD500;
-            outline: 1px solid #FFD500;
+            background: #fff;
+            outline: 1px solid #fff;
         }
 
         @media (max-width: 900px) {
@@ -533,7 +540,7 @@
             .pd-thumb { width: 50px; height: 50px; }
             .pd-img-nav { opacity: 1; }
             .pd-name { font-size: 20px; }
-            .pd-sz { width: 54px; height: 54px; font-size: 11px; }
+            .pd-sz { width: 48px; height: 48px; font-size: 0.7rem; }
         }
 
         @media (max-width: 480px) {
@@ -547,7 +554,7 @@
             .pd-info { padding: 1.2rem 1.2rem 2.5rem; }
             .pd-name { font-size: 18px; }
             .pd-price { font-size: 14px; }
-            .pd-sz { width: 48px; height: 48px; font-size: 10px; }
+            .pd-sz { width: 44px; height: 44px; font-size: 0.65rem; }
             .pd-thumb { width: 44px; height: 44px; }
         }
 
@@ -1011,6 +1018,8 @@
                 productDetail.classList.add('active');
                 document.body.style.overflow = 'hidden';
                 productDetail.scrollTop = 0;
+                // Push state so back button closes the product instead of leaving the page
+                history.pushState({ productOpen: true }, '');
                 tilesReveal();
             });
         }
@@ -1022,9 +1031,36 @@
             tilesCover(() => {
                 productDetail.classList.remove('active');
                 document.body.style.overflow = '';
+                // Only go back if we're in a product-open state (avoid double-back)
+                if (history.state && history.state.productOpen) {
+                    history.back();
+                }
                 tilesReveal();
             });
         }
+
+        // Back button / popstate — close overlays like Ctrl+Z
+        window.addEventListener('popstate', function(e) {
+            // If full-screen gallery is open, close it (don't call history.back since popstate already did)
+            if (fsIsOpen) {
+                fsIsOpen = false;
+                if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
+                for (let i = 0; i < fsSlideCount; i++) fsResetZoom(i);
+                fsGallery.classList.remove('active');
+                return;
+            }
+            // If product detail is open, close it
+            if (productDetail.classList.contains('active')) {
+                isTransitioning = false;
+                // Close without calling history.back (popstate already went back)
+                tilesCover(() => {
+                    productDetail.classList.remove('active');
+                    document.body.style.overflow = '';
+                    tilesReveal();
+                });
+                return;
+            }
+        });
 
         function populateProduct(p) {
             document.getElementById('pdCat').textContent = p.cat;
@@ -1340,6 +1376,8 @@
             if (!currentProductData || fsIsOpen) return;
             fsIsOpen = true;
             fsCurrent = currentSlide;
+            // Push state so back button closes gallery first
+            history.pushState({ galleryOpen: true }, '');
             fsSlideCount = currentProductData.slides.length;
             fsZoomStates = [];
             for (let i = 0; i < fsSlideCount; i++) fsZoomStates.push({ scale: 1, tx: 0, ty: 0 });
@@ -1378,6 +1416,10 @@
             if (zoomAnimId) { cancelAnimationFrame(zoomAnimId); zoomAnimId = null; }
             for (let i = 0; i < fsSlideCount; i++) fsResetZoom(i);
             fsGallery.classList.remove('active');
+            // Go back to remove the gallery history entry (only if triggered by close button, not popstate)
+            if (history.state && history.state.galleryOpen) {
+                history.back();
+            }
         }
 
         function fsGoTo(index) {
@@ -1722,12 +1764,14 @@
         function addCart(btn) {
             if (!sizeSelected) {
                 // Pulse the size buttons to indicate selection needed
-                document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = '#A20000'; setTimeout(() => s.style.outlineColor = '', 600); });
+                document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
                 return;
             }
             btn.textContent = 'AGREGADO!';
-            btn.style.color = '#FFD500';
-            setTimeout(() => { btn.textContent = 'AGREGAR AL CARRITO'; btn.style.color = ''; }, 1800);
+            btn.style.background = '#000';
+            btn.style.color = '#fff';
+            btn.style.border = '1px solid #fff';
+            setTimeout(() => { btn.textContent = 'AGREGAR AL CARRITO'; btn.style.background = ''; btn.style.color = ''; btn.style.border = ''; }, 1800);
         }
     </script>
 </body>
