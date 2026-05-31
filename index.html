@@ -941,10 +941,9 @@
             const addBtn = document.getElementById('pdAddBtn');
             if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
 
-            // Set main image (use cached bg-removed version if available)
+            // Set main image
             const mainImg = document.getElementById('pdMainImg');
-            mainImg.setAttribute('data-original-src', p.slides[0]);
-            mainImg.src = bgRemovedCache[p.slides[0]] || p.slides[0];
+            mainImg.src = p.slides[0];
 
             // Build thumbnails
             const thumbsEl = document.getElementById('pdThumbs');
@@ -954,8 +953,7 @@
                 thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
                 thumb.onclick = () => goToSlide(i);
                 const img = document.createElement('img');
-                img.setAttribute('data-original-src', src);
-                img.src = bgRemovedCache[src] || src;
+                img.src = src;
                 img.alt = p.name + ' ' + (i + 1);
                 thumb.appendChild(img);
                 thumbsEl.appendChild(thumb);
@@ -973,8 +971,7 @@
             if (currentProductData) {
                 const src = currentProductData.slides[currentSlide];
                 const mainImg = document.getElementById('pdMainImg');
-                mainImg.setAttribute('data-original-src', src);
-                mainImg.src = bgRemovedCache[src] || src;
+                mainImg.src = src;
             }
 
             // Update thumbs
@@ -1250,8 +1247,7 @@
                 const slide = document.createElement('div');
                 slide.className = 'fs-slide';
                 const img = document.createElement('img');
-                img.setAttribute('data-original-src', src);
-                img.src = bgRemovedCache[src] || src;
+                img.src = src;
                 img.alt = currentProductData.name + ' ' + (i + 1);
                 img.draggable = false;
                 slide.appendChild(img);
