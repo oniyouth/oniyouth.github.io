@@ -13,6 +13,141 @@
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* ===== PASSWORD LOCK SCREEN — CORTEIZ STYLE ===== */
+        .lock-screen {
+            position: fixed; inset: 0; z-index: 99999;
+            background: #000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .lock-screen.unlocked {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+        .lock-logo {
+            width: 80px; height: 80px;
+            filter: brightness(0) invert(1);
+            margin-bottom: 2rem;
+            animation: lockPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes lockPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        .lock-title {
+            font: 800 clamp(1.8rem, 5vw, 3rem) 'Syne', sans-serif;
+            color: #FFD500;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .lock-subtitle {
+            font: 400 11px 'Courier New', Courier, monospace;
+            color: #A20000;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+        .lock-input-wrap {
+            position: relative;
+            width: 280px;
+            margin-bottom: 1.5rem;
+        }
+        .lock-input {
+            width: 100%;
+            padding: 14px 50px 14px 16px;
+            background: transparent;
+            border: 1px solid #333;
+            color: #FFD500;
+            font: 400 14px 'Courier New', Courier, monospace;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .lock-input::placeholder {
+            color: #333;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .lock-input:focus { border-color: #FFD500; }
+        .lock-input.shake {
+            animation: shakeInput 0.4s ease;
+            border-color: #A20000;
+        }
+        @keyframes shakeInput {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .lock-eye {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: #333; cursor: pointer;
+            font-size: 16px; padding: 4px; transition: color 0.2s;
+        }
+        .lock-eye:hover { color: #FFD500; }
+        .lock-btn {
+            width: 280px; padding: 14px;
+            background: transparent;
+            border: 1px solid #FFD500;
+            color: #FFD500;
+            font: 700 11px 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .lock-btn:hover {
+            background: #FFD500;
+            color: #000;
+        }
+        .lock-error {
+            font: 400 10px 'Courier New', Courier, monospace;
+            color: #A20000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            height: 20px;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .lock-error.show { opacity: 1; }
+        .lock-hint {
+            position: absolute;
+            bottom: 2rem;
+            font: 400 9px 'Courier New', Courier, monospace;
+            color: #222;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .lock-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .lock-dot {
+            width: 10px; height: 10px;
+            border: 1px solid #333;
+            transition: all 0.2s;
+        }
+        .lock-dot.filled {
+            background: #FFD500;
+            border-color: #FFD500;
+        }
+        @media (max-width: 480px) {
+            .lock-logo { width: 60px; height: 60px; margin-bottom: 1.5rem; }
+            .lock-title { letter-spacing: 4px; }
+            .lock-input-wrap, .lock-btn { width: 240px; }
+        }
+
         :root {
             --bg: #000; --bg2: #0a0a0a; --bg-card: #111;
             --text: #fff; --text2: #888; --text3: #555;
@@ -627,6 +762,28 @@
 </head>
 <body>
 
+    <!-- PASSWORD LOCK SCREEN — CORTEIZ STYLE -->
+    <div class="lock-screen" id="lockScreen">
+        <img class="lock-logo" src="assets/images/logo.png" alt="OniYouth">
+        <div class="lock-title">OniYouth</div>
+        <div class="lock-subtitle">Enter Password</div>
+        <div class="lock-dots" id="lockDots">
+            <div class="lock-dot"></div>
+            <div class="lock-dot"></div>
+            <div class="lock-dot"></div>
+            <div class="lock-dot"></div>
+            <div class="lock-dot"></div>
+            <div class="lock-dot"></div>
+        </div>
+        <div class="lock-input-wrap">
+            <input class="lock-input" id="lockInput" type="password" placeholder="PASSWORD" maxlength="20" autocomplete="off" spellcheck="false">
+            <button class="lock-eye" id="lockEye" type="button">&#9673;</button>
+        </div>
+        <button class="lock-btn" id="lockBtn">ENTER</button>
+        <div class="lock-error" id="lockError">WRONG PASSWORD</div>
+        <div class="lock-hint">AUTHORIZED ACCESS ONLY</div>
+    </div>
+
     <!-- HERO -->
     <section class="hero">
         <nav>
@@ -833,6 +990,73 @@
 
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
+        // ===== PASSWORD LOCK — CORTEIZ STYLE =====
+        (function() {
+            const CORRECT_PASSWORD = 'oniyouth';
+            const lockScreen = document.getElementById('lockScreen');
+            const lockInput = document.getElementById('lockInput');
+            const lockBtn = document.getElementById('lockBtn');
+            const lockEye = document.getElementById('lockEye');
+            const lockError = document.getElementById('lockError');
+            const lockDots = document.querySelectorAll('.lock-dot');
+
+            // Check if already unlocked in this session
+            if (sessionStorage.getItem('oy-unlocked') === '1') {
+                lockScreen.style.display = 'none';
+                document.body.style.overflow = '';
+                return;
+            }
+
+            // Lock the body scroll
+            document.body.style.overflow = 'hidden';
+
+            // Focus input
+            setTimeout(() => lockInput.focus(), 300);
+
+            // Update dots indicator
+            function updateDots() {
+                const len = lockInput.value.length;
+                lockDots.forEach((dot, i) => {
+                    dot.classList.toggle('filled', i < len);
+                });
+            }
+
+            lockInput.addEventListener('input', updateDots);
+
+            // Toggle password visibility
+            lockEye.addEventListener('click', () => {
+                const isPassword = lockInput.type === 'password';
+                lockInput.type = isPassword ? 'text' : 'password';
+                lockEye.innerHTML = isPassword ? '&#9676;' : '&#9673;';
+                lockInput.focus();
+            });
+
+            // Submit
+            function tryUnlock() {
+                const val = lockInput.value.toLowerCase().trim();
+                if (val === CORRECT_PASSWORD) {
+                    sessionStorage.setItem('oy-unlocked', '1');
+                    lockScreen.classList.add('unlocked');
+                    document.body.style.overflow = '';
+                    setTimeout(() => { lockScreen.style.display = 'none'; }, 700);
+                } else {
+                    lockInput.classList.add('shake');
+                    lockError.classList.add('show');
+                    lockInput.value = '';
+                    updateDots();
+                    setTimeout(() => {
+                        lockInput.classList.remove('shake');
+                        lockError.classList.remove('show');
+                    }, 1500);
+                }
+            }
+
+            lockBtn.addEventListener('click', tryUnlock);
+            lockInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') tryUnlock();
+            });
+        })();
+
         const tgl = document.getElementById('toggle');
         const html = document.documentElement;
         const saved = localStorage.getItem('oy-theme') || 'dark';
