@@ -673,18 +673,6 @@
             </div>
         </div>
         <div class="products-grid" id="track">
-                <div class="product-card" data-p="hoodie" onclick="openProduct('hoodie')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-hoodie.png" alt="Oversized Hoodie">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Hoodie</div>
-                        <div class="product-name">Oversized Hoodie</div>
-                        <div class="product-price">$89.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
-                    </div>
-                </div>
                 <div class="product-card" data-p="tshirt" onclick="openProduct('tshirt')">
                     <div class="product-img-wrap">
                         <img src="assets/images/product-nostairs-front.png" alt="No Stairs To Heaven">
@@ -695,66 +683,6 @@
                         <div class="product-name">No Stairs To Heaven</div>
                         <div class="product-price">$49.99</div>
                         <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="bomber" onclick="openProduct('bomber')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-bomber.png" alt="Bomber Jacket">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Jacket</div>
-                        <div class="product-name">Bomber Jacket</div>
-                        <div class="product-price">$129.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="joggers" onclick="openProduct('joggers')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-joggers.png" alt="Tech Joggers">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Pants</div>
-                        <div class="product-name">Tech Joggers</div>
-                        <div class="product-price">$69.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div><div class="pc-dot" style="background:#444"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="hoodie-w" onclick="openProduct('hoodie-w')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-hoodie-white.png" alt="Essential Hoodie">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Hoodie</div>
-                        <div class="product-name">Essential Hoodie</div>
-                        <div class="product-price">$84.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="cap" onclick="openProduct('cap')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-cap.png" alt="Logo Cap">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Accesorio</div>
-                        <div class="product-name">Logo Cap</div>
-                        <div class="product-price">$34.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="sneakers" onclick="openProduct('sneakers')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-sneakers.png" alt="Streetwear Sneakers">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">Calzado</div>
-                        <div class="product-name">Streetwear Sneakers</div>
-                        <div class="product-price">$119.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#fff;border-color:#ccc"></div></div>
                     </div>
                 </div>
             </div>
@@ -884,13 +812,7 @@
 
         // ===== PRODUCT DATA =====
         const data = {
-            hoodie: { name: 'Oversized Hoodie', cat: 'Hoodie', price: '$89.99', desc: 'Algodon organico 400gsm. Logo bordado en pecho. Interior afelpado ultra suave. Corte oversized con capucha doble capa.', slides: ['assets/images/product-hoodie.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] },
-            tshirt: { name: 'No Stairs To Heaven', cat: 'T-Shirt', price: '$49.99', desc: 'Algodon 100% 220gsm. Corte boxy oversize. Estampa serigrafiada de alta definicion. Cuello ribeteado. Diseño exclusivo OniYouth.', slides: ['assets/images/product-nostairs-front.png','assets/images/product-nostairs-back.png','assets/images/product-nostairs-detail.png'] },
-            bomber: { name: 'Bomber Jacket', cat: 'Jacket', price: '$129.99', desc: 'Acabado satinado premium. Forro interior estampado. Cierre YKK de alta resistencia. Puños y borde elastico.', slides: ['assets/images/product-bomber.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
-            joggers: { name: 'Tech Joggers', cat: 'Pants', price: '$69.99', desc: 'Tejido tech de secado rapido. Tapered fit moderno. Bolsillos con cierre zip. Cintura elastica con cordones.', slides: ['assets/images/product-joggers.png','assets/images/hero-model-1.png','assets/images/hero-model-3.png','assets/images/hero-model-2.png'] },
-            'hoodie-w': { name: 'Essential Hoodie', cat: 'Hoodie', price: '$84.99', desc: 'Blanco roto premium. Logo tono sobre tono bordado. Algodon organico suave. Interior afelpado.', slides: ['assets/images/product-hoodie-white.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png'] },
-            cap: { name: 'Logo Cap', cat: 'Accesorio', price: '$34.99', desc: '6 paneles estructurados. Logo bordado frontal. Hebilla metalica ajustable. Visera curva clasica.', slides: ['assets/images/product-cap.png','assets/images/hero-model-3.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png'] },
-            sneakers: { name: 'Streetwear Sneakers', cat: 'Calzado', price: '$119.99', desc: 'Suela premium amortiguada. Diseno minimalista versatil. Comfort todo el dia. Materiales sustainables.', slides: ['assets/images/product-sneakers.png','assets/images/hero-model-1.png','assets/images/hero-model-2.png','assets/images/hero-model-3.png'] }
+            tshirt: { name: 'No Stairs To Heaven', cat: 'T-Shirt', price: '$49.99', desc: 'Algodon 100% 220gsm. Corte boxy oversize. Estampa serigrafiada de alta definicion. Cuello ribeteado. Diseño exclusivo OniYouth.', slides: ['assets/images/product-nostairs-front.png','assets/images/product-nostairs-back.png','assets/images/product-nostairs-detail.png'] }
         };
 
         // ===== PRODUCT DETAIL (Carousel) =====
