@@ -1,0 +1,7 @@
+# Archivos que NO deben publicarse en el sitio
+PLAN.md
+db/
+supabase/
+CNAME
+.git/
+.gitignore
