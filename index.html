@@ -764,7 +764,7 @@
             <div class="cart-footer" id="cartFooter" style="display:none;">
                 <div class="cart-total-row">
                     <span class="cart-total-label">Total</span>
-                    <span class="cart-total-amount" id="cartTotal">$0.00</span>
+                    <span class="cart-total-amount" id="cartTotal">S/ 0.00</span>
                 </div>
                 <button class="cart-checkout-btn" id="cartCheckoutBtn" onclick="checkout()">PAGAR</button>
                 <div id="mpPaymentBrick"></div>
@@ -898,7 +898,7 @@
             currentProductData = p;
 
             const addBtn = document.getElementById('pdAddBtn');
-            if (addBtn) addBtn.textContent = 'AGREGAR AL CARRITO';
+            if (addBtn) addBtn.textContent = 'AGREGAR A LA BOLSA';
 
             // Set main image
             document.getElementById('pdMainImg').src = p.slides[0];
@@ -1053,7 +1053,7 @@
             if (!currentProductData) return;
 
             const size = getSelectedSize();
-            const priceNum = parseFloat(currentProductData.price.replace('$', ''));
+            const priceNum = parseFloat(currentProductData.price.replace(/[^\d.]/g, ''));
 
             // Check if same product + size already in cart
             const existing = cart.find(item => item.name === currentProductData.name && item.size === size);
@@ -1117,7 +1117,7 @@
                     '<div class="cart-item-info">' +
                         '<div class="cart-item-name">' + item.name + '</div>' +
                         '<div class="cart-item-meta">Talla: ' + item.size + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
-                        '<div class="cart-item-price">$' + (item.priceNum * item.qty).toFixed(2) + '</div>' +
+                        '<div class="cart-item-price">S/ ' + (item.priceNum * item.qty).toFixed(2) + '</div>' +
                     '</div>' +
                     '<button class="cart-item-remove" onclick="removeFromCart(' + i + ')">&times;</button>' +
                 '</div>';
@@ -1125,7 +1125,7 @@
             itemsEl.innerHTML = html;
 
             const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
-            totalEl.textContent = '$' + total.toFixed(2);
+            totalEl.textContent = 'S/ ' + total.toFixed(2);
             footerEl.style.display = 'block';
         }
 
