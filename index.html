@@ -218,6 +218,18 @@
             cursor: pointer; transition: all 0.3s;
         }
         .cart-checkout-btn:hover { background: rgba(255,255,255,0.85); }
+        .cart-checkout-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Aviso de ajustes de stock al abrir la bolsa (Fase 4) */
+        .cart-notice {
+            display: none; margin: 0 0 1.2rem; padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+            font: 400 0.7rem 'Syne', sans-serif; color: var(--text2);
+            letter-spacing: 1px; line-height: 1.5;
+        }
+        .cart-notice ul { margin: 6px 0 0; padding-left: 16px; }
+        .cart-notice.show { display: block; }
 
         /* MP Payment Brick container */
         #mpPaymentBrick {
@@ -749,6 +761,7 @@
                 <div class="cart-title">Tu Bolsa</div>
                 <div class="cart-subtitle">Articulos listos para ti</div>
             </div>
+            <div class="cart-notice" id="cartNotice"></div>
             <div class="cart-items" id="cartItems">
                 <div class="cart-empty" id="cartEmpty">Tu bolsa esta vacia</div>
             </div>
@@ -1126,7 +1139,33 @@
         }
 
         // ===== CART SYSTEM =====
-        let cart = [];
+        // ===== CARRITO (Fase 4) =====
+        // Persistente en localStorage. La fuente de verdad del stock sigue
+        // siendo el servidor: al abrir la bolsa se revalida contra Supabase
+        // (no vale guardar algo que se agoto hace dias). El precio final se
+        // recalcula igualmente en /api antes de cobrar (Fase 7).
+        const CART_KEY = 'oy-cart';
+
+        function loadCart() {
+            try {
+                const raw = localStorage.getItem(CART_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(arr)) return [];
+                // Solo items con lo minimo indispensable
+                return arr.filter(it => it && it.variante_id && it.qty > 0);
+            } catch (e) {
+                console.warn('Carrito corrupto en localStorage, se reinicia.', e);
+                return [];
+            }
+        }
+
+        function saveCart() {
+            try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
+            catch (e) { console.warn('No se pudo guardar el carrito.', e); }
+        }
+
+        let cart = loadCart();
+        updateCartBadge();  // refleja el carrito persistido al cargar la pagina
 
         function getSelectedSize() {
             const sel = document.querySelector('.pd-sz.sel');
@@ -1170,11 +1209,13 @@
             btn.style.border = '1px solid #fff';
             setTimeout(() => { btn.textContent = 'AGREGAR A LA BOLSA'; btn.style.background = ''; btn.style.color = ''; btn.style.border = ''; }, 1800);
 
+            saveCart();
             updateCartBadge();
         }
 
         function removeFromCart(index) {
             cart.splice(index, 1);
+            saveCart();
             renderCart();
             updateCartBadge();
         }
@@ -1223,7 +1264,55 @@
 
         let cartIsOpen = false;
 
-        function openCart() {
+        function showCartNotice(notes) {
+            const el = document.getElementById('cartNotice');
+            if (!el) return;
+            if (!notes || notes.length === 0) { el.classList.remove('show'); el.innerHTML = ''; return; }
+            el.innerHTML = 'Ajustamos tu bolsa segun el stock disponible:' +
+                '<ul>' + notes.map(n => '<li>' + escapeHtml(n) + '</li>').join('') + '</ul>';
+            el.classList.add('show');
+        }
+
+        // Revalida el stock del carrito contra Supabase al abrir la bolsa.
+        // RLS solo devuelve variantes de productos activos: si una variante
+        // ya no aparece, el producto se desactivo o se borro => se retira.
+        async function validateCartStock() {
+            if (cart.length === 0) return;
+            let changed = false;
+            const notes = [];
+            try {
+                const ids = [...new Set(cart.map(i => i.variante_id))];
+                const rows = await sbFetch('variantes?id=in.(' + ids.join(',') + ')&select=id,stock');
+                const stockById = {};
+                rows.forEach(r => { stockById[r.id] = r.stock || 0; });
+                for (let i = cart.length - 1; i >= 0; i--) {
+                    const item = cart[i];
+                    const stock = stockById[item.variante_id];
+                    if (stock === undefined || stock <= 0) {
+                        notes.push(item.name + ' (' + item.size + ') ya no esta disponible');
+                        cart.splice(i, 1);
+                        changed = true;
+                    } else if (item.qty > stock) {
+                        notes.push(item.name + ' (' + item.size + '): solo quedan ' + stock);
+                        item.qty = stock;
+                        changed = true;
+                    }
+                }
+            } catch (e) {
+                // Si Supabase falla, no rompas la bolsa: se revalida igual en /api al pagar.
+                console.error('No se pudo validar el stock del carrito:', e);
+                return;
+            }
+            if (changed) {
+                saveCart();
+                updateCartBadge();
+                renderCart();
+                showCartNotice(notes);
+            }
+        }
+
+        async function openCart() {
+            showCartNotice(null);
             renderCart();
             const cartPage = document.getElementById('cartPage');
             cartPage.classList.add('active');
@@ -1231,6 +1320,7 @@
             cartPage.scrollTop = 0;
             cartIsOpen = true;
             history.pushState({ cartOpen: true }, '');
+            await validateCartStock();
         }
 
         function closeCart() {
@@ -1310,6 +1400,7 @@
                             console.log('Payment submitted:', formData);
                             alert('Pedido recibido! Te contactaremos para completar el pago.');
                             cart = [];
+                            saveCart();
                             updateCartBadge();
                             closeCart();
                             resolve();
