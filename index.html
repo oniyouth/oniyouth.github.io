@@ -627,6 +627,23 @@
             .pd-sz { width: 44px; height: 44px; font-size: 0.65rem; }
         }
 
+        /* ===== Estados de catálogo (Fase 3) ===== */
+        .grid-status {
+            grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;
+            color: var(--text2); font: 400 0.75rem 'Syne', sans-serif;
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+        .product-card.sold-out .product-img-wrap img { opacity: 0.5; filter: grayscale(0.4); }
+        .product-badge-sold {
+            position: absolute; top: 10px; left: 10px; z-index: 3;
+            background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.3);
+            font: 700 0.55rem 'Syne', sans-serif; letter-spacing: 2px;
+            padding: 5px 9px; text-transform: uppercase;
+        }
+        .pd-sz.agotada {
+            opacity: 0.35; cursor: not-allowed; text-decoration: line-through;
+        }
+        .pd-sz.agotada:hover { border-color: var(--border); }
 
     </style>
 </head>
@@ -678,31 +695,8 @@
             </div>
         </div>
         <div class="products-grid" id="track">
-                <div class="product-card" data-p="oneoniyouth" onclick="openProduct('oneoniyouth')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-oneoniyouth-front.png" alt="ONIYOUTH TRIBAL TEE">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">T-shirt</div>
-                        <div class="product-name">ONIYOUTH TRIBAL TEE</div>
-                        <div class="product-price">S/ 89.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="oniyouthstars" onclick="openProduct('oniyouthstars')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-oniyouthstars-front.png" alt="oniyouth stars">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">T-shirt</div>
-                        <div class="product-name">oniyouth stars</div>
-                        <div class="product-price">S/ 89.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-            </div>
+            <div class="grid-status" id="gridStatus">Cargando coleccion...</div>
+        </div>
     </div>
 
     <!-- PRODUCT DETAIL — ONIYOUTH STYLE -->
@@ -729,13 +723,7 @@
                 <div class="pd-name" id="pdName"></div>
                 <div class="pd-price" id="pdPrice"></div>
                 <div class="pd-sizes-label">Talla</div>
-                <div class="pd-sizes" id="pdSizes">
-                    <button class="pd-sz" onclick="selSz(this)">XS</button>
-                    <button class="pd-sz" onclick="selSz(this)">S</button>
-                    <button class="pd-sz sel" onclick="selSz(this)">M</button>
-                    <button class="pd-sz" onclick="selSz(this)">L</button>
-                    <button class="pd-sz" onclick="selSz(this)">XL</button>
-                </div>
+                <div class="pd-sizes" id="pdSizes"></div>
                 <button class="pd-add-btn" id="pdAddBtn" onclick="addCart(this)">AGREGAR A LA BOLSA</button>
                 <div class="pd-desc" id="pdDesc"></div>
             </div>
@@ -827,11 +815,85 @@
             }
         }
 
-        // ===== PRODUCT DATA =====
-        const data = {
-            oneoniyouth: { name: 'ONIYOUTH TRIBAL TEE', cat: 'T-shirt', price: 'S/ 89.99', desc: 'T-shirt 100% cotton 20/1\nEstampado DTG ESTRIBAL "ONIYOUTH"', slides: ['assets/images/product-oneoniyouth-front.png','assets/images/product-oneoniyouth-back.png'] },
-            oniyouthstars: { name: 'oniyouth stars', cat: 'T-shirt', price: 'S/ 89.99', desc: 'T-shirt 100% cotton 20/1\nEstampado DTG ESTRIBAL en la espalda y en el pecho "ONIYOUTH STARS"', slides: ['assets/images/product-oniyouthstars-front.png','assets/images/product-oniyouthstars-back.png'] }
-        };
+        // ===== CONFIG PÚBLICA (Supabase) =====
+        // La anon key es pública por diseño: el acceso a datos lo restringe RLS
+        // (verificado tabla por tabla). NO es un secreto. Sin build, va directo aquí.
+        const SUPABASE_URL      = 'https://oblekapcdajpueiteukv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ibGVrYXBjZGFqcHVlaXRldWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDkxNjAsImV4cCI6MjEwMjQ4NTE2MH0.PN5wYLnftHUhVDct_cggSBnLwsvH7x10GrSY9YMiJvQ'; // pública — reemplazar
+
+        // ===== CATÁLOGO (desde Supabase, solo lectura vía RLS) =====
+        let data = {};        // id -> producto
+        let districts = [];   // se llena en la Fase 5
+
+        const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+        function sizeRank(t) { const i = SIZE_ORDER.indexOf(String(t || '').toUpperCase()); return i < 0 ? 99 : i; }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        async function sbFetch(path) {
+            const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY }
+            });
+            if (!r.ok) throw new Error('Supabase ' + r.status);
+            return r.json();
+        }
+
+        async function loadCatalog() {
+            const rows = await sbFetch(
+                'productos?activo=eq.true' +
+                '&select=id,nombre,descripcion,precio,categoria,imagenes,orden,variantes(id,talla,stock,sku)' +
+                '&order=orden.asc'
+            );
+            data = {};
+            rows.forEach(p => {
+                const variantes = (p.variantes || []).slice().sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
+                const soldOut = variantes.length > 0 && variantes.every(v => (v.stock || 0) <= 0);
+                const precioNum = Number(p.precio) || 0;
+                const imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : ['assets/images/logo.png'];
+                data[p.id] = {
+                    id: p.id, name: p.nombre, cat: p.categoria || '',
+                    priceNum: precioNum, price: 'S/ ' + precioNum.toFixed(2),
+                    desc: p.descripcion || '', slides: imgs,
+                    variantes: variantes, soldOut: soldOut
+                };
+            });
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const track = document.getElementById('track');
+            if (!track) return;
+            const list = Object.values(data);
+            if (list.length === 0) {
+                track.innerHTML = '<div class="grid-status">No hay productos disponibles.</div>';
+                return;
+            }
+            // Agotados al final (el sort estable conserva el orden por "orden")
+            list.sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0));
+            track.innerHTML = list.map(p =>
+                '<div class="product-card' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" onclick="openProduct(\'' + p.id + '\')">' +
+                    '<div class="product-img-wrap">' +
+                        '<img src="' + escapeHtml(p.slides[0]) + '" alt="' + escapeHtml(p.name) + '" loading="lazy">' +
+                        '<div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>' +
+                        (p.soldOut ? '<div class="product-badge-sold">AGOTADO</div>' : '') +
+                    '</div>' +
+                    '<div class="product-info">' +
+                        '<div class="product-cat">' + escapeHtml(p.cat) + '</div>' +
+                        '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+                        '<div class="product-price">' + p.price + '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
+        }
+
+        // Carga inicial del catálogo
+        loadCatalog().catch(err => {
+            console.error('Error cargando catálogo:', err);
+            const track = document.getElementById('track');
+            if (track) track.innerHTML = '<div class="grid-status">No se pudo cargar la coleccion. Recarga la pagina.</div>';
+        });
 
         // ===== PRODUCT DETAIL (Carousel) =====
         const productDetail = document.getElementById('productDetail');
@@ -893,15 +955,38 @@
             document.getElementById('pdName').textContent = p.name;
             document.getElementById('pdPrice').textContent = p.price;
             document.getElementById('pdDesc').textContent = p.desc;
-            document.querySelectorAll('.pd-sz').forEach((s, i) => { s.classList.remove('sel'); if (i === 2) s.classList.add('sel'); });
+
+            // Tallas dinámicas desde variantes. Sin stock => tachada y deshabilitada.
+            const sizesEl = document.getElementById('pdSizes');
+            sizesEl.innerHTML = '';
+            sizeSelected = false;
+            let firstAvailable = null;
+            (p.variantes || []).forEach(v => {
+                const btn = document.createElement('button');
+                btn.className = 'pd-sz';
+                btn.textContent = v.talla;
+                btn.dataset.varianteId = v.id;
+                btn.dataset.stock = v.stock;
+                if ((v.stock || 0) <= 0) {
+                    btn.classList.add('agotada');
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => selSz(btn);
+                    if (!firstAvailable) firstAvailable = btn;
+                }
+                sizesEl.appendChild(btn);
+            });
+            if (firstAvailable) { firstAvailable.classList.add('sel'); sizeSelected = true; }
 
             slideCount = p.slides.length;
             currentSlide = 0;
-            sizeSelected = true;
             currentProductData = p;
 
             const addBtn = document.getElementById('pdAddBtn');
-            if (addBtn) addBtn.textContent = 'AGREGAR A LA BOLSA';
+            if (addBtn) {
+                if (p.soldOut) { addBtn.textContent = 'AGOTADO'; addBtn.disabled = true; }
+                else { addBtn.textContent = 'AGREGAR A LA BOLSA'; addBtn.disabled = false; }
+            }
 
             // Set main image
             document.getElementById('pdMainImg').src = p.slides[0];
@@ -1049,27 +1134,31 @@
         }
 
         function addCart(btn) {
-            if (!sizeSelected) {
-                document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
+            if (!currentProductData) return;
+            const sel = document.querySelector('.pd-sz.sel');
+            if (!sel || sel.disabled) {
+                document.querySelectorAll('.pd-sz:not(.agotada)').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
                 return;
             }
-            if (!currentProductData) return;
 
-            const size = getSelectedSize();
-            const priceNum = parseFloat(currentProductData.price.replace(/[^\d.]/g, ''));
+            const p = currentProductData;
+            const size = sel.textContent;
+            const varianteId = sel.dataset.varianteId;
 
-            // Check if same product + size already in cart
-            const existing = cart.find(item => item.name === currentProductData.name && item.size === size);
+            // Mismo variante (producto + talla) ya en la bolsa => suma cantidad
+            const existing = cart.find(item => item.variante_id === varianteId);
             if (existing) {
                 existing.qty++;
             } else {
                 cart.push({
-                    name: currentProductData.name,
-                    cat: currentProductData.cat,
-                    price: currentProductData.price,
-                    priceNum: priceNum,
+                    producto_id: p.id,
+                    variante_id: varianteId,
+                    name: p.name,
+                    cat: p.cat,
+                    price: p.price,
+                    priceNum: p.priceNum,
                     size: size,
-                    img: currentProductData.slides[0],
+                    img: p.slides[0],
                     qty: 1
                 });
             }
