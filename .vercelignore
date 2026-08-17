@@ -1,5 +1,6 @@
 # Archivos que NO deben publicarse en el sitio
 PLAN.md
+ESTADO.md
 db/
 supabase/
 CNAME
