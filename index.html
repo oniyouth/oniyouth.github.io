@@ -1773,8 +1773,12 @@
 
             // Fase 7a: el pago aún no está habilitado, pero el pedido quedó creado.
             if (data.mp_configurado === false && data.pedido) {
-                setCheckoutMsg('Pedido ' + data.pedido.codigo + ' registrado (total S/ ' +
-                    Number(data.pedido.total).toFixed(2) + '). El pago se habilitará pronto.', 'ok');
+                const cod = data.pedido.codigo;
+                const el = document.getElementById('checkoutMsg');
+                el.className = 'cart-checkout-msg ok';
+                el.innerHTML = 'Pedido <strong>' + escapeHtml(cod) + '</strong> registrado (total S/ ' +
+                    Number(data.pedido.total).toFixed(2) + '). El pago se habilitara pronto.<br>' +
+                    '<a href="/pedido?codigo=' + encodeURIComponent(cod) + '" style="color:#7CFC9A;text-decoration:underline;">Seguir mi pedido</a>';
                 return;
             }
 
