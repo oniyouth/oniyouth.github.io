@@ -97,7 +97,7 @@
 
     <script>
         const ESTADOS = ['pendiente', 'pagado', 'enviado', 'entregado'];
-        const ESTADO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', enviado: 'Enviado', entregado: 'Entregado', rechazado: 'Rechazado', cancelado: 'Cancelado' };
+        const ESTADO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', enviado: 'Enviado', entregado: 'Entregado', rechazado: 'Rechazado', cancelado: 'Cancelado', contraentrega: 'Contraentrega' };
 
         function escapeHtml(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -128,6 +128,15 @@
         function renderStepper(estado) {
             if (estado === 'rechazado' || estado === 'cancelado') {
                 return '<div class="estado-neg">Pedido ' + escapeHtml(ESTADO_LABEL[estado] || estado) + '</div>';
+            }
+            if (estado === 'contraentrega') {
+                const pasos = [['contraentrega', 'Confirmado'], ['enviado', 'Enviado'], ['entregado', 'Entregado']];
+                const stepper = pasos.map((s, i) => {
+                    const cls = i === 0 ? 'current' : '';
+                    return '<div class="step ' + cls + '"><div class="dot"></div><div class="lbl">' + s[1] + '</div></div>';
+                }).join('');
+                return '<div class="estado-neg" style="border-color:#7CFC9A;color:#7CFC9A;">Contraentrega — pagas al recibir</div>' +
+                    '<div class="steps">' + stepper + '</div>';
             }
             const idx = ESTADOS.indexOf(estado);
             return '<div class="steps">' + ESTADOS.map((s, i) => {

@@ -34,10 +34,10 @@ module.exports = async function handler(req, res) {
     const p = Array.isArray(rows) && rows[0];
     if (!p) return res.status(404).json({ error: 'no_encontrado', mensaje: 'No encontramos un pedido con ese código' });
 
-    // Días estimados: se busca por el nombre de distrito guardado (si aún existe)
+    // Días estimados: se busca por el nombre de zona guardado (si aún existe)
     let dias_estimados = null;
     if (p.distrito) {
-      const rd = await sb('distritos?select=dias_estimados&nombre=eq.' + encodeURIComponent(p.distrito) + '&limit=1');
+      const rd = await sb('zonas_envio?select=dias_estimados&nombre=eq.' + encodeURIComponent(p.distrito) + '&limit=1');
       if (rd.ok) { const d = await rd.json(); if (Array.isArray(d) && d[0]) dias_estimados = d[0].dias_estimados; }
     }
 

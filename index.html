@@ -304,6 +304,24 @@
         .cart-checkout-msg.error { color: #ff5a5a; }
         .cart-checkout-msg.ok { color: #7CFC9A; }
 
+        /* Nota de progreso de envío gratis / contraentrega (Fase zonas) */
+        .cart-envio-note {
+            font: 400 0.68rem 'Syne', sans-serif; letter-spacing: 0.5px;
+            color: var(--text2); min-height: 1em; margin: 0.2rem 0 0.4rem;
+        }
+        .cart-envio-note.free { color: #7CFC9A; }
+
+        /* Confirmación de pedido (contraentrega / futuro pago) */
+        .cart-confirm { text-align: center; padding: 3.5rem 1rem; }
+        .cart-confirm .cc-check {
+            width: 56px; height: 56px; margin: 0 auto 1.2rem; border-radius: 50%;
+            border: 2px solid #7CFC9A; color: #7CFC9A; font-size: 1.6rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cart-confirm .cc-title { font: 400 0.85rem 'Syne', sans-serif; color: var(--text2); letter-spacing: 1px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+        .cart-confirm .cc-code { font: 700 1.4rem 'Syne', sans-serif; letter-spacing: 2px; margin: 1rem 0; }
+        .cart-confirm .cc-link { display: inline-block; margin-top: 0.5rem; color: #fff; text-decoration: underline; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; }
+
 
         @media (max-width: 900px) {
             .cart-btn { top: 0.8rem; right: 0.8rem; }
@@ -835,9 +853,9 @@
                     <input type="email" id="shipEmail" placeholder="tucorreo@ejemplo.com" oninput="saveShipping()" autocomplete="email">
                 </label>
                 <label class="cart-field" id="fieldDistrito">
-                    <span>Distrito</span>
+                    <span>Zona de envio</span>
                     <select id="shipDistrito" onchange="onDistritoChange()">
-                        <option value="">Cargando distritos...</option>
+                        <option value="">Cargando zonas...</option>
                     </select>
                 </label>
                 <div class="cart-ship-note" id="shipNote"></div>
@@ -878,6 +896,7 @@
                     <span class="cart-total-label">Envio</span>
                     <span class="cart-total-sub" id="cartEnvio">&mdash;</span>
                 </div>
+                <div class="cart-envio-note" id="envioNote"></div>
                 <div class="cart-total-row">
                     <span class="cart-total-label">Total</span>
                     <span class="cart-total-amount" id="cartTotal">S/ 0.00</span>
@@ -988,7 +1007,7 @@
 
         async function loadDistricts() {
             try {
-                districts = await sbFetch('distritos?select=nombre,costo_envio,dias_estimados&order=nombre.asc');
+                districts = await sbFetch('zonas_envio?select=nombre,costo_envio,dias_estimados,contraentrega&order=nombre.asc');
             } catch (e) {
                 console.error('No se pudieron cargar los distritos:', e);
                 districts = [];
@@ -1000,20 +1019,26 @@
             populateDistritoSelect();
         }
 
+        // Envío gratis por encima de este subtotal (solo VISUAL; el servidor
+        // recalcula y manda). Estricto: > 299.
+        const UMBRAL_ENVIO_GRATIS = 299;
+
         function populateDistritoSelect() {
             const sel = document.getElementById('shipDistrito');
             if (!sel) return;
             if (districts.length === 0) {
-                sel.innerHTML = '<option value="">No hay distritos disponibles aun</option>';
+                sel.innerHTML = '<option value="">No hay zonas disponibles aun</option>';
                 sel.disabled = true;
             } else {
                 sel.disabled = false;
-                sel.innerHTML = '<option value="">Selecciona tu distrito...</option>' +
-                    districts.map(d =>
-                        '<option value="' + escapeHtml(d.nombre) + '">' +
-                        escapeHtml(d.nombre) + ' — S/ ' + (Number(d.costo_envio) || 0).toFixed(2) +
-                        '</option>'
-                    ).join('');
+                sel.innerHTML = '<option value="">Selecciona tu zona...</option>' +
+                    districts.map(d => {
+                        const etiqueta = d.contraentrega
+                            ? 'Contraentrega'
+                            : 'S/ ' + (Number(d.costo_envio) || 0).toFixed(2);
+                        return '<option value="' + escapeHtml(d.nombre) + '">' +
+                            escapeHtml(d.nombre) + ' — ' + etiqueta + '</option>';
+                    }).join('');
                 if (shipping.distrito) sel.value = shipping.distrito;
             }
             updateShipNote();
@@ -1023,25 +1048,29 @@
             const note = document.getElementById('shipNote');
             if (!note) return;
             const d = districtByName[shipping.distrito];
-            note.textContent = d
-                ? 'Entrega estimada: ' + d.dias_estimados + (Number(d.dias_estimados) === 1 ? ' dia habil' : ' dias habiles')
-                : '';
+            if (!d) { note.textContent = ''; return; }
+            if (d.contraentrega) { note.textContent = 'Contraentrega — pagas al recibir'; return; }
+            note.textContent = 'Entrega estimada: ' + d.dias_estimados +
+                (Number(d.dias_estimados) === 1 ? ' dia habil' : ' dias habiles');
         }
 
-        function getEnvio() {
-            const d = districtByName[shipping.distrito];
-            return d ? (Number(d.costo_envio) || 0) : 0;
-        }
-
-        // Resumen de importes. El descuento del cupón lo fija el SERVIDOR
-        // (/api/validar-cupon); el navegador solo lo muestra, nunca lo calcula.
+        // Resumen de importes. Reglas de envío (contraentrega y gratis > 299)
+        // se muestran aquí solo para UX; el SERVIDOR (crear-preferencia)
+        // recalcula todo y es el que manda. El descuento del cupón también
+        // viene del servidor.
         function getCartSummary() {
             const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
-            const envio = getEnvio();
+            const z = districtByName[shipping.distrito] || null;
+            const contraentrega = !!(z && z.contraentrega);
+            let envio = 0, envioGratis = false;
+            if (z && !contraentrega) {
+                if (subtotal > UMBRAL_ENVIO_GRATIS) { envio = 0; envioGratis = true; }
+                else { envio = Number(z.costo_envio) || 0; }
+            }
             let descuento = (coupon && coupon.valido) ? (Number(coupon.descuento) || 0) : 0;
             if (descuento > subtotal) descuento = subtotal;   // nunca más que el subtotal
             const total = Math.max(0, subtotal - descuento + envio);
-            return { subtotal, envio, descuento, total };
+            return { subtotal, envio, descuento, total, envioGratis, contraentrega, zona: z };
         }
 
         function onDistritoChange() {
@@ -1600,8 +1629,35 @@
             const subEl = document.getElementById('cartSubtotal');
             const envEl = document.getElementById('cartEnvio');
             if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
-            if (envEl) envEl.textContent = shipping.distrito ? 'S/ ' + s.envio.toFixed(2) : '—';
+            if (envEl) {
+                if (!shipping.distrito) envEl.textContent = '—';
+                else if (s.contraentrega) envEl.textContent = 'Contraentrega';
+                else if (s.envioGratis) envEl.textContent = 'Gratis';
+                else envEl.textContent = 'S/ ' + s.envio.toFixed(2);
+            }
             document.getElementById('cartTotal').textContent = 'S/ ' + s.total.toFixed(2);
+
+            // Nota de envío: contraentrega, ya-gratis, o cuánto falta para el gratis
+            const envNote = document.getElementById('envioNote');
+            if (envNote) {
+                envNote.className = 'cart-envio-note';
+                if (s.contraentrega) {
+                    envNote.textContent = 'Pagas al recibir (contraentrega).';
+                } else if (s.envioGratis) {
+                    envNote.textContent = '¡Tienes envío gratis!';
+                    envNote.classList.add('free');
+                } else {
+                    const falta = UMBRAL_ENVIO_GRATIS - s.subtotal;
+                    envNote.textContent = falta > 0
+                        ? 'Te faltan S/ ' + falta.toFixed(2) + ' para envío gratis'
+                        : 'Agrega un poco más para envío gratis';
+                }
+            }
+
+            // El botón cambia a "confirmar" en contraentrega (no hay pago online)
+            const cbtn = document.getElementById('cartCheckoutBtn');
+            if (cbtn && !cbtn.disabled) cbtn.textContent = s.contraentrega ? 'CONFIRMAR PEDIDO' : 'PAGAR';
+
             footerEl.style.display = 'block';
         }
 
@@ -1764,6 +1820,14 @@
             // Errores de validación server-side
             if (!res.ok || data.error) { await handleCheckoutError(data); return; }
 
+            // Contraentrega: no hay pago online. El pedido ya quedó creado y el
+            // stock reservado en el servidor. Confirmamos y vaciamos la bolsa.
+            if (data.contraentrega && data.pedido) {
+                showOrderConfirmation(data.pedido.codigo,
+                    'Pedido registrado. Pagas al recibir; te contactaremos para coordinar la entrega.');
+                return;
+            }
+
             // Enganche con Checkout Pro (Fase 7b): cuando el servidor devuelva
             // init_point, aquí se abrirá el modal de pago de Mercado Pago.
             if (data.init_point) {
@@ -1783,6 +1847,27 @@
             }
 
             setCheckoutMsg('Pedido recibido. Te contactaremos para completar el pago.', 'ok');
+        }
+
+        // Vacía la bolsa y muestra una confirmación con enlace de seguimiento.
+        // Se usa cuando el pedido queda cerrado sin pago online (contraentrega;
+        // en Fase 7b también tras un pago aprobado).
+        function showOrderConfirmation(codigo, mensaje) {
+            cart = []; saveCart();
+            coupon = null; saveCoupon();
+            updateCartBadge();
+            const shipEl = document.getElementById('cartShipping');
+            const footEl = document.getElementById('cartFooter');
+            if (shipEl) shipEl.style.display = 'none';
+            if (footEl) footEl.style.display = 'none';
+            showCartNotice(null);
+            document.getElementById('cartItems').innerHTML =
+                '<div class="cart-confirm">' +
+                    '<div class="cc-check">&#10003;</div>' +
+                    '<div class="cc-title">' + escapeHtml(mensaje) + '</div>' +
+                    '<div class="cc-code">' + escapeHtml(codigo) + '</div>' +
+                    '<a class="cc-link" href="/pedido?codigo=' + encodeURIComponent(codigo) + '">Seguir mi pedido</a>' +
+                '</div>';
         }
 
         // Traduce los errores del servidor a la UI y reconcilia la bolsa.

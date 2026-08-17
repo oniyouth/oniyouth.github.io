@@ -22,8 +22,20 @@
 const crypto = require('crypto');
 const { setCors, money, configOK, parseBody, sb, fetchCupon, evaluarCupon } = require('./_lib/store');
 
+// Envío gratis por encima de este subtotal (estricto: > 299). Regla de
+// negocio global; se aplica SOLO en el servidor.
+const UMBRAL_ENVIO_GRATIS = 299;
+
 function codigoPedido() {
   return 'ONI-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // ONI-XXXXXXXX
+}
+
+// Notificación al vendedor de un pedido contraentrega (Fase 9: stub).
+async function notificarContraentrega(pedido) {
+  try {
+    // TODO Fase 9: avisar al vendedor (WhatsApp/correo) para coordinar la entrega.
+    return;
+  } catch (e) { console.error('notificarContraentrega:', e); }
 }
 
 module.exports = async function handler(req, res) {
@@ -99,14 +111,19 @@ module.exports = async function handler(req, res) {
     if (sinStock.length) return res.status(409).json({ error: 'stock', items: sinStock, mensaje: 'No hay stock suficiente para algunos artículos' });
     subtotal = money(subtotal);
 
-    // --- 3a. Envío desde la tabla distritos ---
-    const rd = await sb('distritos?select=nombre,costo_envio,dias_estimados&nombre=eq.' +
+    // --- 3a. Envío desde la tabla zonas_envio ---
+    const rd = await sb('zonas_envio?select=nombre,costo_envio,dias_estimados,contraentrega&nombre=eq.' +
       encodeURIComponent(distritoN) + '&limit=1');
-    if (!rd.ok) throw new Error('distritos ' + rd.status);
+    if (!rd.ok) throw new Error('zonas_envio ' + rd.status);
     const dRows = await rd.json();
-    const distrito = Array.isArray(dRows) && dRows[0];
-    if (!distrito) return res.status(400).json({ error: 'distrito', mensaje: 'Distrito no válido' });
-    const envio = money(distrito.costo_envio);
+    const zona = Array.isArray(dRows) && dRows[0];
+    if (!zona) return res.status(400).json({ error: 'distrito', mensaje: 'Zona de envío no válida' });
+
+    const esContraentrega = zona.contraentrega === true;
+    // Envío: contraentrega y "envío gratis > 299" se deciden AQUÍ (server).
+    let envio;
+    if (esContraentrega) envio = 0;
+    else envio = (subtotal > UMBRAL_ENVIO_GRATIS) ? 0 : money(zona.costo_envio);
 
     // --- 3b. Cupón recalculado en el servidor ---
     let descuento = 0;
@@ -121,10 +138,10 @@ module.exports = async function handler(req, res) {
 
     const total = money(Math.max(0, subtotal - descuento + envio));
 
-    // --- 4. Crear pedido 'pendiente' (sin tocar stock; eso va en el webhook) ---
+    // --- 4. Crear pedido (pendiente para pago online; contraentrega si aplica) ---
     const pedido = {
       codigo: codigoPedido(),
-      estado: 'pendiente',
+      estado: esContraentrega ? 'contraentrega' : 'pendiente',
       items: pedidoItems,
       subtotal, envio, descuento, total,
       cliente_nombre: nombre,
@@ -149,15 +166,30 @@ module.exports = async function handler(req, res) {
     }
     if (!pedidoRow) return res.status(500).json({ error: 'pedido', mensaje: 'No se pudo crear el pedido' });
 
-    const resumen = { codigo: pedidoRow.codigo, subtotal, descuento, envio, total, cupon: cuponAplicado };
+    const resumen = { codigo: pedidoRow.codigo, subtotal, descuento, envio, total, cupon: cuponAplicado, contraentrega: esContraentrega };
 
-    // --- 5. Preferencia de Mercado Pago (Fase 7b) ---
-    if (!process.env.MP_ACCESS_TOKEN) {
-      // Aún sin token: el pedido queda registrado, sin pago habilitado.
+    // --- 5a. Contraentrega: sin pago online. Reserva stock ya y notifica. ---
+    if (esContraentrega) {
+      const itemsRpc = pedidoItems.map(it => ({ variante_id: it.variante_id, cantidad: it.qty }));
+      const rRes = await sb('rpc/descontar_stock_pedido', { method: 'POST', body: JSON.stringify({ p_items: itemsRpc }) });
+      if (!rRes.ok) {
+        // Carrera de stock: se cancela el pedido recién creado y se informa.
+        await sb('pedidos?codigo=eq.' + encodeURIComponent(pedidoRow.codigo), {
+          method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ estado: 'cancelado' })
+        });
+        return res.status(409).json({ error: 'stock', mensaje: 'No hay stock suficiente para algunos artículos' });
+      }
+      await notificarContraentrega(pedidoRow);
       return res.status(200).json({
-        ok: true,
-        mp_configurado: false,
-        pedido: resumen,
+        ok: true, contraentrega: true, pedido: resumen,
+        mensaje: 'Pedido registrado. Pagas al recibir; te contactaremos para coordinar.'
+      });
+    }
+
+    // --- 5b. Pago online: preferencia de Mercado Pago (Fase 7b) ---
+    if (!process.env.MP_ACCESS_TOKEN) {
+      return res.status(200).json({
+        ok: true, mp_configurado: false, pedido: resumen,
         mensaje: 'Pedido registrado. El pago aún no está habilitado.'
       });
     }
