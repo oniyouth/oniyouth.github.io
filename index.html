@@ -259,6 +259,43 @@
         .cart-total-sub { font: 500 0.85rem 'Syne', sans-serif; color: var(--text2); }
         .cart-total-row + .cart-total-row { margin-top: 0.5rem; }
 
+        /* ===== Cupón (Fase 6) ===== */
+        .cart-coupon { margin-bottom: 1.2rem; }
+        .cart-coupon-input { display: flex; gap: 8px; }
+        .cart-coupon-input input {
+            flex: 1; padding: 12px 14px;
+            background: rgba(255,255,255,0.04); color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            font: 400 0.8rem 'Syne', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .cart-coupon-input input::placeholder { color: rgba(255,255,255,0.25); text-transform: none; }
+        .cart-coupon-input input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+        .cart-coupon-input button {
+            padding: 0 18px; background: transparent; color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            font: 700 0.62rem 'Syne', sans-serif; letter-spacing: 2px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cart-coupon-input button:hover { background: #fff; color: #000; }
+        .cart-coupon-input button:disabled { opacity: 0.4; cursor: default; }
+        .cart-coupon-applied {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 10px 14px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+            font: 600 0.72rem 'Syne', sans-serif; color: #fff; letter-spacing: 1px;
+        }
+        .cart-coupon-remove {
+            background: none; border: none; color: var(--text2); cursor: pointer;
+            font: 400 0.65rem 'Syne', sans-serif; text-transform: uppercase; letter-spacing: 1px;
+            text-decoration: underline; padding: 0;
+        }
+        .cart-coupon-remove:hover { color: #fff; }
+        .cart-coupon-msg {
+            font: 400 0.68rem 'Syne', sans-serif; letter-spacing: 1px; margin-top: 0.5rem; min-height: 1em;
+        }
+        .cart-coupon-msg.error { color: #ff5a5a; }
+        .cart-coupon-msg.ok { color: #7CFC9A; }
+
         /* MP Payment Brick container */
         #mpPaymentBrick {
             margin-top: 1.5rem;
@@ -816,9 +853,24 @@
                 </label>
             </div>
             <div class="cart-footer" id="cartFooter" style="display:none;">
+                <div class="cart-coupon">
+                    <div class="cart-coupon-input" id="couponInputRow">
+                        <input type="text" id="couponCode" placeholder="Codigo de cupon" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                        <button type="button" id="couponApplyBtn" onclick="applyCoupon()">APLICAR</button>
+                    </div>
+                    <div class="cart-coupon-applied" id="couponApplied" style="display:none;">
+                        <span id="couponAppliedText"></span>
+                        <button type="button" class="cart-coupon-remove" onclick="removeCoupon()">Quitar</button>
+                    </div>
+                    <div class="cart-coupon-msg" id="couponMsg"></div>
+                </div>
                 <div class="cart-total-row">
                     <span class="cart-total-label">Subtotal</span>
                     <span class="cart-total-sub" id="cartSubtotal">S/ 0.00</span>
+                </div>
+                <div class="cart-total-row" id="rowDescuento" style="display:none;">
+                    <span class="cart-total-label">Descuento</span>
+                    <span class="cart-total-sub" id="cartDescuento">&mdash;</span>
                 </div>
                 <div class="cart-total-row">
                     <span class="cart-total-label">Envio</span>
@@ -975,11 +1027,15 @@
             return d ? (Number(d.costo_envio) || 0) : 0;
         }
 
-        // Resumen de importes. El descuento (cupón) se suma en la Fase 6.
+        // Resumen de importes. El descuento del cupón lo fija el SERVIDOR
+        // (/api/validar-cupon); el navegador solo lo muestra, nunca lo calcula.
         function getCartSummary() {
             const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
             const envio = getEnvio();
-            return { subtotal, envio, total: subtotal + envio };
+            let descuento = (coupon && coupon.valido) ? (Number(coupon.descuento) || 0) : 0;
+            if (descuento > subtotal) descuento = subtotal;   // nunca más que el subtotal
+            const total = Math.max(0, subtotal - descuento + envio);
+            return { subtotal, envio, descuento, total };
         }
 
         function onDistritoChange() {
@@ -996,6 +1052,116 @@
             const sel = document.getElementById('shipDistrito');
             if (sel && shipping.distrito && districtByName[shipping.distrito]) sel.value = shipping.distrito;
             updateShipNote();
+        }
+
+        // ===== CUPÓN (Fase 6) — la validación SIEMPRE es del servidor =====
+        // El navegador nunca decide el descuento: llama a /api/validar-cupon y
+        // solo muestra lo que responde. Persistimos SOLO el código (no el monto);
+        // se re-valida al abrir la bolsa y el importe final lo recalcula
+        // /api/crear-preferencia (Fase 7). Requiere backend (Vercel), no Pages.
+        const COUPON_KEY = 'oy-coupon';
+        const COUPON_API = '/api/validar-cupon';
+        let coupon = loadCoupon();   // { codigo, descuento, valido } | null
+
+        function loadCoupon() {
+            try {
+                const c = JSON.parse(localStorage.getItem(COUPON_KEY) || 'null');
+                if (c && c.codigo) return { codigo: String(c.codigo), descuento: 0, valido: false };
+            } catch (e) {}
+            return null;
+        }
+
+        function saveCoupon() {
+            try {
+                if (coupon && coupon.codigo) localStorage.setItem(COUPON_KEY, JSON.stringify({ codigo: coupon.codigo }));
+                else localStorage.removeItem(COUPON_KEY);
+            } catch (e) {}
+        }
+
+        function setCouponMsg(text, kind) {
+            const el = document.getElementById('couponMsg');
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'cart-coupon-msg' + (kind ? ' ' + kind : '');
+        }
+
+        async function requestCouponValidation(codigo) {
+            const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
+            const r = await fetch(COUPON_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo, subtotal })
+            });
+            return r.json();
+        }
+
+        async function applyCoupon() {
+            const input = document.getElementById('couponCode');
+            const codigo = (input ? input.value : '').trim().toUpperCase();
+            if (!codigo) { setCouponMsg('Ingresa un codigo', 'error'); return; }
+            const btn = document.getElementById('couponApplyBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            setCouponMsg('Validando...', '');
+            try {
+                const res = await requestCouponValidation(codigo);
+                if (res && res.valido) {
+                    coupon = { codigo: res.codigo, descuento: Number(res.descuento) || 0, valido: true };
+                    saveCoupon();
+                    setCouponMsg('', '');
+                } else {
+                    coupon = null; saveCoupon();
+                    setCouponMsg((res && res.mensaje) || 'Cupon invalido', 'error');
+                }
+            } catch (e) {
+                console.error('applyCoupon:', e);
+                setCouponMsg('No se pudo validar el cupon', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'APLICAR'; }
+                renderCart();
+            }
+        }
+
+        function removeCoupon() {
+            coupon = null;
+            saveCoupon();
+            setCouponMsg('', '');
+            const input = document.getElementById('couponCode');
+            if (input) input.value = '';
+            renderCart();
+        }
+
+        // Re-valida el cupón guardado al abrir la bolsa (el subtotal pudo cambiar).
+        async function revalidateCoupon() {
+            if (!coupon || !coupon.codigo) return;
+            try {
+                const res = await requestCouponValidation(coupon.codigo);
+                if (res && res.valido) {
+                    coupon = { codigo: res.codigo, descuento: Number(res.descuento) || 0, valido: true };
+                } else {
+                    setCouponMsg((res && res.mensaje) || 'El cupon ya no es valido', 'error');
+                    coupon = null;
+                }
+            } catch (e) {
+                // Sin servidor no se puede afirmar un descuento: no se aplica.
+                console.error('revalidateCoupon:', e);
+                if (coupon) coupon.valido = false;
+            }
+            saveCoupon();
+        }
+
+        // Refleja el estado del cupón en la UI. Recibe el descuento ya calculado.
+        function renderCouponUI(descuento) {
+            const inputRow = document.getElementById('couponInputRow');
+            const appliedRow = document.getElementById('couponApplied');
+            const appliedText = document.getElementById('couponAppliedText');
+            const rowDesc = document.getElementById('rowDescuento');
+            const descEl = document.getElementById('cartDescuento');
+            const applied = !!(coupon && coupon.valido && descuento > 0);
+            if (inputRow) inputRow.style.display = applied ? 'none' : 'flex';
+            if (appliedRow) appliedRow.style.display = applied ? 'flex' : 'none';
+            if (applied && appliedText) appliedText.textContent = 'Cupon ' + coupon.codigo;
+            if (rowDesc) rowDesc.style.display = applied ? 'flex' : 'none';
+            if (descEl) descEl.textContent = '- S/ ' + (Number(descuento) || 0).toFixed(2);
         }
 
         const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -1420,8 +1586,9 @@
             if (shippingEl) shippingEl.style.display = 'block';
             applyShippingToForm();
 
-            // Desglose Subtotal / Envío / Total
+            // Desglose Subtotal / Descuento / Envío / Total
             const s = getCartSummary();
+            renderCouponUI(s.descuento);
             const subEl = document.getElementById('cartSubtotal');
             const envEl = document.getElementById('cartEnvio');
             if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
@@ -1488,9 +1655,9 @@
             cartPage.scrollTop = 0;
             cartIsOpen = true;
             history.pushState({ cartOpen: true }, '');
-            // Carga distritos frescos y revalida stock; luego re-render para
-            // reflejar el envío y cualquier ajuste de la bolsa.
-            await Promise.all([loadDistricts(), validateCartStock()]);
+            // Carga distritos frescos, revalida stock y re-valida el cupón
+            // contra el servidor; luego re-render para reflejar todo.
+            await Promise.all([loadDistricts(), validateCartStock(), revalidateCoupon()]);
             if (cart.length > 0) renderCart();
         }
 
