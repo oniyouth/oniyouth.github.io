@@ -231,6 +231,34 @@
         .cart-notice ul { margin: 6px 0 0; padding-left: 16px; }
         .cart-notice.show { display: block; }
 
+        /* ===== Envío (Fase 5) ===== */
+        .cart-shipping { margin: 1.5rem 0 0; padding: 1.5rem 0 0; border-top: 1px solid rgba(255,255,255,0.06); }
+        .cart-section-title {
+            font: 600 0.7rem 'Syne', sans-serif; color: rgba(255,255,255,0.4);
+            text-transform: uppercase; letter-spacing: 3px; margin-bottom: 1.2rem;
+        }
+        .cart-field { display: block; margin-bottom: 1rem; }
+        .cart-field > span {
+            display: block; font: 400 0.62rem 'Syne', sans-serif; color: var(--text2);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.4rem;
+        }
+        .cart-field select, .cart-field input {
+            width: 100%; padding: 12px 14px;
+            background: rgba(255,255,255,0.04); color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            font: 400 0.85rem 'Syne', sans-serif; letter-spacing: 0.5px;
+        }
+        .cart-field select { appearance: none; cursor: pointer; }
+        .cart-field input::placeholder { color: rgba(255,255,255,0.25); }
+        .cart-field select:focus, .cart-field input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+        .cart-field.invalid select, .cart-field.invalid input { border-color: #ff5a5a; }
+        .cart-ship-note {
+            font: 400 0.68rem 'Syne', sans-serif; color: var(--text2);
+            letter-spacing: 1px; min-height: 1em; margin-top: 0.2rem;
+        }
+        .cart-total-sub { font: 500 0.85rem 'Syne', sans-serif; color: var(--text2); }
+        .cart-total-row + .cart-total-row { margin-top: 0.5rem; }
+
         /* MP Payment Brick container */
         #mpPaymentBrick {
             margin-top: 1.5rem;
@@ -765,7 +793,37 @@
             <div class="cart-items" id="cartItems">
                 <div class="cart-empty" id="cartEmpty">Tu bolsa esta vacia</div>
             </div>
+            <div class="cart-shipping" id="cartShipping" style="display:none;">
+                <div class="cart-section-title">Envio</div>
+                <label class="cart-field" id="fieldDistrito">
+                    <span>Distrito</span>
+                    <select id="shipDistrito" onchange="onDistritoChange()">
+                        <option value="">Cargando distritos...</option>
+                    </select>
+                </label>
+                <div class="cart-ship-note" id="shipNote"></div>
+                <label class="cart-field" id="fieldDireccion">
+                    <span>Direccion</span>
+                    <input type="text" id="shipDireccion" placeholder="Av. / Calle y numero" oninput="saveShipping()" autocomplete="street-address">
+                </label>
+                <label class="cart-field" id="fieldTelefono">
+                    <span>Telefono</span>
+                    <input type="tel" id="shipTelefono" placeholder="9XXXXXXXX" oninput="saveShipping()" autocomplete="tel">
+                </label>
+                <label class="cart-field">
+                    <span>Referencia (opcional)</span>
+                    <input type="text" id="shipReferencia" placeholder="Puerta, piso, indicaciones" oninput="saveShipping()">
+                </label>
+            </div>
             <div class="cart-footer" id="cartFooter" style="display:none;">
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Subtotal</span>
+                    <span class="cart-total-sub" id="cartSubtotal">S/ 0.00</span>
+                </div>
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Envio</span>
+                    <span class="cart-total-sub" id="cartEnvio">&mdash;</span>
+                </div>
                 <div class="cart-total-row">
                     <span class="cart-total-label">Total</span>
                     <span class="cart-total-amount" id="cartTotal">S/ 0.00</span>
@@ -836,7 +894,109 @@
 
         // ===== CATÁLOGO (desde Supabase, solo lectura vía RLS) =====
         let data = {};        // id -> producto
-        let districts = [];   // se llena en la Fase 5
+
+        // ===== ENVÍO / DISTRITOS (Fase 5) =====
+        // El costo de envío viene de la tabla `distritos` (lectura pública por RLS).
+        // La tabla puede estar vacía: se maneja con un estado deshabilitado.
+        // El total real se recalcula igualmente en /api antes de cobrar (Fase 7).
+        let districts = [];
+        let districtByName = {};          // nombre -> {costo_envio, dias_estimados}
+
+        const SHIP_KEY = 'oy-ship';
+        let shipping = loadShipping();
+
+        function loadShipping() {
+            try {
+                const s = JSON.parse(localStorage.getItem(SHIP_KEY) || '{}');
+                return {
+                    distrito:   s.distrito   || '',
+                    direccion:  s.direccion  || '',
+                    telefono:   s.telefono   || '',
+                    referencia: s.referencia || ''
+                };
+            } catch (e) { return { distrito: '', direccion: '', telefono: '', referencia: '' }; }
+        }
+
+        function saveShipping() {
+            const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            shipping = {
+                distrito:   g('shipDistrito'),
+                direccion:  g('shipDireccion'),
+                telefono:   g('shipTelefono'),
+                referencia: g('shipReferencia')
+            };
+            try { localStorage.setItem(SHIP_KEY, JSON.stringify(shipping)); } catch (e) {}
+        }
+
+        async function loadDistricts() {
+            try {
+                districts = await sbFetch('distritos?select=nombre,costo_envio,dias_estimados&order=nombre.asc');
+            } catch (e) {
+                console.error('No se pudieron cargar los distritos:', e);
+                districts = [];
+            }
+            districtByName = {};
+            districts.forEach(d => { districtByName[d.nombre] = d; });
+            // Si el distrito guardado ya no existe, lo limpiamos
+            if (shipping.distrito && !districtByName[shipping.distrito]) shipping.distrito = '';
+            populateDistritoSelect();
+        }
+
+        function populateDistritoSelect() {
+            const sel = document.getElementById('shipDistrito');
+            if (!sel) return;
+            if (districts.length === 0) {
+                sel.innerHTML = '<option value="">No hay distritos disponibles aun</option>';
+                sel.disabled = true;
+            } else {
+                sel.disabled = false;
+                sel.innerHTML = '<option value="">Selecciona tu distrito...</option>' +
+                    districts.map(d =>
+                        '<option value="' + escapeHtml(d.nombre) + '">' +
+                        escapeHtml(d.nombre) + ' — S/ ' + (Number(d.costo_envio) || 0).toFixed(2) +
+                        '</option>'
+                    ).join('');
+                if (shipping.distrito) sel.value = shipping.distrito;
+            }
+            updateShipNote();
+        }
+
+        function updateShipNote() {
+            const note = document.getElementById('shipNote');
+            if (!note) return;
+            const d = districtByName[shipping.distrito];
+            note.textContent = d
+                ? 'Entrega estimada: ' + d.dias_estimados + (Number(d.dias_estimados) === 1 ? ' dia habil' : ' dias habiles')
+                : '';
+        }
+
+        function getEnvio() {
+            const d = districtByName[shipping.distrito];
+            return d ? (Number(d.costo_envio) || 0) : 0;
+        }
+
+        // Resumen de importes. El descuento (cupón) se suma en la Fase 6.
+        function getCartSummary() {
+            const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
+            const envio = getEnvio();
+            return { subtotal, envio, total: subtotal + envio };
+        }
+
+        function onDistritoChange() {
+            saveShipping();
+            updateShipNote();
+            renderCart();
+        }
+
+        function applyShippingToForm() {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('shipDireccion', shipping.direccion);
+            set('shipTelefono', shipping.telefono);
+            set('shipReferencia', shipping.referencia);
+            const sel = document.getElementById('shipDistrito');
+            if (sel && shipping.distrito && districtByName[shipping.distrito]) sel.value = shipping.distrito;
+            updateShipNote();
+        }
 
         const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
         function sizeRank(t) { const i = SIZE_ORDER.indexOf(String(t || '').toUpperCase()); return i < 0 ? 99 : i; }
@@ -1233,23 +1393,23 @@
 
         function renderCart() {
             const itemsEl = document.getElementById('cartItems');
-            const emptyEl = document.getElementById('cartEmpty');
             const footerEl = document.getElementById('cartFooter');
-            const totalEl = document.getElementById('cartTotal');
+            const shippingEl = document.getElementById('cartShipping');
 
             if (cart.length === 0) {
                 itemsEl.innerHTML = '<div class="cart-empty">Tu bolsa esta vacia</div>';
                 footerEl.style.display = 'none';
+                if (shippingEl) shippingEl.style.display = 'none';
                 return;
             }
 
             let html = '';
             cart.forEach((item, i) => {
                 html += '<div class="cart-item">' +
-                    '<div class="cart-item-img"><img src="' + item.img + '" alt="' + item.name + '"></div>' +
+                    '<div class="cart-item-img"><img src="' + escapeHtml(item.img) + '" alt="' + escapeHtml(item.name) + '"></div>' +
                     '<div class="cart-item-info">' +
-                        '<div class="cart-item-name">' + item.name + '</div>' +
-                        '<div class="cart-item-meta">Talla: ' + item.size + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
+                        '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
+                        '<div class="cart-item-meta">Talla: ' + escapeHtml(item.size) + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
                         '<div class="cart-item-price">S/ ' + (item.priceNum * item.qty).toFixed(2) + '</div>' +
                     '</div>' +
                     '<button class="cart-item-remove" onclick="removeFromCart(' + i + ')">&times;</button>' +
@@ -1257,8 +1417,16 @@
             });
             itemsEl.innerHTML = html;
 
-            const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
-            totalEl.textContent = 'S/ ' + total.toFixed(2);
+            if (shippingEl) shippingEl.style.display = 'block';
+            applyShippingToForm();
+
+            // Desglose Subtotal / Envío / Total
+            const s = getCartSummary();
+            const subEl = document.getElementById('cartSubtotal');
+            const envEl = document.getElementById('cartEnvio');
+            if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
+            if (envEl) envEl.textContent = shipping.distrito ? 'S/ ' + s.envio.toFixed(2) : '—';
+            document.getElementById('cartTotal').textContent = 'S/ ' + s.total.toFixed(2);
             footerEl.style.display = 'block';
         }
 
@@ -1320,7 +1488,10 @@
             cartPage.scrollTop = 0;
             cartIsOpen = true;
             history.pushState({ cartOpen: true }, '');
-            await validateCartStock();
+            // Carga distritos frescos y revalida stock; luego re-render para
+            // reflejar el envío y cualquier ajuste de la bolsa.
+            await Promise.all([loadDistricts(), validateCartStock()]);
+            if (cart.length > 0) renderCart();
         }
 
         function closeCart() {
@@ -1338,9 +1509,37 @@
         // ===== MERCADO PAGO PAYMENT BRICK =====
         let mpBrickController = null;
 
+        // Valida los datos de envío antes de pagar. El servidor (Fase 7)
+        // recalcula y revalida todo igualmente; esto es solo UX.
+        function validateShippingForm() {
+            saveShipping();
+            ['fieldDistrito', 'fieldDireccion', 'fieldTelefono'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.remove('invalid');
+            });
+            if (districts.length === 0) {
+                alert('El envio aun no esta disponible. Intentalo mas tarde.');
+                return false;
+            }
+            const problems = [];
+            if (!shipping.distrito || !districtByName[shipping.distrito]) problems.push('fieldDistrito');
+            if (!shipping.direccion) problems.push('fieldDireccion');
+            if (!shipping.telefono) problems.push('fieldTelefono');
+            if (problems.length) {
+                problems.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('invalid'); });
+                const first = document.getElementById(problems[0]);
+                if (first) {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const f = first.querySelector('select, input'); if (f) f.focus();
+                }
+                return false;
+            }
+            return true;
+        }
+
         function checkout() {
             if (cart.length === 0) return;
-            const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
+            if (!validateShippingForm()) return;
+            const total = getCartSummary().total;
 
             // Hide checkout button, show loading
             document.getElementById('cartCheckoutBtn').style.display = 'none';
