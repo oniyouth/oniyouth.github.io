@@ -296,19 +296,13 @@
         .cart-coupon-msg.error { color: #ff5a5a; }
         .cart-coupon-msg.ok { color: #7CFC9A; }
 
-        /* MP Payment Brick container */
-        #mpPaymentBrick {
-            margin-top: 1.5rem;
+        /* Mensaje de checkout (estado del pedido / errores) */
+        .cart-checkout-msg {
+            font: 400 0.72rem 'Syne', sans-serif; letter-spacing: 1px;
+            margin-top: 0.8rem; line-height: 1.5; min-height: 1em; text-align: center;
         }
-        .cart-back-btn {
-            width: 100%; padding: 14px;
-            background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15);
-            font: 700 0.65rem 'Syne', sans-serif;
-            text-transform: uppercase; letter-spacing: 3px;
-            cursor: pointer; transition: all 0.3s;
-            margin-top: 0.8rem;
-        }
-        .cart-back-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+        .cart-checkout-msg.error { color: #ff5a5a; }
+        .cart-checkout-msg.ok { color: #7CFC9A; }
 
 
         @media (max-width: 900px) {
@@ -831,7 +825,15 @@
                 <div class="cart-empty" id="cartEmpty">Tu bolsa esta vacia</div>
             </div>
             <div class="cart-shipping" id="cartShipping" style="display:none;">
-                <div class="cart-section-title">Envio</div>
+                <div class="cart-section-title">Datos de envio</div>
+                <label class="cart-field" id="fieldNombre">
+                    <span>Nombre completo</span>
+                    <input type="text" id="shipNombre" placeholder="Nombre y apellido" oninput="saveShipping()" autocomplete="name">
+                </label>
+                <label class="cart-field" id="fieldEmail">
+                    <span>Email (para tu comprobante)</span>
+                    <input type="email" id="shipEmail" placeholder="tucorreo@ejemplo.com" oninput="saveShipping()" autocomplete="email">
+                </label>
                 <label class="cart-field" id="fieldDistrito">
                     <span>Distrito</span>
                     <select id="shipDistrito" onchange="onDistritoChange()">
@@ -881,13 +883,11 @@
                     <span class="cart-total-amount" id="cartTotal">S/ 0.00</span>
                 </div>
                 <button class="cart-checkout-btn" id="cartCheckoutBtn" onclick="checkout()">PAGAR</button>
-                <div id="mpPaymentBrick"></div>
-                <button class="cart-back-btn" id="cartBackBtn" style="display:none;" onclick="backToCart()">VOLVER A LA BOLSA</button>
+                <div class="cart-checkout-msg" id="checkoutMsg"></div>
             </div>
         </div>
     </div>
 
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script>
 
         const tgl = document.getElementById('toggle');
@@ -957,21 +957,27 @@
         const SHIP_KEY = 'oy-ship';
         let shipping = loadShipping();
 
+        const EMPTY_SHIP = { nombre: '', email: '', distrito: '', direccion: '', telefono: '', referencia: '' };
+
         function loadShipping() {
             try {
                 const s = JSON.parse(localStorage.getItem(SHIP_KEY) || '{}');
                 return {
+                    nombre:     s.nombre     || '',
+                    email:      s.email      || '',
                     distrito:   s.distrito   || '',
                     direccion:  s.direccion  || '',
                     telefono:   s.telefono   || '',
                     referencia: s.referencia || ''
                 };
-            } catch (e) { return { distrito: '', direccion: '', telefono: '', referencia: '' }; }
+            } catch (e) { return { ...EMPTY_SHIP }; }
         }
 
         function saveShipping() {
             const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
             shipping = {
+                nombre:     g('shipNombre'),
+                email:      g('shipEmail'),
                 distrito:   g('shipDistrito'),
                 direccion:  g('shipDireccion'),
                 telefono:   g('shipTelefono'),
@@ -1046,6 +1052,8 @@
 
         function applyShippingToForm() {
             const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('shipNombre', shipping.nombre);
+            set('shipEmail', shipping.email);
             set('shipDireccion', shipping.direccion);
             set('shipTelefono', shipping.telefono);
             set('shipReferencia', shipping.referencia);
@@ -1662,7 +1670,7 @@
         }
 
         function closeCart() {
-            backToCart();
+            setCheckoutMsg('', '');
             const cartPage = document.getElementById('cartPage');
             cartPage.classList.remove('active');
             document.body.style.overflow = '';
@@ -1673,24 +1681,35 @@
             }
         }
 
-        // ===== MERCADO PAGO PAYMENT BRICK =====
-        let mpBrickController = null;
+        // ===== CHECKOUT (Fase 7) =====
+        // El navegador NO calcula el pedido: solo envía variante_id+cantidades,
+        // distrito, cupón y datos del cliente a /api/crear-preferencia, que
+        // recalcula y valida TODO en el servidor. Requiere backend (Vercel).
+        const CREAR_PREF_API = '/api/crear-preferencia';
 
-        // Valida los datos de envío antes de pagar. El servidor (Fase 7)
-        // recalcula y revalida todo igualmente; esto es solo UX.
+        function setCheckoutMsg(text, kind) {
+            const el = document.getElementById('checkoutMsg');
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'cart-checkout-msg' + (kind ? ' ' + kind : '');
+        }
+
+        // Validación de UX antes de enviar. El servidor revalida igual.
         function validateShippingForm() {
             saveShipping();
-            ['fieldDistrito', 'fieldDireccion', 'fieldTelefono'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.classList.remove('invalid');
-            });
+            const FIELDS = ['fieldNombre', 'fieldDistrito', 'fieldDireccion', 'fieldTelefono'];
+            FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('invalid'); });
             if (districts.length === 0) {
-                alert('El envio aun no esta disponible. Intentalo mas tarde.');
+                setCheckoutMsg('El envio aun no esta disponible. Intentalo mas tarde.', 'error');
                 return false;
             }
             const problems = [];
+            if (!shipping.nombre) problems.push('fieldNombre');
             if (!shipping.distrito || !districtByName[shipping.distrito]) problems.push('fieldDistrito');
             if (!shipping.direccion) problems.push('fieldDireccion');
             if (!shipping.telefono) problems.push('fieldTelefono');
+            // Email es opcional; si se escribe, debe tener formato válido.
+            if (shipping.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping.email)) problems.push('fieldEmail');
             if (problems.length) {
                 problems.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('invalid'); });
                 const first = document.getElementById(problems[0]);
@@ -1698,107 +1717,95 @@
                     first.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     const f = first.querySelector('select, input'); if (f) f.focus();
                 }
+                setCheckoutMsg('Revisa los datos de envio marcados.', 'error');
                 return false;
             }
+            setCheckoutMsg('', '');
             return true;
         }
 
-        function checkout() {
+        async function checkout() {
             if (cart.length === 0) return;
             if (!validateShippingForm()) return;
-            const total = getCartSummary().total;
 
-            // Hide checkout button, show loading
-            document.getElementById('cartCheckoutBtn').style.display = 'none';
-            document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.4);font:400 0.75rem Syne,sans-serif;letter-spacing:2px;text-transform:uppercase;">Cargando formulario de pago...</div>';
+            const btn = document.getElementById('cartCheckoutBtn');
+            const payload = {
+                items: cart.map(it => ({ variante_id: it.variante_id, qty: it.qty })),
+                cupon: (coupon && coupon.valido) ? coupon.codigo : '',
+                cliente: {
+                    nombre: shipping.nombre,
+                    email: shipping.email,
+                    telefono: shipping.telefono,
+                    direccion: shipping.direccion,
+                    distrito: shipping.distrito,
+                    referencia: shipping.referencia
+                }
+            };
 
-            if (typeof MercadoPago === 'undefined') {
-                document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:#ff4444;font:600 0.7rem Syne,sans-serif;letter-spacing:2px;">Error al cargar Mercado Pago. Recarga la pagina.</div>';
-                document.getElementById('cartCheckoutBtn').style.display = 'block';
+            if (btn) { btn.disabled = true; btn.textContent = 'PROCESANDO...'; }
+            setCheckoutMsg('Validando tu pedido...', '');
+
+            let res, data;
+            try {
+                res = await fetch(CREAR_PREF_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                data = await res.json().catch(() => ({}));
+            } catch (e) {
+                console.error('checkout:', e);
+                setCheckoutMsg('No se pudo conectar. Revisa tu conexion e intentalo de nuevo.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'PAGAR'; }
+                return;
+            }
+            if (btn) { btn.disabled = false; btn.textContent = 'PAGAR'; }
+
+            // Errores de validación server-side
+            if (!res.ok || data.error) { await handleCheckoutError(data); return; }
+
+            // Enganche con Checkout Pro (Fase 7b): cuando el servidor devuelva
+            // init_point, aquí se abrirá el modal de pago de Mercado Pago.
+            if (data.init_point) {
+                // TODO Fase 7b: abrir Checkout Pro (modal) con data.init_point
                 return;
             }
 
-            const mp = new MercadoPago('TEST-89d43404-8eb5-4c8e-93b7-94c40c4a87b7', {
-                locale: 'es-PE'
-            });
-
-            // Build items description
-            const desc = cart.map(i => i.name + ' (' + i.size + ')').join(', ');
-
-            // Destroy previous brick if exists
-            if (mpBrickController) {
-                mpBrickController.unmount();
+            // Fase 7a: el pago aún no está habilitado, pero el pedido quedó creado.
+            if (data.mp_configurado === false && data.pedido) {
+                setCheckoutMsg('Pedido ' + data.pedido.codigo + ' registrado (total S/ ' +
+                    Number(data.pedido.total).toFixed(2) + '). El pago se habilitará pronto.', 'ok');
+                return;
             }
 
-            // Render Payment Brick
-            mp.bricks().create('payment', 'mpPaymentBrick', {
-                initialization: {
-                    amount: total,
-                    description: desc,
-                    payer: {
-                        email: ''
-                    }
-                },
-                customization: {
-                    visual: {
-                        style: {
-                            theme: 'dark',
-                            customVariables: {
-                                formBackgroundColor: '#000000',
-                                baseColor: '#ffffff'
-                            }
-                        }
-                    },
-                    paymentMethods: {
-                        ticket: 'all',
-                        bankTransfer: 'all',
-                        creditCard: 'all',
-                        debitCard: 'all'
-                    }
-                },
-                callbacks: {
-                    onSubmit: ({ formData }) => {
-                        return new Promise((resolve) => {
-                            // Sitio estatico (GitHub Pages) sin backend: NO se puede crear el
-                            // pago de forma segura desde el navegador. Para pagos reales necesitas
-                            // un servidor que reciba formData y llame a la API de Mercado Pago con
-                            // tu ACCESS TOKEN privado (nunca lo pongas en el frontend).
-                            console.log('Payment submitted:', formData);
-                            alert('Pedido recibido! Te contactaremos para completar el pago.');
-                            cart = [];
-                            saveCart();
-                            updateCartBadge();
-                            closeCart();
-                            resolve();
-                        });
-                    },
-                    onError: (error) => {
-                        console.error('Payment brick error:', error);
-                    },
-                    onReady: () => {
-                        // Remove loading text
-                        const loading = document.getElementById('mpPaymentBrick').querySelector('div[style]');
-                        if (loading && loading.textContent.includes('Cargando')) loading.remove();
-                        document.getElementById('cartBackBtn').style.display = 'block';
-                    }
-                }
-            }).then(controller => {
-                mpBrickController = controller;
-            }).catch(err => {
-                document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:#ff4444;font:600 0.7rem Syne,sans-serif;letter-spacing:2px;">Error al cargar el formulario de pago.</div>';
-                document.getElementById('cartCheckoutBtn').style.display = 'block';
-                console.error(err);
-            });
+            setCheckoutMsg('Pedido recibido. Te contactaremos para completar el pago.', 'ok');
         }
 
-        function backToCart() {
-            if (mpBrickController) {
-                mpBrickController.unmount();
-                mpBrickController = null;
+        // Traduce los errores del servidor a la UI y reconcilia la bolsa.
+        async function handleCheckoutError(data) {
+            data = data || {};
+            switch (data.error) {
+                case 'stock':
+                case 'no_disponible':
+                    setCheckoutMsg((data.mensaje || 'Stock insuficiente') + '. Ajustamos tu bolsa.', 'error');
+                    await validateCartStock();
+                    renderCart();
+                    break;
+                case 'cupon':
+                    coupon = null; saveCoupon();
+                    setCouponMsg(data.mensaje || 'El cupón ya no es válido', 'error');
+                    renderCart();
+                    setCheckoutMsg('Quitamos el cupón: ya no es válido.', 'error');
+                    break;
+                case 'distrito':
+                    setCheckoutMsg('Selecciona un distrito válido.', 'error');
+                    break;
+                case 'datos':
+                    validateShippingForm();
+                    break;
+                default:
+                    setCheckoutMsg(data.mensaje || 'No se pudo procesar el pedido.', 'error');
             }
-            document.getElementById('mpPaymentBrick').innerHTML = '';
-            document.getElementById('cartCheckoutBtn').style.display = 'block';
-            document.getElementById('cartBackBtn').style.display = 'none';
         }
 
         // Keyboard: Escape closes cart
