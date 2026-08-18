@@ -295,7 +295,23 @@
             top.map(p => '<tr><td>' + esc(p.nombre) + '</td><td style="text-align:right"><strong>' + (p.unidades || 0) + '</strong></td></tr>').join('') +
             '</tbody></table></div>'
           : '<p class="muted">Aún no hay ventas registradas.</p>') +
+        '</div>' +
+        '<h2 class="title">Correo de prueba</h2>' +
+        '<div class="card">' +
+          '<p class="muted" style="font-size:.82rem;margin-bottom:.8rem">Envía un ejemplo (cliente + admin) para revisar el diseño en tu bandeja. Requiere el dominio verificado en Resend.</p>' +
+          '<div class="row">' +
+            '<input id="testTo" type="email" placeholder="correo destino (vacío = tu correo admin)" style="flex:1;min-width:200px">' +
+            '<button class="btn sm" id="testBtn">Enviar prueba</button>' +
+          '</div>' +
         '</div>';
+      $('#testBtn').onclick = async () => {
+        const to = $('#testTo').value.trim();
+        const btn = $('#testBtn'), orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Enviando…';
+        try { const r = await api('test-email', { method: 'POST', body: to ? { to } : {} }); toast('Correo de prueba enviado a ' + (r.enviado_a || 'tu correo'), 'ok'); }
+        catch (e) { toast(e.message, 'bad'); }
+        btn.disabled = false; btn.textContent = orig;
+      };
     } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
   }
 

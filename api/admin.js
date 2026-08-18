@@ -22,6 +22,7 @@
 
 const { requireAdmin } = require('./_lib/auth');
 const { sb, money, parseBody } = require('./_lib/store');
+const mailer = require('./_lib/mailer');
 
 const ESTADOS_PEDIDO = ['pendiente', 'pagado', 'rechazado', 'cancelado', 'enviado', 'entregado', 'contraentrega'];
 const TALLAS_DEFAULT = ['XS', 'S', 'M', 'L', 'XL'];
@@ -45,6 +46,7 @@ module.exports = async function handler(req, res) {
       case 'pedidos':   return await recPedidos(req, res);
       case 'cupones':   return await recCupones(req, res);
       case 'zonas':     return await recZonas(req, res);
+      case 'test-email':return await recTestEmail(req, res);
       default:          return res.status(404).json({ error: 'recurso' });
     }
   } catch (e) {
@@ -348,4 +350,18 @@ async function recZonas(req, res) {
   }
 
   return res.status(405).json({ error: 'metodo' });
+}
+
+// ============================================================
+// CORREO DE PRUEBA (revisar el diseño una vez verificado el dominio)
+// ============================================================
+async function recTestEmail(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'metodo' });
+  const b = parseBody(req);
+  const to = String(b.to || '').trim();
+  const r = await mailer.enviarPrueba(to);
+  if (!r || !r.ok) {
+    return res.status(502).json({ error: 'envio', mensaje: 'No se pudo enviar. ¿El dominio ya está verificado en Resend?', detalle: r });
+  }
+  return res.status(200).json({ ok: true, enviado_a: r.to });
 }

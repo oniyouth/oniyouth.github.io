@@ -249,8 +249,27 @@ async function notificarContraentrega(pedido) {
   await Promise.allSettled(tasks);
 }
 
+// Envío de PRUEBA (desde el panel): manda un ejemplo cliente + admin a `to`
+// (o al admin). Sirve para revisar el diseño una vez verificado el dominio.
+async function enviarPrueba(to) {
+  const dest = String(to || '').trim() || ADMIN_EMAIL;
+  if (!dest) return { ok: false, error: 'sin_destinatario' };
+  const p = {
+    codigo: 'ONI-PRUEBA', estado: 'pagado',
+    cliente_nombre: 'Cliente de Prueba', cliente_email: dest, cliente_telefono: '999 999 999',
+    direccion: 'Av. Ejemplo 123', distrito: 'Lima',
+    items: [{ nombre: 'oniyouth stars', talla: 'M', qty: 2, subtotal: 179.98 }, { nombre: 'ONIYOUTH TRIBAL TEE', talla: 'L', qty: 1, subtotal: 89.99 }],
+    subtotal: 269.97, envio: 12, descuento: 0, total: 281.97
+  };
+  const cli = tplClientePagado(p);
+  const adm = tplAdminVenta(p, 'pagado');
+  const r1 = await sendEmail({ to: dest, subject: '[PRUEBA] ' + cli.subject, html: cli.html, text: cli.text, replyTo: ADMIN_EMAIL || undefined });
+  const r2 = await sendEmail({ to: dest, subject: '[PRUEBA] ' + adm.subject, html: adm.html, text: adm.text });
+  return { ok: r1.ok || r2.ok, to: dest, cliente: r1, admin: r2 };
+}
+
 module.exports = {
-  sendEmail, notificarPago, notificarContraentrega,
+  sendEmail, notificarPago, notificarContraentrega, enviarPrueba,
   // exportadas para el preview/tests:
   tplClientePagado, tplClientePagoRecibido, tplClienteContraentrega, tplAdminVenta, tplAdminContraentrega
 };
