@@ -249,6 +249,10 @@ module.exports = async function handler(req, res) {
       throw new Error('MP preference ' + mpr.status + ' ' + t);
     }
     const pref = await mpr.json();
+    console.log('[crear-preferencia] preferencia creada', JSON.stringify({
+      codigo: pedidoRow.codigo, preference_id: pref.id,
+      notification_url: preferencia.notification_url, host
+    }));
 
     // Guarda el preference_id en el pedido (conciliación / depuración).
     await sb('pedidos?codigo=eq.' + encodeURIComponent(pedidoRow.codigo), {
