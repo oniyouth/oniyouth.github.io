@@ -774,6 +774,23 @@
         }
         .pd-sz.agotada:hover { border-color: var(--border); }
 
+        /* ===== FASE 14 — animaciones ===== */
+        /* Reveal al hacer scroll: secciones suben, cards solo aparecen
+           (opacidad) para no pelear con el hover translateY de la card). */
+        .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s cubic-bezier(0.25,0.46,0.45,0.94); }
+        .reveal.in { opacity: 1; transform: none; }
+        .reveal-fade { opacity: 0; transition: opacity .6s ease; }
+        .reveal-fade.in { opacity: 1; }
+        /* Vuelo a la bolsa */
+        .oni-fly { position: fixed; z-index: 9999; pointer-events: none; object-fit: contain; border-radius: 4px; will-change: transform, opacity; }
+        @keyframes oni-cart-bump { 0% { transform: scale(1); } 35% { transform: scale(1.28); } 65% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        .cart-btn.cart-bump { animation: oni-cart-bump .5s cubic-bezier(0.34,1.56,0.64,1); }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .reveal-fade { opacity: 1 !important; transform: none !important; transition: none !important; }
+            .cart-btn.cart-bump { animation: none !important; }
+            .oni-fly { display: none !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -817,7 +834,7 @@
             <img src="assets/images/cart-icon-new.png" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeShop">0</span>
         </button>
-        <div class="collection-header">
+        <div class="collection-header reveal">
             <div>
                 <div class="collection-label">Coleccion</div>
                 <div class="collection-title">SS26</div>
@@ -1322,7 +1339,7 @@
             // Agotados al final (el sort estable conserva el orden por "orden")
             list.sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0));
             track.innerHTML = list.map(p =>
-                '<div class="product-card' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" onclick="openProduct(\'' + p.id + '\')">' +
+                '<div class="product-card reveal-fade' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" onclick="openProduct(\'' + p.id + '\')">' +
                     '<div class="product-img-wrap">' +
                         '<img src="' + escapeHtml(p.slides[0]) + '" alt="' + escapeHtml(p.name) + '" loading="lazy">' +
                         '<div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>' +
@@ -1335,6 +1352,7 @@
                     '</div>' +
                 '</div>'
             ).join('');
+            oniObserveReveals(track);
         }
 
         // Carga inicial del catálogo
@@ -1613,6 +1631,49 @@
             return sel ? sel.textContent : 'M';
         }
 
+        // ===== FASE 14 — animaciones (reveal al scroll + vuelo a la bolsa) =====
+        var ONI_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        var oniRevealIO = (!ONI_REDUCED && 'IntersectionObserver' in window)
+            ? new IntersectionObserver(function (ents, obs) {
+                ents.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); } });
+              }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
+            : null;
+        function oniObserveReveals(root) {
+            var els = (root || document).querySelectorAll('.reveal:not(.in), .reveal-fade:not(.in)');
+            els.forEach(function (el) { if (oniRevealIO) oniRevealIO.observe(el); else el.classList.add('in'); });
+        }
+        function oniBumpCart() {
+            if (ONI_REDUCED) return;
+            var c = document.getElementById('cartBtnDetail');
+            if (!c) return;
+            c.classList.remove('cart-bump'); void c.offsetWidth; c.classList.add('cart-bump');
+            setTimeout(function () { c.classList.remove('cart-bump'); }, 600);
+        }
+        function oniFlyToCart() {
+            if (ONI_REDUCED) return;
+            var img = document.getElementById('pdMainImg');
+            var cart = document.getElementById('cartBtnDetail');
+            if (!img || !cart || !img.src) return;
+            var s = img.getBoundingClientRect(), t = cart.getBoundingClientRect();
+            if (!s.width || !t.width) return;
+            var fly = document.createElement('img');
+            fly.src = img.src; fly.className = 'oni-fly'; fly.alt = '';
+            fly.style.left = s.left + 'px'; fly.style.top = s.top + 'px';
+            fly.style.width = s.width + 'px'; fly.style.height = s.height + 'px'; fly.style.opacity = '0.95';
+            fly.style.transition = 'transform .75s cubic-bezier(.4,0,.2,1), opacity .75s ease';
+            document.body.appendChild(fly);
+            var tx = (t.left + t.width / 2) - (s.left + s.width / 2);
+            var ty = (t.top + t.height / 2) - (s.top + s.height / 2);
+            requestAnimationFrame(function () {
+                fly.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(0.09) rotate(-6deg)';
+                fly.style.opacity = '0.15';
+            });
+            var done = false, finish = function () { if (done) return; done = true; if (fly.parentNode) fly.remove(); oniBumpCart(); };
+            fly.addEventListener('transitionend', finish, { once: true });
+            setTimeout(finish, 950);
+        }
+        oniObserveReveals(document);
+
         function addCart(btn) {
             if (!currentProductData) return;
             const sel = document.querySelector('.pd-sz.sel');
@@ -1624,6 +1685,8 @@
             const p = currentProductData;
             const size = sel.textContent;
             const varianteId = sel.dataset.varianteId;
+
+            oniFlyToCart();   // Fase 14: vuela la imagen del producto a la bolsa
 
             // Mismo variante (producto + talla) ya en la bolsa => suma cantidad
             const existing = cart.find(item => item.variante_id === varianteId);

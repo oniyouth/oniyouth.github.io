@@ -113,10 +113,21 @@ Correos transaccionales desde el **dominio propio** (`pedidos@oniyouth.xyz`) ví
 - **ROBUSTEZ (requisito del dueño):** el correo es best-effort, va DESPUÉS de marcar pagado; si Resend falla/timeout/dominio sin verificar → log + se traga el error, webhook responde 200, pedido sigue `pagado`. Probado: webhook 14/14 (incluye "Resend 500 → 200"), mailer 11/11, admin 26/26.
 - **PENDIENTE:** (1) que **Resend verifique `oniyouth.xyz`** (registros en Hostinger, puede tardar horas) → recién ahí salen correos reales; luego probar un envío end-to-end. (2) **Subir el logo** `assets/images/logo-email.png` al bucket público `productos` de Supabase como `logo-oniyouth.png` (para que `MAIL_LOGO_URL` resuelva). NO se pudo hacer por API (la subida a Storage necesita service_role/token de admin y no se materializa la key); hacerlo desde el dashboard de Supabase o aprobar la subida. Como ningún correo real sale hasta que verifique el dominio, no hay imagen rota en vivo mientras tanto. `NOTIFY_ADMIN_EMAIL`/`ADMIN_EMAIL` solo en Preview (falta en Production). `RESEND_API_KEY` ya en Preview+Prod.
 
+## Fase 14 — Animaciones (IMPLEMENTADA + desplegada, 2026-08-18)
+En `index.html`, aditivo y con guard de `prefers-reduced-motion`:
+- **Reveal al scroll** vía `IntersectionObserver` (`oniObserveReveals`): la cabecera de colección sube (`.reveal`), las product-card aparecen por opacidad (`.reveal-fade`, para NO pelear con el hover `translateY(-8px)` que ya existía). `.shop-page` usa `visibility:hidden` (no display:none) → el observer evalúa geometría bien.
+- **Hover**: ya existía (lift de card + zoom de imagen + overlay); se conservó.
+- **Vuelo a la bolsa** (`oniFlyToCart`): al Agregar, clona `#pdMainImg` y lo vuela hasta `#cartBtnDetail` (FLIP con getBoundingClientRect), + `oniBumpCart` (keyframe `oni-cart-bump`) que rebota el ícono. Cleanup por `transitionend` + timeout.
+- **`prefers-reduced-motion: reduce`**: media query que apaga reveal/bump/fly, y los `oni*` chequean `ONI_REDUCED` para saltar el vuelo (revela todo al instante).
+- Verificado: `node --check` del script inline OK. Falta review visual en el deploy.
+
+## Correo de prueba (panel, Fase 9)
+Botón en Resumen del panel → `POST /api/admin?r=test-email` → `mailer.enviarPrueba(to)` manda un ejemplo (cliente + admin) al destino o al `ADMIN_EMAIL`. Falla suave hasta que el dominio verifique en Resend. Tests: admin 28/28.
+
 ## Falta (fases pendientes)
-- **9** ✅ Implementada y desplegada. Solo falta el envío real cuando el dominio verifique en Resend + una prueba end-to-end.
+- **9** ✅ Implementada y desplegada. Solo falta el envío real cuando el dominio verifique en Resend + prueba end-to-end (ya hay botón de prueba en el panel).
 - **12** ✅ Verificada (29 asserts + 2 E2E por logs) y "revivido" implementado (migración 006).
-- **14** Animaciones (fade-in scroll, hover, vuelo a la bolsa; respetar `prefers-reduced-motion`).
+- **14** ✅ Implementada y desplegada (falta review visual).
 - **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
 
 ## Pendientes de DECISIÓN
