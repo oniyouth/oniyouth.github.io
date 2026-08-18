@@ -1,7 +1,7 @@
 # OniYouth — Estado del proyecto
 
 > Documento canónico de estado. Una sesión nueva debe poder retomar leyendo esto + `PLAN.md`.
-> Última actualización: 2026-08-18 (pago end-to-end probado).
+> Última actualización: 2026-08-18 (Fase 11 panel admin: código listo + desplegado en preview).
 
 ## Stack
 - Web: HTML/CSS/JS puro, sin frameworks.
@@ -54,9 +54,24 @@ Flujo confirmado con datos reales: **pago aprobado en MP → webhook recibido �
 - Para leer logs: `vercel logs https://oniyouth-dev.vercel.app --json` — el desenlace completo por invocación viene en el campo `logs[]` de cada evento, y el status HTTP en `responseStatusCode`.
 - El manifest de la firma es `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` (coincide con el template oficial de MP). MP manda además notificaciones `merchant_order` que se ignoran con 200.
 
+## Fase 11 — Panel de administración (CÓDIGO LISTO · desplegado en preview · falta activar)
+Panel en `admin.html` (SPA vanilla, sin dependencias) servido desde el deploy de Vercel: **`https://oniyouth-dev.vercel.app/admin.html`**. Pantallas: Resumen, Productos, Stock, Pedidos, Cupones, Envíos.
+
+**Cómo se protege (4 candados):**
+1. **Login** email+password con Supabase Auth (fetch crudo a `/auth/v1/token`). El **registro público debe estar DESACTIVADO** en Supabase → solo existe tu usuario.
+2. **Allowlist por email** en el servidor: `api/_lib/auth.js → requireAdmin()` valida el token contra `/auth/v1/user` (usa la service key como `apikey`) y exige `email === ADMIN_EMAIL`. Env var `ADMIN_EMAIL` = `chocolatitoprueba4@gmail.com` (cargada en **Preview**; falta en Production para cuando se pase a prod).
+3. **RLS sigue cerrado**: NO se abrieron políticas de escritura para `authenticated`. Todo se escribe con `service_role` desde `api/admin.js`, y ese endpoint está tapado por el candado 2. Un token filtrado no sirve por sí solo.
+4. **Same-origin**: el panel se sirve del mismo deploy que `/api`, así que `api/admin.js` NO abre CORS (un origen ajeno queda bloqueado por defecto).
+
+**Backend:** un solo endpoint router `api/admin.js` (`?r=<recurso>` + método), recursos: `resumen`, `productos`, `variantes`, `pedidos`, `cupones`, `zonas`. Todo recalculado/saneado en servidor. Imágenes: subida directa del navegador a Storage (bucket público `productos`), autorizada por política que exige el JWT del admin. Verificado con 24 tests node mockeados (guard + cada recurso) y smoke test en vivo (sin token→401, token falso→401).
+
+**PENDIENTE PARA ACTIVARLO (pasos manuales, requieren acceso a Supabase):**
+- **(a) Aplicar migración `supabase/migrations/005_panel_admin.sql`** (RPC `resumen_admin`, índice de pedidos, bucket Storage `productos` + políticas de subida). Sin esto: la pestaña Resumen y la subida de imágenes fallan; el resto funciona. ⚠️ El email en la política de Storage debe coincidir con `ADMIN_EMAIL`.
+- **(b) Crear el usuario admin** en Supabase → Authentication → Users → Add user: `chocolatitoprueba4@gmail.com` + contraseña + Auto Confirm. Y **desactivar** "Allow new users to sign up".
+- Tras (a) y (b): entrar a `oniyouth-dev.vercel.app/admin.html` y probar cada pantalla.
+
 ## Falta (fases pendientes)
 - **9** Notificaciones automáticas (correo al cliente + aviso al admin). Necesita **proveedor de correo**.
-- **11** Panel de administración (Supabase Auth; productos/stock/pedidos/cupones).
 - **12** Pruebas de pago completas (aprobado/rechazado/pendiente, stock en carrera, webhook duplicado).
 - **14** Animaciones (fade-in scroll, hover, vuelo a la bolsa; respetar `prefers-reduced-motion`).
 - **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
