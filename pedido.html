@@ -13,11 +13,12 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Syne', sans-serif; background: #000; color: #fff; min-height: 100vh; }
         a { color: inherit; }
+        :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
         .wrap { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem 3rem; }
         .logo { display: block; width: 40px; height: 40px; margin: 0 auto 2.5rem; }
         .logo img { width: 100%; height: 100%; filter: brightness(0) invert(1); }
         h1 { font: 800 clamp(1.6rem, 5vw, 2.6rem) 'Syne', sans-serif; letter-spacing: -1px; text-align: center; }
-        .sub { text-align: center; color: rgba(255,255,255,0.35); font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; margin-top: 0.5rem; }
+        .sub { text-align: center; color: rgba(255,255,255,0.5); font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; margin-top: 0.5rem; }
 
         .search { display: flex; gap: 8px; margin: 2.5rem auto 0; max-width: 460px; }
         .search input {
@@ -25,7 +26,7 @@
             border: 1px solid rgba(255,255,255,0.18); font: 400 0.9rem 'Syne', sans-serif;
             letter-spacing: 1px; text-transform: uppercase;
         }
-        .search input::placeholder { color: rgba(255,255,255,0.3); text-transform: none; }
+        .search input::placeholder { color: rgba(255,255,255,0.5); text-transform: none; }
         .search button {
             padding: 0 22px; background: #fff; color: #000; border: none;
             font: 700 0.7rem 'Syne', sans-serif; letter-spacing: 2px; cursor: pointer;
@@ -37,7 +38,7 @@
         .card { margin-top: 2.5rem; border: 1px solid rgba(255,255,255,0.12); padding: 1.8rem; }
         .code-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
         .code { font: 700 1.1rem 'Syne', sans-serif; letter-spacing: 2px; }
-        .date { color: rgba(255,255,255,0.4); font-size: 0.72rem; letter-spacing: 1px; }
+        .date { color: rgba(255,255,255,0.55); font-size: 0.72rem; letter-spacing: 1px; }
 
         /* Stepper de estado — pasos completados con check estilo "verificado" */
         .steps { display: flex; margin: 2rem 0 0.5rem; }
@@ -74,7 +75,7 @@
         /* Futuro: gris apagado (por defecto) */
         .step .lbl {
             font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
-            color: rgba(255,255,255,0.32); transition: color .4s ease;
+            color: rgba(255,255,255,0.5); transition: color .4s ease;
         }
         .step.done .lbl { color: #7CFC9A; }
         .step.current .lbl { color: #fff; }
@@ -108,19 +109,19 @@
         .item img { width: 54px; height: 68px; object-fit: contain; flex-shrink: 0; background: rgba(255,255,255,0.03); }
         .item .info { flex: 1; min-width: 0; }
         .item .n { font: 600 0.9rem 'Syne', sans-serif; }
-        .item .m { font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-top: 0.25rem; letter-spacing: 1px; }
+        .item .m { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 0.25rem; letter-spacing: 1px; }
         .item .p { font: 600 0.85rem 'Syne', sans-serif; white-space: nowrap; }
 
         .totals { margin-top: 1.5rem; }
         .trow { display: flex; justify-content: space-between; font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-top: 0.4rem; }
         .trow.total { color: #fff; font-weight: 700; font-size: 1rem; margin-top: 0.8rem; }
-        .back { display: block; text-align: center; margin-top: 2.5rem; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); text-decoration: none; }
+        .back { display: block; text-align: center; margin-top: 2.5rem; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.55); text-decoration: none; }
         .back:hover { color: #fff; }
     </style>
 </head>
 <body>
     <div class="wrap">
-        <a href="/" class="logo"><img src="assets/images/logo.png" alt="OniYouth"></a>
+        <a href="/" class="logo"><img src="assets/images/logo.webp" alt="OniYouth"></a>
         <h1>Seguimiento</h1>
         <div class="sub">Estado de tu pedido</div>
 

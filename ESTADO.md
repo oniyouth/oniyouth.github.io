@@ -129,7 +129,8 @@ Botón en Resumen del panel → `POST /api/admin?r=test-email` → `mailer.envia
 - **Números (medido con `sharp` + `du`):** TODAS las imágenes **4824 KB → 1012 KB (-79%)**. Imágenes core del home (4 hero + logo + ícono + 2 fronts de producto) **~2966 KB → ~337 KB (-89%)**. Hero-slide-4 1263KB→43KB (-97%), hero-slide-3 1111KB→41KB (-96%). Con lazy, el crítico inicial baja aún más (solo hero-bg.webp ~40KB con prioridad alta).
 - **Accesibilidad:** `:focus-visible` con anillo blanco (negro en tema claro) global + en product-card; **product-card ahora operables por teclado** (`role="button"` + `tabindex="0"` + `aria-label` + `onkeydown` Enter/Espacio → `oniCardKey`). **Contraste:** `--text3` subido para pasar AA (dark `#555`→`#7a7a7a` ≈4.8:1; light `#aaa`→`#6f6f6f` ≈5.1:1).
 - **sharp** se instaló vía npm en scratchpad (v0.35.3; binario precompilado); no quedó en el repo.
-- **PENDIENTE:** review visual en móvil (no hay navegador headless en el entorno — verificar en el teléfono: LCP, foco por teclado, que no haya scroll horizontal). Aplicar el mismo pase de foco/contraste a `pedido.html` (secundario, se abre desde el correo).
+- **PENDIENTE:** review visual en móvil (no hay navegador headless en el entorno — verificar en el teléfono: LCP, foco por teclado, que no haya scroll horizontal).
+- **`pedido.html` — pase de accesibilidad HECHO:** `:focus-visible`, logo a WebP, y contraste AA (`.sub` 0.35→0.5, `.date`/`.item .m`/`.back` 0.4→0.55, `.step .lbl` 0.32→0.5, placeholder 0.3→0.5). Los elementos interactivos (buscador, link volver) ya eran nativos/accesibles.
 
 ## Falta (fases pendientes)
 - **9** ✅ Implementada y desplegada. Solo falta el envío real cuando el dominio verifique en Resend + prueba end-to-end (ya hay botón de prueba en el panel).
