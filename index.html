@@ -800,9 +800,7 @@
         .pay-fail-msg { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; margin: 1rem auto 2rem; max-width: 34ch; }
         .pay-fail-retry { width: 100%; max-width: 320px; padding: 15px; background: #fff; color: #000; border: none; font: 700 0.8rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; }
         .pay-fail-retry:hover { opacity: 0.85; }
-        .pay-fail-wa { display: inline-block; margin-top: 1.4rem; color: #7CFC9A; font-size: 0.8rem; letter-spacing: 0.5px; text-decoration: none; }
-        .pay-fail-wa:hover { text-decoration: underline; }
-        .pay-fail-close { display: block; margin: 1.6rem auto 0; background: none; border: none; color: rgba(255,255,255,0.4); font: 400 0.72rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+        .pay-fail-close { display: block; margin: 1.5rem auto 0; background: none; border: none; color: rgba(255,255,255,0.45); font: 400 0.72rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
         .pay-fail-close:hover { color: #fff; }
 
         /* ===== FASE 15 — accesibilidad ===== */
@@ -992,8 +990,7 @@
             <h2 class="pay-fail-title" id="payFailTitle">No pudimos procesar tu pago</h2>
             <p class="pay-fail-msg">No se te cobró nada y tu bolsa sigue intacta. Podés reintentar con otro medio de pago.</p>
             <button class="pay-fail-retry" id="payFailRetry" type="button">Reintentar con otro medio</button>
-            <a class="pay-fail-wa" id="payFailWa" href="#" target="_blank" rel="noopener">¿Necesitás ayuda? Escríbenos por WhatsApp</a>
-            <button class="pay-fail-close" id="payFailClose" type="button">Seguir viendo la tienda</button>
+            <button class="pay-fail-close" id="payFailClose" type="button">Volver a la tienda</button>
         </div>
     </div>
 
@@ -1941,24 +1938,13 @@
         // ===== Pago rechazado: pantalla propia (estética de la tienda) =====
         // MP vuelve a /?pago=rechazado tras un pago no aprobado. El carrito vive
         // en localStorage y NO se limpia en pago online, así que sigue intacto.
-        const WHATSAPP_NUMERO = '51XXXXXXXXX'; // TODO: número real de la tienda (intl, sin +)
-        function showPayFail(codigo) {
-            const wa = document.getElementById('payFailWa');
-            if (wa) {
-                if (/^\d{9,}$/.test(WHATSAPP_NUMERO)) {
-                    const msg = 'Hola, tuve un problema con el pago de mi pedido' + (codigo ? ' ' + codigo : '') + ' en OniYouth. ¿Me ayudan?';
-                    wa.href = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(msg);
-                } else { wa.style.display = 'none'; }  // sin número configurado: no mostrar link roto
-            }
-            document.getElementById('payFail').classList.add('show');
-        }
+        function showPayFail() { const el = document.getElementById('payFail'); if (el) el.classList.add('show'); }
         function hidePayFail() { const el = document.getElementById('payFail'); if (el) el.classList.remove('show'); }
         (function initPayFail() {
             const params = new URLSearchParams(location.search);
             if (params.get('pago') !== 'rechazado') return;
-            const codigo = params.get('codigo') || '';
             history.replaceState(null, '', location.pathname);  // limpia la URL: un refresh no re-dispara
-            showPayFail(codigo);
+            showPayFail();
             const retry = document.getElementById('payFailRetry');
             const close = document.getElementById('payFailClose');
             if (retry) retry.onclick = function () { hidePayFail(); if (typeof openCart === 'function') openCart(); };
