@@ -5,17 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>OniYouth - Streetwear</title>
     <link rel="icon" href="assets/images/logo.png" type="image/png">
-    <meta name="description" content="OniYouth - Streetwear Culture">
+    <meta name="description" content="OniYouth - Streetwear Culture. Envio a todo el Peru.">
     <meta name="theme-color" content="#000000">
+
+    <!-- Open Graph / compartir en redes (WhatsApp, Instagram, Facebook, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="OniYouth">
+    <meta property="og:title" content="OniYouth — Streetwear">
+    <meta property="og:description" content="Streetwear culture. Envio a todo el Peru.">
+    <meta property="og:url" content="https://oniyouth.xyz/">
+    <meta property="og:image" content="https://oniyouth.xyz/assets/images/hero-bg.jpg">
+    <meta property="og:image:alt" content="OniYouth Streetwear">
+    <meta property="og:locale" content="es_PE">
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="OniYouth — Streetwear">
+    <meta name="twitter:description" content="Streetwear culture. Envio a todo el Peru.">
+    <meta name="twitter:image" content="https://oniyouth.xyz/assets/images/hero-bg.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SDK de Mercado Pago (Checkout Pro, Fase 7b). La Public Key es publica. -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --bg: #000; --bg2: #0a0a0a; --bg-card: #111;
-            --text: #fff; --text2: #888; --text3: #555;
+            --text: #fff; --text2: #888; --text3: #7a7a7a;
             --border: #222; --accent: #fff;
             --logo-filter: brightness(0) invert(1);
             --nav-bg: rgba(0,0,0,0.85);
@@ -23,7 +40,7 @@
 
         [data-theme="light"] {
             --bg: #fff; --bg2: #f5f5f5; --bg-card: #f0f0f0;
-            --text: #000; --text2: #666; --text3: #aaa;
+            --text: #000; --text2: #666; --text3: #6f6f6f;
             --border: #e0e0e0; --accent: #000;
             --logo-filter: none;
             --nav-bg: rgba(255,255,255,0.9);
@@ -218,20 +235,109 @@
             cursor: pointer; transition: all 0.3s;
         }
         .cart-checkout-btn:hover { background: rgba(255,255,255,0.85); }
+        .cart-checkout-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* MP Payment Brick container */
-        #mpPaymentBrick {
-            margin-top: 1.5rem;
+        /* Aviso de ajustes de stock al abrir la bolsa (Fase 4) */
+        .cart-notice {
+            display: none; margin: 0 0 1.2rem; padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+            font: 400 0.7rem 'Syne', sans-serif; color: var(--text2);
+            letter-spacing: 1px; line-height: 1.5;
         }
-        .cart-back-btn {
-            width: 100%; padding: 14px;
-            background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15);
-            font: 700 0.65rem 'Syne', sans-serif;
-            text-transform: uppercase; letter-spacing: 3px;
-            cursor: pointer; transition: all 0.3s;
-            margin-top: 0.8rem;
+        .cart-notice ul { margin: 6px 0 0; padding-left: 16px; }
+        .cart-notice.show { display: block; }
+
+        /* ===== Envío (Fase 5) ===== */
+        .cart-shipping { margin: 1.5rem 0 0; padding: 1.5rem 0 0; border-top: 1px solid rgba(255,255,255,0.06); }
+        .cart-section-title {
+            font: 600 0.7rem 'Syne', sans-serif; color: rgba(255,255,255,0.4);
+            text-transform: uppercase; letter-spacing: 3px; margin-bottom: 1.2rem;
         }
-        .cart-back-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+        .cart-field { display: block; margin-bottom: 1rem; }
+        .cart-field > span {
+            display: block; font: 400 0.62rem 'Syne', sans-serif; color: var(--text2);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.4rem;
+        }
+        .cart-field select, .cart-field input {
+            width: 100%; padding: 12px 14px;
+            background: rgba(255,255,255,0.04); color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            font: 400 0.85rem 'Syne', sans-serif; letter-spacing: 0.5px;
+        }
+        .cart-field select { appearance: none; cursor: pointer; }
+        .cart-field input::placeholder { color: rgba(255,255,255,0.25); }
+        .cart-field select:focus, .cart-field input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+        .cart-field.invalid select, .cart-field.invalid input { border-color: #ff5a5a; }
+        .cart-ship-note {
+            font: 400 0.68rem 'Syne', sans-serif; color: var(--text2);
+            letter-spacing: 1px; min-height: 1em; margin-top: 0.2rem;
+        }
+        .cart-total-sub { font: 500 0.85rem 'Syne', sans-serif; color: var(--text2); }
+        .cart-total-row + .cart-total-row { margin-top: 0.5rem; }
+
+        /* ===== Cupón (Fase 6) ===== */
+        .cart-coupon { margin-bottom: 1.2rem; }
+        .cart-coupon-input { display: flex; gap: 8px; }
+        .cart-coupon-input input {
+            flex: 1; padding: 12px 14px;
+            background: rgba(255,255,255,0.04); color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            font: 400 0.8rem 'Syne', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .cart-coupon-input input::placeholder { color: rgba(255,255,255,0.25); text-transform: none; }
+        .cart-coupon-input input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+        .cart-coupon-input button {
+            padding: 0 18px; background: transparent; color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            font: 700 0.62rem 'Syne', sans-serif; letter-spacing: 2px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cart-coupon-input button:hover { background: #fff; color: #000; }
+        .cart-coupon-input button:disabled { opacity: 0.4; cursor: default; }
+        .cart-coupon-applied {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 10px 14px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+            font: 600 0.72rem 'Syne', sans-serif; color: #fff; letter-spacing: 1px;
+        }
+        .cart-coupon-remove {
+            background: none; border: none; color: var(--text2); cursor: pointer;
+            font: 400 0.65rem 'Syne', sans-serif; text-transform: uppercase; letter-spacing: 1px;
+            text-decoration: underline; padding: 0;
+        }
+        .cart-coupon-remove:hover { color: #fff; }
+        .cart-coupon-msg {
+            font: 400 0.68rem 'Syne', sans-serif; letter-spacing: 1px; margin-top: 0.5rem; min-height: 1em;
+        }
+        .cart-coupon-msg.error { color: #ff5a5a; }
+        .cart-coupon-msg.ok { color: #7CFC9A; }
+
+        /* Mensaje de checkout (estado del pedido / errores) */
+        .cart-checkout-msg {
+            font: 400 0.72rem 'Syne', sans-serif; letter-spacing: 1px;
+            margin-top: 0.8rem; line-height: 1.5; min-height: 1em; text-align: center;
+        }
+        .cart-checkout-msg.error { color: #ff5a5a; }
+        .cart-checkout-msg.ok { color: #7CFC9A; }
+
+        /* Nota de progreso de envío gratis / contraentrega (Fase zonas) */
+        .cart-envio-note {
+            font: 400 0.68rem 'Syne', sans-serif; letter-spacing: 0.5px;
+            color: var(--text2); min-height: 1em; margin: 0.2rem 0 0.4rem;
+        }
+        .cart-envio-note.free { color: #7CFC9A; }
+
+        /* Confirmación de pedido (contraentrega / futuro pago) */
+        .cart-confirm { text-align: center; padding: 3.5rem 1rem; }
+        .cart-confirm .cc-check {
+            width: 56px; height: 56px; margin: 0 auto 1.2rem; border-radius: 50%;
+            border: 2px solid #7CFC9A; color: #7CFC9A; font-size: 1.6rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cart-confirm .cc-title { font: 400 0.85rem 'Syne', sans-serif; color: var(--text2); letter-spacing: 1px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+        .cart-confirm .cc-code { font: 700 1.4rem 'Syne', sans-serif; letter-spacing: 2px; margin: 1rem 0; }
+        .cart-confirm .cc-link { display: inline-block; margin-top: 0.5rem; color: #fff; text-decoration: underline; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; }
 
 
         @media (max-width: 900px) {
@@ -313,10 +419,33 @@
         .shop-logo img:hover { transform: scale(1.1); }
         .shop-page .collection-header { padding: 0 3rem; margin-bottom: 3rem; padding-top: 4rem; }
         .shop-page .products-grid { padding: 0 3rem; }
+        .shop-page .shop-filters { padding: 0 3rem; }
+
+        /* ===== FILTROS POR CATEGORIA (Fase 13) ===== */
+        .shop-filters {
+            display: flex; flex-wrap: wrap; gap: 0.6rem;
+            margin: 0 0 2rem;
+        }
+        .filter-chip {
+            padding: 0.5rem 1.1rem;
+            background: transparent;
+            color: var(--text3);
+            border: 1px solid var(--border);
+            font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; border-radius: 100px;
+            transition: all 0.3s;
+        }
+        .filter-chip:hover { color: var(--text); border-color: var(--text); }
+        .filter-chip.active {
+            background: var(--text); color: var(--bg);
+            border-color: var(--text);
+        }
 
         @media (max-width: 900px) {
             .shop-page .collection-header { padding: 0 1.5rem; padding-top: 4rem; }
             .shop-page .products-grid { padding: 0 1.5rem; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+            .shop-page .shop-filters { padding: 0 1.5rem; }
         }
         @media (max-width: 480px) {
             .shop-page .collection-header { padding: 0 1.2rem; padding-top: 3.5rem; }
@@ -627,6 +756,58 @@
             .pd-sz { width: 44px; height: 44px; font-size: 0.65rem; }
         }
 
+        /* ===== Estados de catálogo (Fase 3) ===== */
+        .grid-status {
+            grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;
+            color: var(--text2); font: 400 0.75rem 'Syne', sans-serif;
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+        .product-card.sold-out .product-img-wrap img { opacity: 0.5; filter: grayscale(0.4); }
+        .product-badge-sold {
+            position: absolute; top: 10px; left: 10px; z-index: 3;
+            background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.3);
+            font: 700 0.55rem 'Syne', sans-serif; letter-spacing: 2px;
+            padding: 5px 9px; text-transform: uppercase;
+        }
+        .pd-sz.agotada {
+            opacity: 0.35; cursor: not-allowed; text-decoration: line-through;
+        }
+        .pd-sz.agotada:hover { border-color: var(--border); }
+
+        /* ===== FASE 14 — animaciones ===== */
+        /* Reveal al hacer scroll: secciones suben, cards solo aparecen
+           (opacidad) para no pelear con el hover translateY de la card). */
+        .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s cubic-bezier(0.25,0.46,0.45,0.94); }
+        .reveal.in { opacity: 1; transform: none; }
+        .reveal-fade { opacity: 0; transition: opacity .6s ease; }
+        .reveal-fade.in { opacity: 1; }
+        /* Vuelo a la bolsa */
+        .oni-fly { position: fixed; z-index: 9999; pointer-events: none; object-fit: contain; border-radius: 4px; will-change: transform, opacity; }
+        @keyframes oni-cart-bump { 0% { transform: scale(1); } 35% { transform: scale(1.28); } 65% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        .cart-btn.cart-bump { animation: oni-cart-bump .5s cubic-bezier(0.34,1.56,0.64,1); }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .reveal-fade { opacity: 1 !important; transform: none !important; transition: none !important; }
+            .cart-btn.cart-bump { animation: none !important; }
+            .oni-fly { display: none !important; }
+        }
+
+        /* ===== Pago rechazado (pantalla propia) ===== */
+        .pay-fail { position: fixed; inset: 0; z-index: 9000; display: none; align-items: center; justify-content: center; padding: 1.5rem; background: rgba(0,0,0,0.93); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        .pay-fail.show { display: flex; }
+        .pay-fail-box { width: 100%; max-width: 420px; text-align: center; }
+        .pay-fail-eyebrow { font-size: 0.62rem; letter-spacing: 5px; text-transform: uppercase; color: #ff6b6b; margin-bottom: 1.1rem; }
+        .pay-fail-title { font: 800 clamp(1.5rem, 5vw, 2.1rem) 'Syne', sans-serif; letter-spacing: -0.5px; line-height: 1.1; }
+        .pay-fail-msg { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; margin: 1rem auto 2rem; max-width: 34ch; }
+        .pay-fail-retry { width: 100%; max-width: 320px; padding: 15px; background: #fff; color: #000; border: none; font: 700 0.8rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; }
+        .pay-fail-retry:hover { opacity: 0.85; }
+        .pay-fail-close { display: block; margin: 1.5rem auto 0; background: none; border: none; color: rgba(255,255,255,0.45); font: 400 0.72rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+        .pay-fail-close:hover { color: #fff; }
+
+        /* ===== FASE 15 — accesibilidad ===== */
+        :focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 1px; }
+        [data-theme="light"] :focus-visible { outline-color: #000; }
+        .product-card:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
+        .product-card:focus-visible .product-overlay { opacity: 1; }
 
     </style>
 </head>
@@ -636,7 +817,7 @@
     <section class="hero">
         <nav>
             <a href="#" class="nav-logo">
-                <img src="assets/images/logo.png" alt="O">
+                <img src="assets/images/logo.webp" alt="O">
                 <span>OniYouth</span>
             </a>
             <div class="nav-right">
@@ -648,14 +829,14 @@
             </div>
         </nav>
         <div class="hero-slideshow" id="heroSlideshow">
-            <div class="hero-slide active"><img src="assets/images/hero-bg.jpg" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-3.png" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-4.png" alt="OniYouth"></div>
+            <div class="hero-slide active"><picture><source srcset="assets/images/hero-bg.webp" type="image/webp"><img src="assets/images/hero-bg.jpg" alt="OniYouth" fetchpriority="high" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-2.webp" type="image/webp"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-3.webp" type="image/webp"><img src="assets/images/hero-slide-3.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-4.webp" type="image/webp"><img src="assets/images/hero-slide-4.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
         </div>
         <div class="hero-gradient"></div>
         <button class="cart-btn" id="cartBtnHero" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeHero">0</span>
         </button>
         <a href="javascript:void(0)" class="hero-shop-btn" onclick="openShop()">NEW ARRIVALS</a>
@@ -665,51 +846,29 @@
     <!-- SHOP PAGE (overlay — same page, no lag) -->
     <div class="shop-page" id="shopPage">
         <div class="shop-logo">
-            <img src="assets/images/logo.png" alt="OniYouth" onclick="closeShop()">
+            <img src="assets/images/logo.webp" alt="OniYouth" onclick="closeShop()">
         </div>
         <button class="cart-btn" id="cartBtnShop" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeShop">0</span>
         </button>
-        <div class="collection-header">
+        <div class="collection-header reveal">
             <div>
                 <div class="collection-label">Coleccion</div>
                 <div class="collection-title">SS26</div>
             </div>
         </div>
+        <div class="shop-filters" id="shopFilters" style="display:none;"></div>
         <div class="products-grid" id="track">
-                <div class="product-card" data-p="oneoniyouth" onclick="openProduct('oneoniyouth')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-oneoniyouth-front.png" alt="ONIYOUTH TRIBAL TEE">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">T-shirt</div>
-                        <div class="product-name">ONIYOUTH TRIBAL TEE</div>
-                        <div class="product-price">S/ 89.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-                <div class="product-card" data-p="oniyouthstars" onclick="openProduct('oniyouthstars')">
-                    <div class="product-img-wrap">
-                        <img src="assets/images/product-oniyouthstars-front.png" alt="oniyouth stars">
-                        <div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>
-                    </div>
-                    <div class="product-info">
-                        <div class="product-cat">T-shirt</div>
-                        <div class="product-name">oniyouth stars</div>
-                        <div class="product-price">S/ 89.99</div>
-                        <div class="product-colors"><div class="pc-dot" style="background:#000"></div></div>
-                    </div>
-                </div>
-            </div>
+            <div class="grid-status" id="gridStatus">Cargando coleccion...</div>
+        </div>
     </div>
 
     <!-- PRODUCT DETAIL — ONIYOUTH STYLE -->
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <button class="cart-btn" id="cartBtnDetail" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeDetail">0</span>
         </button>
         <div class="pd-layout">
@@ -729,13 +888,7 @@
                 <div class="pd-name" id="pdName"></div>
                 <div class="pd-price" id="pdPrice"></div>
                 <div class="pd-sizes-label">Talla</div>
-                <div class="pd-sizes" id="pdSizes">
-                    <button class="pd-sz" onclick="selSz(this)">XS</button>
-                    <button class="pd-sz" onclick="selSz(this)">S</button>
-                    <button class="pd-sz sel" onclick="selSz(this)">M</button>
-                    <button class="pd-sz" onclick="selSz(this)">L</button>
-                    <button class="pd-sz" onclick="selSz(this)">XL</button>
-                </div>
+                <div class="pd-sizes" id="pdSizes"></div>
                 <button class="pd-add-btn" id="pdAddBtn" onclick="addCart(this)">AGREGAR A LA BOLSA</button>
                 <div class="pd-desc" id="pdDesc"></div>
             </div>
@@ -754,29 +907,93 @@
     <!-- CART PAGE (full-screen overlay — like shop) -->
     <div class="cart-page" id="cartPage">
         <div class="cart-page-logo">
-            <img src="assets/images/logo.png" alt="OniYouth" onclick="closeCart()">
+            <img src="assets/images/logo.webp" alt="OniYouth" onclick="closeCart()">
         </div>
         <div class="cart-page-content">
             <div class="cart-header">
                 <div class="cart-title">Tu Bolsa</div>
                 <div class="cart-subtitle">Articulos listos para ti</div>
             </div>
+            <div class="cart-notice" id="cartNotice"></div>
             <div class="cart-items" id="cartItems">
                 <div class="cart-empty" id="cartEmpty">Tu bolsa esta vacia</div>
             </div>
+            <div class="cart-shipping" id="cartShipping" style="display:none;">
+                <div class="cart-section-title">Datos de envio</div>
+                <label class="cart-field" id="fieldNombre">
+                    <span>Nombre completo</span>
+                    <input type="text" id="shipNombre" placeholder="Nombre y apellido" oninput="saveShipping()" autocomplete="name">
+                </label>
+                <label class="cart-field" id="fieldEmail">
+                    <span>Email (para tu comprobante)</span>
+                    <input type="email" id="shipEmail" placeholder="tucorreo@ejemplo.com" oninput="saveShipping()" autocomplete="email">
+                </label>
+                <label class="cart-field" id="fieldDistrito">
+                    <span>Zona de envio</span>
+                    <select id="shipDistrito" onchange="onDistritoChange()">
+                        <option value="">Cargando zonas...</option>
+                    </select>
+                </label>
+                <div class="cart-ship-note" id="shipNote"></div>
+                <label class="cart-field" id="fieldDireccion">
+                    <span>Direccion</span>
+                    <input type="text" id="shipDireccion" placeholder="Av. / Calle y numero" oninput="saveShipping()" autocomplete="street-address">
+                </label>
+                <label class="cart-field" id="fieldTelefono">
+                    <span>Telefono</span>
+                    <input type="tel" id="shipTelefono" placeholder="9XXXXXXXX" oninput="saveShipping()" autocomplete="tel">
+                </label>
+                <label class="cart-field">
+                    <span>Referencia (opcional)</span>
+                    <input type="text" id="shipReferencia" placeholder="Puerta, piso, indicaciones" oninput="saveShipping()">
+                </label>
+            </div>
             <div class="cart-footer" id="cartFooter" style="display:none;">
+                <div class="cart-coupon">
+                    <div class="cart-coupon-input" id="couponInputRow">
+                        <input type="text" id="couponCode" placeholder="Codigo de cupon" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                        <button type="button" id="couponApplyBtn" onclick="applyCoupon()">APLICAR</button>
+                    </div>
+                    <div class="cart-coupon-applied" id="couponApplied" style="display:none;">
+                        <span id="couponAppliedText"></span>
+                        <button type="button" class="cart-coupon-remove" onclick="removeCoupon()">Quitar</button>
+                    </div>
+                    <div class="cart-coupon-msg" id="couponMsg"></div>
+                </div>
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Subtotal</span>
+                    <span class="cart-total-sub" id="cartSubtotal">S/ 0.00</span>
+                </div>
+                <div class="cart-total-row" id="rowDescuento" style="display:none;">
+                    <span class="cart-total-label">Descuento</span>
+                    <span class="cart-total-sub" id="cartDescuento">&mdash;</span>
+                </div>
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Envio</span>
+                    <span class="cart-total-sub" id="cartEnvio">&mdash;</span>
+                </div>
+                <div class="cart-envio-note" id="envioNote"></div>
                 <div class="cart-total-row">
                     <span class="cart-total-label">Total</span>
                     <span class="cart-total-amount" id="cartTotal">S/ 0.00</span>
                 </div>
                 <button class="cart-checkout-btn" id="cartCheckoutBtn" onclick="checkout()">PAGAR</button>
-                <div id="mpPaymentBrick"></div>
-                <button class="cart-back-btn" id="cartBackBtn" style="display:none;" onclick="backToCart()">VOLVER A LA BOLSA</button>
+                <div class="cart-checkout-msg" id="checkoutMsg"></div>
             </div>
         </div>
     </div>
 
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <!-- Pantalla propia de pago rechazado -->
+    <div class="pay-fail" id="payFail" role="dialog" aria-modal="true" aria-labelledby="payFailTitle">
+        <div class="pay-fail-box">
+            <div class="pay-fail-eyebrow">Pago no completado</div>
+            <h2 class="pay-fail-title" id="payFailTitle">No pudimos procesar tu pago</h2>
+            <p class="pay-fail-msg">No se te cobró nada y tu bolsa sigue intacta. Podés reintentar con otro medio de pago.</p>
+            <button class="pay-fail-retry" id="payFailRetry" type="button">Reintentar con otro medio</button>
+            <button class="pay-fail-close" id="payFailClose" type="button">Volver a la tienda</button>
+        </div>
+    </div>
+
     <script>
 
         const tgl = document.getElementById('toggle');
@@ -827,11 +1044,352 @@
             }
         }
 
-        // ===== PRODUCT DATA =====
-        const data = {
-            oneoniyouth: { name: 'ONIYOUTH TRIBAL TEE', cat: 'T-shirt', price: 'S/ 89.99', desc: 'T-shirt 100% cotton 20/1\nEstampado DTG ESTRIBAL "ONIYOUTH"', slides: ['assets/images/product-oneoniyouth-front.png','assets/images/product-oneoniyouth-back.png'] },
-            oniyouthstars: { name: 'oniyouth stars', cat: 'T-shirt', price: 'S/ 89.99', desc: 'T-shirt 100% cotton 20/1\nEstampado DTG ESTRIBAL en la espalda y en el pecho "ONIYOUTH STARS"', slides: ['assets/images/product-oniyouthstars-front.png','assets/images/product-oniyouthstars-back.png'] }
-        };
+        // ===== CONFIG PÚBLICA (Supabase) =====
+        // La anon key es pública por diseño: el acceso a datos lo restringe RLS
+        // (verificado tabla por tabla). NO es un secreto. Sin build, va directo aquí.
+        const SUPABASE_URL      = 'https://oblekapcdajpueiteukv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ibGVrYXBjZGFqcHVlaXRldWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5MDkxNjAsImV4cCI6MjEwMjQ4NTE2MH0.PN5wYLnftHUhVDct_cggSBnLwsvH7x10GrSY9YMiJvQ'; // pública — reemplazar
+
+        // ===== CATÁLOGO (desde Supabase, solo lectura vía RLS) =====
+        let data = {};        // id -> producto
+
+        // ===== ENVÍO / DISTRITOS (Fase 5) =====
+        // El costo de envío viene de la tabla `distritos` (lectura pública por RLS).
+        // La tabla puede estar vacía: se maneja con un estado deshabilitado.
+        // El total real se recalcula igualmente en /api antes de cobrar (Fase 7).
+        let districts = [];
+        let districtByName = {};          // nombre -> {costo_envio, dias_estimados}
+
+        const SHIP_KEY = 'oy-ship';
+        let shipping = loadShipping();
+
+        const EMPTY_SHIP = { nombre: '', email: '', distrito: '', direccion: '', telefono: '', referencia: '' };
+
+        function loadShipping() {
+            try {
+                const s = JSON.parse(localStorage.getItem(SHIP_KEY) || '{}');
+                return {
+                    nombre:     s.nombre     || '',
+                    email:      s.email      || '',
+                    distrito:   s.distrito   || '',
+                    direccion:  s.direccion  || '',
+                    telefono:   s.telefono   || '',
+                    referencia: s.referencia || ''
+                };
+            } catch (e) { return { ...EMPTY_SHIP }; }
+        }
+
+        function saveShipping() {
+            const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            shipping = {
+                nombre:     g('shipNombre'),
+                email:      g('shipEmail'),
+                distrito:   g('shipDistrito'),
+                direccion:  g('shipDireccion'),
+                telefono:   g('shipTelefono'),
+                referencia: g('shipReferencia')
+            };
+            try { localStorage.setItem(SHIP_KEY, JSON.stringify(shipping)); } catch (e) {}
+        }
+
+        async function loadDistricts() {
+            try {
+                districts = await sbFetch('zonas_envio?select=nombre,costo_envio,dias_estimados,contraentrega&order=nombre.asc');
+            } catch (e) {
+                console.error('No se pudieron cargar los distritos:', e);
+                districts = [];
+            }
+            districtByName = {};
+            districts.forEach(d => { districtByName[d.nombre] = d; });
+            // Si el distrito guardado ya no existe, lo limpiamos
+            if (shipping.distrito && !districtByName[shipping.distrito]) shipping.distrito = '';
+            populateDistritoSelect();
+        }
+
+        // Envío gratis por encima de este subtotal (solo VISUAL; el servidor
+        // recalcula y manda). Estricto: > 299.
+        const UMBRAL_ENVIO_GRATIS = 299;
+
+        function populateDistritoSelect() {
+            const sel = document.getElementById('shipDistrito');
+            if (!sel) return;
+            if (districts.length === 0) {
+                sel.innerHTML = '<option value="">No hay zonas disponibles aun</option>';
+                sel.disabled = true;
+            } else {
+                sel.disabled = false;
+                sel.innerHTML = '<option value="">Selecciona tu zona...</option>' +
+                    districts.map(d => {
+                        const etiqueta = d.contraentrega
+                            ? 'Contraentrega'
+                            : 'S/ ' + (Number(d.costo_envio) || 0).toFixed(2);
+                        return '<option value="' + escapeHtml(d.nombre) + '">' +
+                            escapeHtml(d.nombre) + ' — ' + etiqueta + '</option>';
+                    }).join('');
+                if (shipping.distrito) sel.value = shipping.distrito;
+            }
+            updateShipNote();
+        }
+
+        function updateShipNote() {
+            const note = document.getElementById('shipNote');
+            if (!note) return;
+            const d = districtByName[shipping.distrito];
+            if (!d) { note.textContent = ''; return; }
+            if (d.contraentrega) { note.textContent = 'Contraentrega — pagas al recibir'; return; }
+            note.textContent = 'Entrega estimada: ' + d.dias_estimados +
+                (Number(d.dias_estimados) === 1 ? ' dia habil' : ' dias habiles');
+        }
+
+        // Resumen de importes. Reglas de envío (contraentrega y gratis > 299)
+        // se muestran aquí solo para UX; el SERVIDOR (crear-preferencia)
+        // recalcula todo y es el que manda. El descuento del cupón también
+        // viene del servidor.
+        function getCartSummary() {
+            const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
+            const z = districtByName[shipping.distrito] || null;
+            const contraentrega = !!(z && z.contraentrega);
+            let envio = 0, envioGratis = false;
+            if (z && !contraentrega) {
+                if (subtotal > UMBRAL_ENVIO_GRATIS) { envio = 0; envioGratis = true; }
+                else { envio = Number(z.costo_envio) || 0; }
+            }
+            let descuento = (coupon && coupon.valido) ? (Number(coupon.descuento) || 0) : 0;
+            if (descuento > subtotal) descuento = subtotal;   // nunca más que el subtotal
+            const total = Math.max(0, subtotal - descuento + envio);
+            return { subtotal, envio, descuento, total, envioGratis, contraentrega, zona: z };
+        }
+
+        function onDistritoChange() {
+            saveShipping();
+            updateShipNote();
+            renderCart();
+        }
+
+        function applyShippingToForm() {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('shipNombre', shipping.nombre);
+            set('shipEmail', shipping.email);
+            set('shipDireccion', shipping.direccion);
+            set('shipTelefono', shipping.telefono);
+            set('shipReferencia', shipping.referencia);
+            const sel = document.getElementById('shipDistrito');
+            if (sel && shipping.distrito && districtByName[shipping.distrito]) sel.value = shipping.distrito;
+            updateShipNote();
+        }
+
+        // ===== CUPÓN (Fase 6) — la validación SIEMPRE es del servidor =====
+        // El navegador nunca decide el descuento: llama a /api/validar-cupon y
+        // solo muestra lo que responde. Persistimos SOLO el código (no el monto);
+        // se re-valida al abrir la bolsa y el importe final lo recalcula
+        // /api/crear-preferencia (Fase 7). Requiere backend (Vercel), no Pages.
+        const COUPON_KEY = 'oy-coupon';
+        const COUPON_API = '/api/validar-cupon';
+        let coupon = loadCoupon();   // { codigo, descuento, valido } | null
+
+        function loadCoupon() {
+            try {
+                const c = JSON.parse(localStorage.getItem(COUPON_KEY) || 'null');
+                if (c && c.codigo) return { codigo: String(c.codigo), descuento: 0, valido: false };
+            } catch (e) {}
+            return null;
+        }
+
+        function saveCoupon() {
+            try {
+                if (coupon && coupon.codigo) localStorage.setItem(COUPON_KEY, JSON.stringify({ codigo: coupon.codigo }));
+                else localStorage.removeItem(COUPON_KEY);
+            } catch (e) {}
+        }
+
+        function setCouponMsg(text, kind) {
+            const el = document.getElementById('couponMsg');
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'cart-coupon-msg' + (kind ? ' ' + kind : '');
+        }
+
+        async function requestCouponValidation(codigo) {
+            const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
+            const r = await fetch(COUPON_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo, subtotal })
+            });
+            return r.json();
+        }
+
+        async function applyCoupon() {
+            const input = document.getElementById('couponCode');
+            const codigo = (input ? input.value : '').trim().toUpperCase();
+            if (!codigo) { setCouponMsg('Ingresa un codigo', 'error'); return; }
+            const btn = document.getElementById('couponApplyBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            setCouponMsg('Validando...', '');
+            try {
+                const res = await requestCouponValidation(codigo);
+                if (res && res.valido) {
+                    coupon = { codigo: res.codigo, descuento: Number(res.descuento) || 0, valido: true };
+                    saveCoupon();
+                    setCouponMsg('', '');
+                } else {
+                    coupon = null; saveCoupon();
+                    setCouponMsg((res && res.mensaje) || 'Cupon invalido', 'error');
+                }
+            } catch (e) {
+                console.error('applyCoupon:', e);
+                setCouponMsg('No se pudo validar el cupon', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'APLICAR'; }
+                renderCart();
+            }
+        }
+
+        function removeCoupon() {
+            coupon = null;
+            saveCoupon();
+            setCouponMsg('', '');
+            const input = document.getElementById('couponCode');
+            if (input) input.value = '';
+            renderCart();
+        }
+
+        // Re-valida el cupón guardado al abrir la bolsa (el subtotal pudo cambiar).
+        async function revalidateCoupon() {
+            if (!coupon || !coupon.codigo) return;
+            try {
+                const res = await requestCouponValidation(coupon.codigo);
+                if (res && res.valido) {
+                    coupon = { codigo: res.codigo, descuento: Number(res.descuento) || 0, valido: true };
+                } else {
+                    setCouponMsg((res && res.mensaje) || 'El cupon ya no es valido', 'error');
+                    coupon = null;
+                }
+            } catch (e) {
+                // Sin servidor no se puede afirmar un descuento: no se aplica.
+                console.error('revalidateCoupon:', e);
+                if (coupon) coupon.valido = false;
+            }
+            saveCoupon();
+        }
+
+        // Refleja el estado del cupón en la UI. Recibe el descuento ya calculado.
+        function renderCouponUI(descuento) {
+            const inputRow = document.getElementById('couponInputRow');
+            const appliedRow = document.getElementById('couponApplied');
+            const appliedText = document.getElementById('couponAppliedText');
+            const rowDesc = document.getElementById('rowDescuento');
+            const descEl = document.getElementById('cartDescuento');
+            const applied = !!(coupon && coupon.valido && descuento > 0);
+            if (inputRow) inputRow.style.display = applied ? 'none' : 'flex';
+            if (appliedRow) appliedRow.style.display = applied ? 'flex' : 'none';
+            if (applied && appliedText) appliedText.textContent = 'Cupon ' + coupon.codigo;
+            if (rowDesc) rowDesc.style.display = applied ? 'flex' : 'none';
+            if (descEl) descEl.textContent = '- S/ ' + (Number(descuento) || 0).toFixed(2);
+        }
+
+        const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+        function sizeRank(t) { const i = SIZE_ORDER.indexOf(String(t || '').toUpperCase()); return i < 0 ? 99 : i; }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        async function sbFetch(path) {
+            const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+                headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY }
+            });
+            if (!r.ok) throw new Error('Supabase ' + r.status);
+            return r.json();
+        }
+
+        async function loadCatalog() {
+            const rows = await sbFetch(
+                'productos?activo=eq.true' +
+                '&select=id,nombre,descripcion,precio,categoria,imagenes,orden,variantes(id,talla,stock,sku)' +
+                '&order=orden.asc'
+            );
+            data = {};
+            rows.forEach(p => {
+                const variantes = (p.variantes || []).slice().sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
+                const soldOut = variantes.length > 0 && variantes.every(v => (v.stock || 0) <= 0);
+                const precioNum = Number(p.precio) || 0;
+                const imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : ['assets/images/logo.png'];
+                data[p.id] = {
+                    id: p.id, name: p.nombre, cat: p.categoria || '',
+                    priceNum: precioNum, price: 'S/ ' + precioNum.toFixed(2),
+                    desc: p.descripcion || '', slides: imgs,
+                    variantes: variantes, soldOut: soldOut
+                };
+            });
+            renderFilters();
+            renderGrid();
+        }
+
+        // ===== FILTROS POR CATEGORIA (Fase 13) =====
+        // Chips generados desde las categorias distintas del catalogo. Con una
+        // sola categoria la barra se oculta (no aporta). Reusa renderGrid().
+        let currentFilter = 'ALL';
+
+        function renderFilters() {
+            const bar = document.getElementById('shopFilters');
+            if (!bar) return;
+            const cats = [];
+            Object.values(data).forEach(p => { if (p.cat && cats.indexOf(p.cat) === -1) cats.push(p.cat); });
+            if (cats.length < 2) { bar.style.display = 'none'; bar.innerHTML = ''; currentFilter = 'ALL'; return; }
+            if (currentFilter !== 'ALL' && cats.indexOf(currentFilter) === -1) currentFilter = 'ALL';
+            bar.style.display = 'flex';
+            bar.innerHTML = '';
+            [['ALL', 'Todos']].concat(cats.map(c => [c, c])).forEach(pair => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-chip' + (pair[0] === currentFilter ? ' active' : '');
+                btn.textContent = pair[1];
+                btn.dataset.cat = pair[0];
+                btn.addEventListener('click', () => setFilter(pair[0]));
+                bar.appendChild(btn);
+            });
+        }
+
+        function setFilter(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('#shopFilters .filter-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const track = document.getElementById('track');
+            if (!track) return;
+            let list = Object.values(data);
+            if (currentFilter !== 'ALL') list = list.filter(p => p.cat === currentFilter);
+            if (list.length === 0) {
+                track.innerHTML = '<div class="grid-status">' + (currentFilter === 'ALL' ? 'No hay productos disponibles.' : 'No hay productos en esta categoria.') + '</div>';
+                return;
+            }
+            // Agotados al final (el sort estable conserva el orden por "orden")
+            list.sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0));
+            track.innerHTML = list.map(p =>
+                '<div class="product-card reveal-fade' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" role="button" tabindex="0" aria-label="Ver ' + escapeHtml(p.name) + '" onclick="openProduct(\'' + p.id + '\')" onkeydown="oniCardKey(event,\'' + p.id + '\')">' +
+                    '<div class="product-img-wrap">' +
+                        oniPicture(p.slides[0], p.name, ' loading="lazy"') +
+                        '<div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>' +
+                        (p.soldOut ? '<div class="product-badge-sold">AGOTADO</div>' : '') +
+                    '</div>' +
+                    '<div class="product-info">' +
+                        '<div class="product-cat">' + escapeHtml(p.cat) + '</div>' +
+                        '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+                        '<div class="product-price">' + p.price + '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
+            oniObserveReveals(track);
+        }
+
+        // Carga inicial del catálogo
+        loadCatalog().catch(err => {
+            console.error('Error cargando catálogo:', err);
+            const track = document.getElementById('track');
+            if (track) track.innerHTML = '<div class="grid-status">No se pudo cargar la coleccion. Recarga la pagina.</div>';
+        });
 
         // ===== PRODUCT DETAIL (Carousel) =====
         const productDetail = document.getElementById('productDetail');
@@ -893,18 +1451,41 @@
             document.getElementById('pdName').textContent = p.name;
             document.getElementById('pdPrice').textContent = p.price;
             document.getElementById('pdDesc').textContent = p.desc;
-            document.querySelectorAll('.pd-sz').forEach((s, i) => { s.classList.remove('sel'); if (i === 2) s.classList.add('sel'); });
+
+            // Tallas dinámicas desde variantes. Sin stock => tachada y deshabilitada.
+            const sizesEl = document.getElementById('pdSizes');
+            sizesEl.innerHTML = '';
+            sizeSelected = false;
+            let firstAvailable = null;
+            (p.variantes || []).forEach(v => {
+                const btn = document.createElement('button');
+                btn.className = 'pd-sz';
+                btn.textContent = v.talla;
+                btn.dataset.varianteId = v.id;
+                btn.dataset.stock = v.stock;
+                if ((v.stock || 0) <= 0) {
+                    btn.classList.add('agotada');
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => selSz(btn);
+                    if (!firstAvailable) firstAvailable = btn;
+                }
+                sizesEl.appendChild(btn);
+            });
+            if (firstAvailable) { firstAvailable.classList.add('sel'); sizeSelected = true; }
 
             slideCount = p.slides.length;
             currentSlide = 0;
-            sizeSelected = true;
             currentProductData = p;
 
             const addBtn = document.getElementById('pdAddBtn');
-            if (addBtn) addBtn.textContent = 'AGREGAR A LA BOLSA';
+            if (addBtn) {
+                if (p.soldOut) { addBtn.textContent = 'AGOTADO'; addBtn.disabled = true; }
+                else { addBtn.textContent = 'AGREGAR A LA BOLSA'; addBtn.disabled = false; }
+            }
 
-            // Set main image
-            document.getElementById('pdMainImg').src = p.slides[0];
+            // Set main image (WebP con fallback a PNG/JPG)
+            setPdImg(p.slides[0]);
             document.getElementById('pdMainImg').alt = p.name;
 
             // Build thumbnails
@@ -915,11 +1496,19 @@
                 thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
                 thumb.onclick = () => goToSlide(i);
                 const img = document.createElement('img');
-                img.src = src;
+                const tw = oniWebp(src);
+                img.onerror = tw ? function(){ img.onerror = null; img.src = src; } : null;
+                img.loading = 'lazy'; img.decoding = 'async';
+                img.src = tw || src;
                 img.alt = p.name + ' ' + (i + 1);
                 thumb.appendChild(img);
                 thumbsEl.appendChild(thumb);
             });
+
+            // Con una sola imagen, las flechas y las miniaturas no aportan: se ocultan.
+            const multiImg = p.slides.length > 1;
+            thumbsEl.style.display = multiImg ? 'flex' : 'none';
+            document.querySelectorAll('#pdMainImgWrap .pd-img-nav').forEach(a => { a.style.display = multiImg ? 'flex' : 'none'; });
         }
 
         function goToSlide(index) {
@@ -928,7 +1517,7 @@
             currentSlide = index;
 
             if (currentProductData) {
-                document.getElementById('pdMainImg').src = currentProductData.slides[currentSlide];
+                setPdImg(currentProductData.slides[currentSlide]);
             }
             document.querySelectorAll('.pd-thumb').forEach((t, i) => t.classList.toggle('active', i === currentSlide));
         }
@@ -1041,35 +1630,125 @@
         }
 
         // ===== CART SYSTEM =====
-        let cart = [];
+        // ===== CARRITO (Fase 4) =====
+        // Persistente en localStorage. La fuente de verdad del stock sigue
+        // siendo el servidor: al abrir la bolsa se revalida contra Supabase
+        // (no vale guardar algo que se agoto hace dias). El precio final se
+        // recalcula igualmente en /api antes de cobrar (Fase 7).
+        const CART_KEY = 'oy-cart';
+
+        function loadCart() {
+            try {
+                const raw = localStorage.getItem(CART_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(arr)) return [];
+                // Solo items con lo minimo indispensable
+                return arr.filter(it => it && it.variante_id && it.qty > 0);
+            } catch (e) {
+                console.warn('Carrito corrupto en localStorage, se reinicia.', e);
+                return [];
+            }
+        }
+
+        function saveCart() {
+            try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
+            catch (e) { console.warn('No se pudo guardar el carrito.', e); }
+        }
+
+        let cart = loadCart();
+        updateCartBadge();  // refleja el carrito persistido al cargar la pagina
 
         function getSelectedSize() {
             const sel = document.querySelector('.pd-sz.sel');
             return sel ? sel.textContent : 'M';
         }
 
+        // ===== FASE 14 — animaciones (reveal al scroll + vuelo a la bolsa) =====
+        var ONI_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        var oniRevealIO = (!ONI_REDUCED && 'IntersectionObserver' in window)
+            ? new IntersectionObserver(function (ents, obs) {
+                ents.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); } });
+              }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
+            : null;
+        function oniObserveReveals(root) {
+            var els = (root || document).querySelectorAll('.reveal:not(.in), .reveal-fade:not(.in)');
+            els.forEach(function (el) { if (oniRevealIO) oniRevealIO.observe(el); else el.classList.add('in'); });
+        }
+        function oniBumpCart() {
+            if (ONI_REDUCED) return;
+            var c = document.getElementById('cartBtnDetail');
+            if (!c) return;
+            c.classList.remove('cart-bump'); void c.offsetWidth; c.classList.add('cart-bump');
+            setTimeout(function () { c.classList.remove('cart-bump'); }, 600);
+        }
+        function oniFlyToCart() {
+            if (ONI_REDUCED) return;
+            var img = document.getElementById('pdMainImg');
+            var cart = document.getElementById('cartBtnDetail');
+            if (!img || !cart || !img.src) return;
+            var s = img.getBoundingClientRect(), t = cart.getBoundingClientRect();
+            if (!s.width || !t.width) return;
+            var fly = document.createElement('img');
+            fly.src = img.src; fly.className = 'oni-fly'; fly.alt = '';
+            fly.style.left = s.left + 'px'; fly.style.top = s.top + 'px';
+            fly.style.width = s.width + 'px'; fly.style.height = s.height + 'px'; fly.style.opacity = '0.95';
+            fly.style.transition = 'transform .75s cubic-bezier(.4,0,.2,1), opacity .75s ease';
+            document.body.appendChild(fly);
+            var tx = (t.left + t.width / 2) - (s.left + s.width / 2);
+            var ty = (t.top + t.height / 2) - (s.top + s.height / 2);
+            requestAnimationFrame(function () {
+                fly.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(0.09) rotate(-6deg)';
+                fly.style.opacity = '0.15';
+            });
+            var done = false, finish = function () { if (done) return; done = true; if (fly.parentNode) fly.remove(); oniBumpCart(); };
+            fly.addEventListener('transitionend', finish, { once: true });
+            setTimeout(finish, 950);
+        }
+        oniObserveReveals(document);
+
+        // ===== FASE 15 — WebP con fallback + accesibilidad por teclado =====
+        function oniWebp(src){ return /^assets\/images\/.+\.(png|jpe?g)$/i.test(src) ? src.replace(/\.(png|jpe?g)$/i, '.webp') : null; }
+        function oniPicture(src, alt, extra){
+            var webp = oniWebp(src);
+            var img = '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt || '') + '" decoding="async"' + (extra || '') + '>';
+            return webp ? '<picture><source srcset="' + escapeHtml(webp) + '" type="image/webp">' + img + '</picture>' : img;
+        }
+        function setPdImg(src){
+            var img = document.getElementById('pdMainImg'); if (!img) return;
+            var webp = oniWebp(src);
+            img.onerror = webp ? function(){ img.onerror = null; img.src = src; } : null;
+            img.src = webp || src;
+        }
+        function oniCardKey(e, id){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProduct(id); } }
+
         function addCart(btn) {
-            if (!sizeSelected) {
-                document.querySelectorAll('.pd-sz').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
+            if (!currentProductData) return;
+            const sel = document.querySelector('.pd-sz.sel');
+            if (!sel || sel.disabled) {
+                document.querySelectorAll('.pd-sz:not(.agotada)').forEach(s => { s.style.outlineColor = 'rgba(255,255,255,0.6)'; setTimeout(() => s.style.outlineColor = '', 600); });
                 return;
             }
-            if (!currentProductData) return;
 
-            const size = getSelectedSize();
-            const priceNum = parseFloat(currentProductData.price.replace(/[^\d.]/g, ''));
+            const p = currentProductData;
+            const size = sel.textContent;
+            const varianteId = sel.dataset.varianteId;
 
-            // Check if same product + size already in cart
-            const existing = cart.find(item => item.name === currentProductData.name && item.size === size);
+            oniFlyToCart();   // Fase 14: vuela la imagen del producto a la bolsa
+
+            // Mismo variante (producto + talla) ya en la bolsa => suma cantidad
+            const existing = cart.find(item => item.variante_id === varianteId);
             if (existing) {
                 existing.qty++;
             } else {
                 cart.push({
-                    name: currentProductData.name,
-                    cat: currentProductData.cat,
-                    price: currentProductData.price,
-                    priceNum: priceNum,
+                    producto_id: p.id,
+                    variante_id: varianteId,
+                    name: p.name,
+                    cat: p.cat,
+                    price: p.price,
+                    priceNum: p.priceNum,
                     size: size,
-                    img: currentProductData.slides[0],
+                    img: p.slides[0],
                     qty: 1
                 });
             }
@@ -1081,11 +1760,13 @@
             btn.style.border = '1px solid #fff';
             setTimeout(() => { btn.textContent = 'AGREGAR A LA BOLSA'; btn.style.background = ''; btn.style.color = ''; btn.style.border = ''; }, 1800);
 
+            saveCart();
             updateCartBadge();
         }
 
         function removeFromCart(index) {
             cart.splice(index, 1);
+            saveCart();
             renderCart();
             updateCartBadge();
         }
@@ -1103,23 +1784,23 @@
 
         function renderCart() {
             const itemsEl = document.getElementById('cartItems');
-            const emptyEl = document.getElementById('cartEmpty');
             const footerEl = document.getElementById('cartFooter');
-            const totalEl = document.getElementById('cartTotal');
+            const shippingEl = document.getElementById('cartShipping');
 
             if (cart.length === 0) {
                 itemsEl.innerHTML = '<div class="cart-empty">Tu bolsa esta vacia</div>';
                 footerEl.style.display = 'none';
+                if (shippingEl) shippingEl.style.display = 'none';
                 return;
             }
 
             let html = '';
             cart.forEach((item, i) => {
                 html += '<div class="cart-item">' +
-                    '<div class="cart-item-img"><img src="' + item.img + '" alt="' + item.name + '"></div>' +
+                    '<div class="cart-item-img"><img src="' + escapeHtml(item.img) + '" alt="' + escapeHtml(item.name) + '"></div>' +
                     '<div class="cart-item-info">' +
-                        '<div class="cart-item-name">' + item.name + '</div>' +
-                        '<div class="cart-item-meta">Talla: ' + item.size + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
+                        '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
+                        '<div class="cart-item-meta">Talla: ' + escapeHtml(item.size) + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
                         '<div class="cart-item-price">S/ ' + (item.priceNum * item.qty).toFixed(2) + '</div>' +
                     '</div>' +
                     '<button class="cart-item-remove" onclick="removeFromCart(' + i + ')">&times;</button>' +
@@ -1127,14 +1808,98 @@
             });
             itemsEl.innerHTML = html;
 
-            const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
-            totalEl.textContent = 'S/ ' + total.toFixed(2);
+            if (shippingEl) shippingEl.style.display = 'block';
+            applyShippingToForm();
+
+            // Desglose Subtotal / Descuento / Envío / Total
+            const s = getCartSummary();
+            renderCouponUI(s.descuento);
+            const subEl = document.getElementById('cartSubtotal');
+            const envEl = document.getElementById('cartEnvio');
+            if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
+            if (envEl) {
+                if (!shipping.distrito) envEl.textContent = '—';
+                else if (s.contraentrega) envEl.textContent = 'Contraentrega';
+                else if (s.envioGratis) envEl.textContent = 'Gratis';
+                else envEl.textContent = 'S/ ' + s.envio.toFixed(2);
+            }
+            document.getElementById('cartTotal').textContent = 'S/ ' + s.total.toFixed(2);
+
+            // Nota de envío: contraentrega, ya-gratis, o cuánto falta para el gratis
+            const envNote = document.getElementById('envioNote');
+            if (envNote) {
+                envNote.className = 'cart-envio-note';
+                if (s.contraentrega) {
+                    envNote.textContent = 'Pagas al recibir (contraentrega).';
+                } else if (s.envioGratis) {
+                    envNote.textContent = '¡Tienes envío gratis!';
+                    envNote.classList.add('free');
+                } else {
+                    const falta = UMBRAL_ENVIO_GRATIS - s.subtotal;
+                    envNote.textContent = falta > 0
+                        ? 'Te faltan S/ ' + falta.toFixed(2) + ' para envío gratis'
+                        : 'Agrega un poco más para envío gratis';
+                }
+            }
+
+            // El botón cambia a "confirmar" en contraentrega (no hay pago online)
+            const cbtn = document.getElementById('cartCheckoutBtn');
+            if (cbtn && !cbtn.disabled) cbtn.textContent = s.contraentrega ? 'CONFIRMAR PEDIDO' : 'PAGAR';
+
             footerEl.style.display = 'block';
         }
 
         let cartIsOpen = false;
 
-        function openCart() {
+        function showCartNotice(notes) {
+            const el = document.getElementById('cartNotice');
+            if (!el) return;
+            if (!notes || notes.length === 0) { el.classList.remove('show'); el.innerHTML = ''; return; }
+            el.innerHTML = 'Ajustamos tu bolsa segun el stock disponible:' +
+                '<ul>' + notes.map(n => '<li>' + escapeHtml(n) + '</li>').join('') + '</ul>';
+            el.classList.add('show');
+        }
+
+        // Revalida el stock del carrito contra Supabase al abrir la bolsa.
+        // RLS solo devuelve variantes de productos activos: si una variante
+        // ya no aparece, el producto se desactivo o se borro => se retira.
+        async function validateCartStock() {
+            if (cart.length === 0) return;
+            let changed = false;
+            const notes = [];
+            try {
+                const ids = [...new Set(cart.map(i => i.variante_id))];
+                const rows = await sbFetch('variantes?id=in.(' + ids.join(',') + ')&select=id,stock');
+                const stockById = {};
+                rows.forEach(r => { stockById[r.id] = r.stock || 0; });
+                for (let i = cart.length - 1; i >= 0; i--) {
+                    const item = cart[i];
+                    const stock = stockById[item.variante_id];
+                    if (stock === undefined || stock <= 0) {
+                        notes.push(item.name + ' (' + item.size + ') ya no esta disponible');
+                        cart.splice(i, 1);
+                        changed = true;
+                    } else if (item.qty > stock) {
+                        notes.push(item.name + ' (' + item.size + '): solo quedan ' + stock);
+                        item.qty = stock;
+                        changed = true;
+                    }
+                }
+            } catch (e) {
+                // Si Supabase falla, no rompas la bolsa: se revalida igual en /api al pagar.
+                console.error('No se pudo validar el stock del carrito:', e);
+                return;
+            }
+            if (changed) {
+                saveCart();
+                updateCartBadge();
+                renderCart();
+                showCartNotice(notes);
+            }
+        }
+
+        async function openCart() {
+            showCartNotice(null);
             renderCart();
             const cartPage = document.getElementById('cartPage');
             cartPage.classList.add('active');
@@ -1142,10 +1907,14 @@
             cartPage.scrollTop = 0;
             cartIsOpen = true;
             history.pushState({ cartOpen: true }, '');
+            // Carga distritos frescos, revalida stock y re-valida el cupón
+            // contra el servidor; luego re-render para reflejar todo.
+            await Promise.all([loadDistricts(), validateCartStock(), revalidateCoupon()]);
+            if (cart.length > 0) renderCart();
         }
 
         function closeCart() {
-            backToCart();
+            setCheckoutMsg('', '');
             const cartPage = document.getElementById('cartPage');
             cartPage.classList.remove('active');
             document.body.style.overflow = '';
@@ -1156,103 +1925,200 @@
             }
         }
 
-        // ===== MERCADO PAGO PAYMENT BRICK =====
-        let mpBrickController = null;
+        // ===== CHECKOUT (Fase 7) =====
+        // El navegador NO calcula el pedido: solo envía variante_id+cantidades,
+        // distrito, cupón y datos del cliente a /api/crear-preferencia, que
+        // recalcula y valida TODO en el servidor. Requiere backend (Vercel).
+        const CREAR_PREF_API = '/api/crear-preferencia';
+        // Public Key de Mercado Pago (publica; el cobro real usa el access token
+        // del servidor). Abre el modal de Checkout Pro con el preference_id.
+        const MP_PUBLIC_KEY = 'APP_USR-e207152a-6de8-417a-aea9-ffbd74af3329';
+        let mpInstance = null;
 
-        function checkout() {
+        // ===== Pago rechazado: pantalla propia (estética de la tienda) =====
+        // MP vuelve a /?pago=rechazado tras un pago no aprobado. El carrito vive
+        // en localStorage y NO se limpia en pago online, así que sigue intacto.
+        function showPayFail() { const el = document.getElementById('payFail'); if (el) el.classList.add('show'); }
+        function hidePayFail() { const el = document.getElementById('payFail'); if (el) el.classList.remove('show'); }
+        (function initPayFail() {
+            const params = new URLSearchParams(location.search);
+            if (params.get('pago') !== 'rechazado') return;
+            history.replaceState(null, '', location.pathname);  // limpia la URL: un refresh no re-dispara
+            showPayFail();
+            const retry = document.getElementById('payFailRetry');
+            const close = document.getElementById('payFailClose');
+            if (retry) retry.onclick = function () { hidePayFail(); if (typeof openCart === 'function') openCart(); };
+            if (close) close.onclick = hidePayFail;
+        })();
+
+        function openCheckoutPro(preferenceId, initPoint) {
+            try {
+                if (typeof MercadoPago === 'undefined') {
+                    if (initPoint) { window.location.href = initPoint; return; }
+                    throw new Error('SDK de Mercado Pago no disponible');
+                }
+                if (!mpInstance) mpInstance = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
+                setCheckoutMsg('Abriendo el pago seguro de Mercado Pago...', '');
+                mpInstance.checkout({ preference: { id: preferenceId }, autoOpen: true });
+            } catch (e) {
+                console.error('checkout pro:', e);
+                if (initPoint) { window.location.href = initPoint; return; }
+                setCheckoutMsg('No se pudo abrir el pago. Intenta de nuevo.', 'error');
+            }
+        }
+
+        function setCheckoutMsg(text, kind) {
+            const el = document.getElementById('checkoutMsg');
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'cart-checkout-msg' + (kind ? ' ' + kind : '');
+        }
+
+        // Validación de UX antes de enviar. El servidor revalida igual.
+        function validateShippingForm() {
+            saveShipping();
+            const FIELDS = ['fieldNombre', 'fieldDistrito', 'fieldDireccion', 'fieldTelefono'];
+            FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('invalid'); });
+            if (districts.length === 0) {
+                setCheckoutMsg('El envio aun no esta disponible. Intentalo mas tarde.', 'error');
+                return false;
+            }
+            const problems = [];
+            if (!shipping.nombre) problems.push('fieldNombre');
+            if (!shipping.distrito || !districtByName[shipping.distrito]) problems.push('fieldDistrito');
+            if (!shipping.direccion) problems.push('fieldDireccion');
+            if (!shipping.telefono) problems.push('fieldTelefono');
+            // Email es opcional; si se escribe, debe tener formato válido.
+            if (shipping.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping.email)) problems.push('fieldEmail');
+            if (problems.length) {
+                problems.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('invalid'); });
+                const first = document.getElementById(problems[0]);
+                if (first) {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const f = first.querySelector('select, input'); if (f) f.focus();
+                }
+                setCheckoutMsg('Revisa los datos de envio marcados.', 'error');
+                return false;
+            }
+            setCheckoutMsg('', '');
+            return true;
+        }
+
+        async function checkout() {
             if (cart.length === 0) return;
-            const total = cart.reduce((sum, item) => sum + item.priceNum * item.qty, 0);
+            if (!validateShippingForm()) return;
 
-            // Hide checkout button, show loading
-            document.getElementById('cartCheckoutBtn').style.display = 'none';
-            document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.4);font:400 0.75rem Syne,sans-serif;letter-spacing:2px;text-transform:uppercase;">Cargando formulario de pago...</div>';
+            const btn = document.getElementById('cartCheckoutBtn');
+            const payload = {
+                items: cart.map(it => ({ variante_id: it.variante_id, qty: it.qty })),
+                cupon: (coupon && coupon.valido) ? coupon.codigo : '',
+                cliente: {
+                    nombre: shipping.nombre,
+                    email: shipping.email,
+                    telefono: shipping.telefono,
+                    direccion: shipping.direccion,
+                    distrito: shipping.distrito,
+                    referencia: shipping.referencia
+                }
+            };
 
-            if (typeof MercadoPago === 'undefined') {
-                document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:#ff4444;font:600 0.7rem Syne,sans-serif;letter-spacing:2px;">Error al cargar Mercado Pago. Recarga la pagina.</div>';
-                document.getElementById('cartCheckoutBtn').style.display = 'block';
+            if (btn) { btn.disabled = true; btn.textContent = 'PROCESANDO...'; }
+            setCheckoutMsg('Validando tu pedido...', '');
+
+            let res, data;
+            try {
+                res = await fetch(CREAR_PREF_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                data = await res.json().catch(() => ({}));
+            } catch (e) {
+                console.error('checkout:', e);
+                setCheckoutMsg('No se pudo conectar. Revisa tu conexion e intentalo de nuevo.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'PAGAR'; }
+                return;
+            }
+            if (btn) { btn.disabled = false; btn.textContent = 'PAGAR'; }
+
+            // Errores de validación server-side
+            if (!res.ok || data.error) { await handleCheckoutError(data); return; }
+
+            // Contraentrega: no hay pago online. El pedido ya quedó creado y el
+            // stock reservado en el servidor. Confirmamos y vaciamos la bolsa.
+            if (data.contraentrega && data.pedido) {
+                showOrderConfirmation(data.pedido.codigo,
+                    'Pedido registrado. Pagas al recibir; te contactaremos para coordinar la entrega.');
                 return;
             }
 
-            const mp = new MercadoPago('TEST-89d43404-8eb5-4c8e-93b7-94c40c4a87b7', {
-                locale: 'es-PE'
-            });
-
-            // Build items description
-            const desc = cart.map(i => i.name + ' (' + i.size + ')').join(', ');
-
-            // Destroy previous brick if exists
-            if (mpBrickController) {
-                mpBrickController.unmount();
+            // Checkout Pro (Fase 7b): el servidor creó la preferencia. Abrimos
+            // el modal de pago de Mercado Pago con el preference_id.
+            if (data.preference_id) {
+                openCheckoutPro(data.preference_id, data.init_point);
+                return;
             }
 
-            // Render Payment Brick
-            mp.bricks().create('payment', 'mpPaymentBrick', {
-                initialization: {
-                    amount: total,
-                    description: desc,
-                    payer: {
-                        email: ''
-                    }
-                },
-                customization: {
-                    visual: {
-                        style: {
-                            theme: 'dark',
-                            customVariables: {
-                                formBackgroundColor: '#000000',
-                                baseColor: '#ffffff'
-                            }
-                        }
-                    },
-                    paymentMethods: {
-                        ticket: 'all',
-                        bankTransfer: 'all',
-                        creditCard: 'all',
-                        debitCard: 'all'
-                    }
-                },
-                callbacks: {
-                    onSubmit: ({ formData }) => {
-                        return new Promise((resolve) => {
-                            // Sitio estatico (GitHub Pages) sin backend: NO se puede crear el
-                            // pago de forma segura desde el navegador. Para pagos reales necesitas
-                            // un servidor que reciba formData y llame a la API de Mercado Pago con
-                            // tu ACCESS TOKEN privado (nunca lo pongas en el frontend).
-                            console.log('Payment submitted:', formData);
-                            alert('Pedido recibido! Te contactaremos para completar el pago.');
-                            cart = [];
-                            updateCartBadge();
-                            closeCart();
-                            resolve();
-                        });
-                    },
-                    onError: (error) => {
-                        console.error('Payment brick error:', error);
-                    },
-                    onReady: () => {
-                        // Remove loading text
-                        const loading = document.getElementById('mpPaymentBrick').querySelector('div[style]');
-                        if (loading && loading.textContent.includes('Cargando')) loading.remove();
-                        document.getElementById('cartBackBtn').style.display = 'block';
-                    }
-                }
-            }).then(controller => {
-                mpBrickController = controller;
-            }).catch(err => {
-                document.getElementById('mpPaymentBrick').innerHTML = '<div style="text-align:center;padding:2rem;color:#ff4444;font:600 0.7rem Syne,sans-serif;letter-spacing:2px;">Error al cargar el formulario de pago.</div>';
-                document.getElementById('cartCheckoutBtn').style.display = 'block';
-                console.error(err);
-            });
+            // Fase 7a: el pago aún no está habilitado, pero el pedido quedó creado.
+            if (data.mp_configurado === false && data.pedido) {
+                const cod = data.pedido.codigo;
+                const el = document.getElementById('checkoutMsg');
+                el.className = 'cart-checkout-msg ok';
+                el.innerHTML = 'Pedido <strong>' + escapeHtml(cod) + '</strong> registrado (total S/ ' +
+                    Number(data.pedido.total).toFixed(2) + '). El pago se habilitara pronto.<br>' +
+                    '<a href="/pedido?codigo=' + encodeURIComponent(cod) + '" style="color:#7CFC9A;text-decoration:underline;">Seguir mi pedido</a>';
+                return;
+            }
+
+            setCheckoutMsg('Pedido recibido. Te contactaremos para completar el pago.', 'ok');
         }
 
-        function backToCart() {
-            if (mpBrickController) {
-                mpBrickController.unmount();
-                mpBrickController = null;
+        // Vacía la bolsa y muestra una confirmación con enlace de seguimiento.
+        // Se usa cuando el pedido queda cerrado sin pago online (contraentrega;
+        // en Fase 7b también tras un pago aprobado).
+        function showOrderConfirmation(codigo, mensaje) {
+            cart = []; saveCart();
+            coupon = null; saveCoupon();
+            updateCartBadge();
+            const shipEl = document.getElementById('cartShipping');
+            const footEl = document.getElementById('cartFooter');
+            if (shipEl) shipEl.style.display = 'none';
+            if (footEl) footEl.style.display = 'none';
+            showCartNotice(null);
+            document.getElementById('cartItems').innerHTML =
+                '<div class="cart-confirm">' +
+                    '<div class="cc-check">&#10003;</div>' +
+                    '<div class="cc-title">' + escapeHtml(mensaje) + '</div>' +
+                    '<div class="cc-code">' + escapeHtml(codigo) + '</div>' +
+                    '<a class="cc-link" href="/pedido?codigo=' + encodeURIComponent(codigo) + '">Seguir mi pedido</a>' +
+                '</div>';
+        }
+
+        // Traduce los errores del servidor a la UI y reconcilia la bolsa.
+        async function handleCheckoutError(data) {
+            data = data || {};
+            switch (data.error) {
+                case 'stock':
+                case 'no_disponible':
+                    setCheckoutMsg((data.mensaje || 'Stock insuficiente') + '. Ajustamos tu bolsa.', 'error');
+                    await validateCartStock();
+                    renderCart();
+                    break;
+                case 'cupon':
+                    coupon = null; saveCoupon();
+                    setCouponMsg(data.mensaje || 'El cupón ya no es válido', 'error');
+                    renderCart();
+                    setCheckoutMsg('Quitamos el cupón: ya no es válido.', 'error');
+                    break;
+                case 'distrito':
+                    setCheckoutMsg('Selecciona un distrito válido.', 'error');
+                    break;
+                case 'datos':
+                    validateShippingForm();
+                    break;
+                default:
+                    setCheckoutMsg(data.mensaje || 'No se pudo procesar el pedido.', 'error');
             }
-            document.getElementById('mpPaymentBrick').innerHTML = '';
-            document.getElementById('cartCheckoutBtn').style.display = 'block';
-            document.getElementById('cartBackBtn').style.display = 'none';
         }
 
         // Keyboard: Escape closes cart

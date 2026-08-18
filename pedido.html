@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de pedido — OniYouth</title>
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Syne', sans-serif; background: #000; color: #fff; min-height: 100vh; }
+        a { color: inherit; }
+        :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 4rem 1.5rem 3rem; }
+        .logo { display: block; width: 40px; height: 40px; margin: 0 auto 2.5rem; }
+        .logo img { width: 100%; height: 100%; filter: brightness(0) invert(1); }
+        h1 { font: 800 clamp(1.6rem, 5vw, 2.6rem) 'Syne', sans-serif; letter-spacing: -1px; text-align: center; }
+        .sub { text-align: center; color: rgba(255,255,255,0.5); font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; margin-top: 0.5rem; }
+
+        .search { display: flex; gap: 8px; margin: 2.5rem auto 0; max-width: 460px; }
+        .search input {
+            flex: 1; padding: 14px 16px; background: rgba(255,255,255,0.05); color: #fff;
+            border: 1px solid rgba(255,255,255,0.18); font: 400 0.9rem 'Syne', sans-serif;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .search input::placeholder { color: rgba(255,255,255,0.5); text-transform: none; }
+        .search button {
+            padding: 0 22px; background: #fff; color: #000; border: none;
+            font: 700 0.7rem 'Syne', sans-serif; letter-spacing: 2px; cursor: pointer;
+        }
+
+        .msg { text-align: center; margin-top: 2.5rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; letter-spacing: 1px; }
+        .msg.error { color: #ff6b6b; }
+
+        .card { margin-top: 2.5rem; border: 1px solid rgba(255,255,255,0.12); padding: 1.8rem; }
+        .code-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+        .code { font: 700 1.1rem 'Syne', sans-serif; letter-spacing: 2px; }
+        .date { color: rgba(255,255,255,0.55); font-size: 0.72rem; letter-spacing: 1px; }
+
+        /* Stepper de estado — pasos completados con check estilo "verificado" */
+        .steps { display: flex; margin: 2rem 0 0.5rem; }
+        .step { flex: 1; text-align: center; position: relative; }
+        .step .dot {
+            width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 0.7rem;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent; border: 2px solid rgba(255,255,255,0.16);
+            transition: background .4s ease, border-color .4s ease, box-shadow .4s ease;
+        }
+        .step .dot svg { width: 15px; height: 15px; display: block; }
+        .step .dot svg path {
+            fill: none; stroke: #04140b; stroke-width: 3.2;
+            stroke-linecap: round; stroke-linejoin: round;
+            stroke-dasharray: 24; stroke-dashoffset: 24;
+        }
+        /* Completado: círculo verde relleno + check que se dibuja (cascada por --i) */
+        .step.done .dot {
+            background: #7CFC9A; border-color: #7CFC9A;
+            box-shadow: 0 0 14px rgba(124,252,154,0.30);
+            animation: dot-pop .42s cubic-bezier(.34,1.56,.64,1) both;
+            animation-delay: calc(var(--i, 0) * 0.11s);
+        }
+        .step.done .dot svg path {
+            animation: check-draw .45s ease forwards;
+            animation-delay: calc(var(--i, 0) * 0.11s + 0.12s);
+        }
+        /* Actual: resaltado con anillo verde pulsante */
+        .step.current .dot {
+            border-color: #7CFC9A;
+            box-shadow: 0 0 0 4px rgba(124,252,154,0.14);
+            animation: dot-pulse 2.2s ease-in-out infinite;
+        }
+        /* Futuro: gris apagado (por defecto) */
+        .step .lbl {
+            font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
+            color: rgba(255,255,255,0.5); transition: color .4s ease;
+        }
+        .step.done .lbl { color: #7CFC9A; }
+        .step.current .lbl { color: #fff; }
+        .step::before {
+            content: ''; position: absolute; top: 12px; left: -50%; width: 100%; height: 2px;
+            background: rgba(255,255,255,0.14); z-index: -1;
+        }
+        .step:first-child::before { display: none; }
+        .step.done::before, .step.current::before {
+            background: #7CFC9A;
+            animation: seg-fill .5s ease both;
+            animation-delay: calc(var(--i, 0) * 0.11s);
+        }
+        @keyframes check-draw { to { stroke-dashoffset: 0; } }
+        @keyframes dot-pop { 0% { transform: scale(.5); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes dot-pulse { 0%,100% { box-shadow: 0 0 0 4px rgba(124,252,154,0.14); } 50% { box-shadow: 0 0 0 7px rgba(124,252,154,0.04); } }
+        @keyframes seg-fill { from { background: rgba(255,255,255,0.14); } to { background: #7CFC9A; } }
+        @media (prefers-reduced-motion: reduce) {
+            .step.done .dot, .step.current .dot, .step.done::before, .step.current::before { animation: none !important; }
+            .step.done .dot svg path { stroke-dashoffset: 0; animation: none !important; }
+        }
+
+        .estado-neg {
+            margin-top: 1.5rem; padding: 12px 16px; border: 1px solid #ff6b6b;
+            color: #ff6b6b; font-size: 0.8rem; letter-spacing: 1px; text-align: center; text-transform: uppercase;
+        }
+        .eta { margin-top: 1.4rem; font-size: 0.8rem; color: rgba(255,255,255,0.55); letter-spacing: 0.5px; }
+
+        .items { margin-top: 1.8rem; border-top: 1px solid rgba(255,255,255,0.08); }
+        .item { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); align-items: center; }
+        .item img { width: 54px; height: 68px; object-fit: contain; flex-shrink: 0; background: rgba(255,255,255,0.03); }
+        .item .info { flex: 1; min-width: 0; }
+        .item .n { font: 600 0.9rem 'Syne', sans-serif; }
+        .item .m { font-size: 0.7rem; color: rgba(255,255,255,0.55); margin-top: 0.25rem; letter-spacing: 1px; }
+        .item .p { font: 600 0.85rem 'Syne', sans-serif; white-space: nowrap; }
+
+        .totals { margin-top: 1.5rem; }
+        .trow { display: flex; justify-content: space-between; font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-top: 0.4rem; }
+        .trow.total { color: #fff; font-weight: 700; font-size: 1rem; margin-top: 0.8rem; }
+        .back { display: block; text-align: center; margin-top: 2.5rem; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.55); text-decoration: none; }
+        .back:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <a href="/" class="logo"><img src="assets/images/logo.webp" alt="OniYouth"></a>
+        <h1>Seguimiento</h1>
+        <div class="sub">Estado de tu pedido</div>
+
+        <form class="search" id="searchForm" onsubmit="return onSearch(event)">
+            <input type="text" id="codeInput" placeholder="Codigo (ej. ONI-1A2B3C4D)" autocomplete="off">
+            <button type="submit">BUSCAR</button>
+        </form>
+
+        <div class="msg" id="msg"></div>
+        <div id="result"></div>
+
+        <a href="/" class="back">&larr; Volver a la tienda</a>
+    </div>
+
+    <script>
+        const ESTADOS = ['pendiente', 'pagado', 'enviado', 'entregado'];
+        const ESTADO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', enviado: 'Enviado', entregado: 'Entregado', rechazado: 'Rechazado', cancelado: 'Cancelado', contraentrega: 'Contraentrega' };
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function money(n) { return 'S/ ' + (Number(n) || 0).toFixed(2); }
+        function setMsg(text, kind) { const el = document.getElementById('msg'); el.textContent = text || ''; el.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+        function getCodigo() {
+            const p = new URLSearchParams(location.search);
+            return (p.get('codigo') || '').trim();
+        }
+
+        function onSearch(e) {
+            e.preventDefault();
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) return false;
+            // Actualiza la URL para que sea compartible/recargable
+            history.replaceState(null, '', '/pedido?codigo=' + encodeURIComponent(code));
+            cargar(code);
+            return false;
+        }
+
+        function fmtFecha(iso) {
+            try { return new Date(iso).toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' }); }
+            catch (e) { return ''; }
+        }
+
+        // Check estilo "verificado" que se dibuja en los pasos completados.
+        const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4 10-10"/></svg>';
+        function stepHtml(cls, label, i) {
+            const inner = (cls === 'done') ? CHECK_SVG : '';
+            return '<div class="step ' + cls + '" style="--i:' + i + '"><div class="dot">' + inner + '</div>' +
+                   '<div class="lbl">' + label + '</div></div>';
+        }
+
+        function renderStepper(estado) {
+            if (estado === 'rechazado' || estado === 'cancelado') {
+                return '<div class="estado-neg">Pedido ' + escapeHtml(ESTADO_LABEL[estado] || estado) + '</div>';
+            }
+            if (estado === 'contraentrega') {
+                const pasos = [['contraentrega', 'Confirmado'], ['enviado', 'Enviado'], ['entregado', 'Entregado']];
+                const stepper = pasos.map((s, i) => stepHtml(i === 0 ? 'current' : '', s[1], i)).join('');
+                return '<div class="estado-neg" style="border-color:#7CFC9A;color:#7CFC9A;">Contraentrega — pagas al recibir</div>' +
+                    '<div class="steps">' + stepper + '</div>';
+            }
+            const idx = ESTADOS.indexOf(estado);
+            return '<div class="steps">' + ESTADOS.map((s, i) => {
+                const cls = i < idx ? 'done' : (i === idx ? 'current' : '');
+                return stepHtml(cls, ESTADO_LABEL[s], i);
+            }).join('') + '</div>';
+        }
+
+        function renderEta(p) {
+            if (p.estado === 'rechazado' || p.estado === 'cancelado' || p.estado === 'entregado') return '';
+            if (p.dias_estimados == null) return '';
+            let extra = '';
+            if (p.creado_en) {
+                const d = new Date(p.creado_en);
+                d.setDate(d.getDate() + Number(p.dias_estimados));
+                extra = ' (aprox. ' + fmtFecha(d.toISOString()) + ')';
+            }
+            const dias = Number(p.dias_estimados);
+            return '<div class="eta">Entrega estimada a ' + escapeHtml(p.distrito || '') + ': ' +
+                dias + (dias === 1 ? ' dia habil' : ' dias habiles') + extra + '</div>';
+        }
+
+        function render(p) {
+            const itemsHtml = (p.items || []).map(it =>
+                '<div class="item">' +
+                    (it.img ? '<img src="' + escapeHtml(it.img) + '" alt="' + escapeHtml(it.nombre) + '">' : '<div class="item" style="width:54px;height:68px"></div>') +
+                    '<div class="info"><div class="n">' + escapeHtml(it.nombre) + '</div>' +
+                    '<div class="m">Talla ' + escapeHtml(it.talla) + ' &middot; Cant: ' + (it.qty || 1) + '</div></div>' +
+                    '<div class="p">' + money(it.subtotal) + '</div>' +
+                '</div>'
+            ).join('');
+
+            const descuentoRow = (Number(p.descuento) > 0)
+                ? '<div class="trow"><span>Descuento</span><span>- ' + money(p.descuento) + '</span></div>' : '';
+
+            document.getElementById('result').innerHTML =
+                '<div class="card">' +
+                    '<div class="code-row"><span class="code">' + escapeHtml(p.codigo) + '</span>' +
+                        (p.creado_en ? '<span class="date">' + fmtFecha(p.creado_en) + '</span>' : '') + '</div>' +
+                    renderStepper(p.estado) +
+                    renderEta(p) +
+                    '<div class="items">' + itemsHtml + '</div>' +
+                    '<div class="totals">' +
+                        '<div class="trow"><span>Subtotal</span><span>' + money(p.subtotal) + '</span></div>' +
+                        descuentoRow +
+                        '<div class="trow"><span>Envio</span><span>' + money(p.envio) + '</span></div>' +
+                        '<div class="trow total"><span>Total</span><span>' + money(p.total) + '</span></div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        async function cargar(codigo) {
+            setMsg('Buscando tu pedido...', '');
+            document.getElementById('result').innerHTML = '';
+            try {
+                const r = await fetch('/api/pedido?codigo=' + encodeURIComponent(codigo));
+                const data = await r.json().catch(() => ({}));
+                if (r.status === 404) { setMsg('No encontramos un pedido con ese codigo.', 'error'); return; }
+                if (!r.ok) { setMsg((data && data.mensaje) || 'No se pudo consultar el pedido.', 'error'); return; }
+                setMsg('', '');
+                render(data);
+            } catch (e) {
+                console.error(e);
+                setMsg('No se pudo conectar. Intentalo de nuevo.', 'error');
+            }
+        }
+
+        // Carga inicial si viene ?codigo= en la URL
+        (function () {
+            const c = getCodigo();
+            if (c) { document.getElementById('codeInput').value = c; cargar(c); }
+        })();
+    </script>
+</body>
+</html>
