@@ -88,18 +88,23 @@ Fase 12 es **verificación, no código nuevo**: el comportamiento ya estaba impl
 - **Contraentrega**: crea pedido sin pago online (`ok+contraentrega=true`, sin `init_point`) y reserva stock al instante (-1). Pedido `ONI-D7B09897`.
 - **Carrera**: 2 pedidos concurrentes por TODO el stock (8u c/u) → exactamente 1 gana (`ONI-FB383A55`, 8→0), el otro 409 `stock`. Stock final 0, nunca negativo (lock de fila de `descontar_stock_pedido`).
 
-**⚠️ RESIDUO DE PRUEBAS (limpiar/restock cuando el panel esté activo):**
-- Stock consumido: **`oniyouth stars / XS` quedó en 0** (restock), **`ONIYOUTH TRIBAL TEE / S` en 9**.
-- Pedidos de prueba creados (varios `pendiente` de los tests de envío/cupón, 2 `contraentrega` reales `ONI-D7B09897`/`ONI-FB383A55`, y 1 `cancelado` del perdedor de la carrera).
+**RESIDUO DE PRUEBAS — YA LIMPIADO (2026-08-18, vía psql con la cadena de `~/.oniyouth_db.url`, borrada al terminar):**
+- Stock repuesto: `oniyouth stars / XS` y `ONIYOUTH TRIBAL TEE / S` **de vuelta a 10**.
+- Los 5 pedidos de prueba (`cliente_nombre='QA Bot'`: 3 `pendiente` + 2 `contraentrega` incl. `ONI-D7B09897`/`ONI-FB383A55`) quedaron **`cancelado`**. El perdedor de la carrera no dejó pedido (falló en el pre-check de stock antes de crearlo).
 
-**PENDIENTE (requieren TU navegador, MP solo firma webhooks tras un pago real):**
-- **Pago rechazado E2E**: comprar en `oniyouth-dev.vercel.app` con titular de tarjeta **`OTHE`** → el pedido debe quedar `rechazado` y el stock intacto.
-- **Pago pendiente E2E**: comprar con titular **`CONT`** → pedido `pendiente`, y el seguimiento `/pedido?codigo=` debe mostrarlo bien.
-- (Opcional) **Webhook duplicado real**: reenviar la misma notificación desde el panel de MP y confirmar que no descuenta doble.
+**E2E reales de navegador — HECHOS y verificados por logs (2026-08-18):**
+Ambos cayeron sobre el mismo pedido `ONI-80BE2001` (se reusó el checkout para las 2 tarjetas; MP adjunta varios pagos a la misma preferencia):
+- **OTHE** → MP devolvió pago `1350507981` `status=rejected` / `status_detail=cc_rejected_other_reason` → webhook marcó `rechazado`. ✅ Correcto (MP lo rechazó de verdad).
+- **CONT** → MP devolvió pago `1350507989` `status=in_process` / `status_detail=pending_contingency` → webhook hizo **"estado sin acción"**, NO lo tocó. ✅ Correcto.
+- **Conclusión:** el pedido quedó `rechazado` por el pago OTHE (rechazo real de MP), NO por marcar mal el pending. El manejo de pending es correcto (el log lo prueba en vivo). **No es bug.**
+- **Stock:** las 10 variantes en 10/10; ni el rechazado ni el pendiente descuentan (solo `approved` descuenta). ✅
+- Para ver el pending "limpio" (queda `pendiente`): comprar CON `CONT` en un checkout NUEVO, sin un OTHE previo.
+
+**DECISIÓN TOMADA (pendiente de implementar) — "rechazado que revive a pagado":** si un pedido está `rechazado` y luego llega un `approved` de un intento paralelo, el dueño QUIERE que se marque `pagado` normalmente (el cliente pagó, hay que atenderlo) PERO con un **aviso distinto** porque es un caso raro que él quiere revisar. Diseño en discusión; NO implementado aún.
 
 ## Falta (fases pendientes)
 - **9** Notificaciones automáticas (correo al cliente + aviso al admin). Necesita **proveedor de correo**.
-- **12** Cerrar los 2 E2E de navegador (rechazado con `OTHE`, pendiente con `CONT`); restock del stock de prueba.
+- **12** ✅ Verificada (29 asserts automatizados + 2 E2E reales confirmados por logs). Queda solo implementar el aviso de "rechazado→pagado revivido" (decisión ya tomada, diseño en discusión).
 - **14** Animaciones (fade-in scroll, hover, vuelo a la bolsa; respetar `prefers-reduced-motion`).
 - **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
 
