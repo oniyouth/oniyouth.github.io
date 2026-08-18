@@ -169,7 +169,7 @@
         // Check estilo "verificado" que se dibuja en los pasos completados.
         const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4 10-10"/></svg>';
         function stepHtml(cls, label, i) {
-            const inner = (cls === 'done') ? CHECK_SVG : '';
+            const inner = (cls.indexOf('done') !== -1) ? CHECK_SVG : '';
             return '<div class="step ' + cls + '" style="--i:' + i + '"><div class="dot">' + inner + '</div>' +
                    '<div class="lbl">' + label + '</div></div>';
         }
@@ -180,13 +180,13 @@
             }
             if (estado === 'contraentrega') {
                 const pasos = [['contraentrega', 'Confirmado'], ['enviado', 'Enviado'], ['entregado', 'Entregado']];
-                const stepper = pasos.map((s, i) => stepHtml(i === 0 ? 'current' : '', s[1], i)).join('');
+                const stepper = pasos.map((s, i) => stepHtml(i === 0 ? 'done current' : '', s[1], i)).join('');
                 return '<div class="estado-neg" style="border-color:#7CFC9A;color:#7CFC9A;">Contraentrega — pagas al recibir</div>' +
                     '<div class="steps">' + stepper + '</div>';
             }
             const idx = ESTADOS.indexOf(estado);
             return '<div class="steps">' + ESTADOS.map((s, i) => {
-                const cls = i < idx ? 'done' : (i === idx ? 'current' : '');
+                const cls = i < idx ? 'done' : (i === idx ? 'done current' : '');
                 return stepHtml(cls, ESTADO_LABEL[s], i);
             }).join('') + '</div>';
         }
