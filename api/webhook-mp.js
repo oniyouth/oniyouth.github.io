@@ -19,6 +19,7 @@
 
 const crypto = require('crypto');
 const { configOK, parseBody, sb } = require('./_lib/store');
+const { notificarPago } = require('./_lib/mailer');
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -67,11 +68,12 @@ async function mpGetPayment(id) {
   return r.json();
 }
 
-// Fase 9 (stub): no debe romper el webhook si falla.
+// Fase 9: correo al cliente + aviso al admin (Resend). Best-effort:
+// notificarPago nunca lanza, pero envolvemos igual por si acaso. El pedido
+// ya quedó pagado antes de llegar acá; el correo jamás rompe el webhook.
 async function dispararNotificaciones(pedido, tipo) {
   try {
-    // TODO Fase 9: correo al cliente (código + detalle) y aviso al admin.
-    return;
+    await notificarPago(pedido, tipo);   // tipo: 'pagado' | 'pagado_revivido' | 'stock_error'
   } catch (e) { console.error('notificaciones:', e); }
 }
 
@@ -128,7 +130,7 @@ module.exports = async function handler(req, res) {
       console.log('[webhook-mp] registrar_pago_pedido ->', JSON.stringify(resultado), 'ref', ref);
 
       if (resultado === 'ok' || resultado === 'revivido' || resultado === 'pagado_sin_stock') {
-        const rp = await sb('pedidos?select=codigo,cliente_email,cliente_nombre,items,total&codigo=eq.' + encodeURIComponent(ref) + '&limit=1');
+        const rp = await sb('pedidos?select=codigo,estado,cliente_email,cliente_nombre,cliente_telefono,direccion,distrito,items,subtotal,envio,descuento,total,revision_motivo&codigo=eq.' + encodeURIComponent(ref) + '&limit=1');
         const pedido = rp.ok ? (await rp.json())[0] : { codigo: ref };
         // Aviso DISTINTO por caso: 'pagado' normal, 'pagado_revivido' (pagó tras
         // rechazo/cancelación previa; el pedido quedó marcado para revisión),

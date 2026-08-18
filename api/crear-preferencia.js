@@ -21,6 +21,7 @@
 
 const crypto = require('crypto');
 const { setCors, money, configOK, parseBody, sb, fetchCupon, evaluarCupon } = require('./_lib/store');
+const { notificarContraentrega } = require('./_lib/mailer');
 
 // Envío gratis por encima de este subtotal (estricto: > 299). Regla de
 // negocio global; se aplica SOLO en el servidor.
@@ -28,14 +29,6 @@ const UMBRAL_ENVIO_GRATIS = 299;
 
 function codigoPedido() {
   return 'ONI-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // ONI-XXXXXXXX
-}
-
-// Notificación al vendedor de un pedido contraentrega (Fase 9: stub).
-async function notificarContraentrega(pedido) {
-  try {
-    // TODO Fase 9: avisar al vendedor (WhatsApp/correo) para coordinar la entrega.
-    return;
-  } catch (e) { console.error('notificarContraentrega:', e); }
 }
 
 module.exports = async function handler(req, res) {
@@ -179,7 +172,8 @@ module.exports = async function handler(req, res) {
         });
         return res.status(409).json({ error: 'stock', mensaje: 'No hay stock suficiente para algunos artículos' });
       }
-      await notificarContraentrega(pedidoRow);
+      // Best-effort: el correo nunca puede tumbar un pedido ya creado y con stock reservado.
+      try { await notificarContraentrega(pedidoRow); } catch (e) { console.error('notificarContraentrega:', e); }
       return res.status(200).json({
         ok: true, contraentrega: true, pedido: resumen,
         mensaje: 'Pedido registrado. Pagas al recibir; te contactaremos para coordinar.'

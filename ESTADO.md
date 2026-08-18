@@ -1,7 +1,7 @@
 # OniYouth — Estado del proyecto
 
 > Documento canónico de estado. Una sesión nueva debe poder retomar leyendo esto + `PLAN.md`.
-> Última actualización: 2026-08-18 (Fase 12: 29 pruebas de pago automatizadas en verde; faltan 2 E2E de navegador).
+> Última actualización: 2026-08-18 (Fase 9: notificaciones con Resend implementadas y desplegadas; falta que verifique el dominio para envío real).
 
 ## Stack
 - Web: HTML/CSS/JS puro, sin frameworks.
@@ -102,9 +102,19 @@ Ambos cayeron sobre el mismo pedido `ONI-80BE2001` (se reusó el checkout para l
 
 **"Rechazado que revive a pagado" — IMPLEMENTADO (migración 006 aplicada + desplegado, 2026-08-18):** si un pedido `rechazado`/`cancelado` recibe luego un `approved` de un intento paralelo, se marca `pagado` normalmente (cliente pagó → se atiende) PERO se enciende `pedidos.requiere_revision` con `revision_motivo`, y se avisa distinto. Detección atómica en `registrar_pago_pedido` (bajo el `for update`): si el estado previo era rechazado/cancelado devuelve `'revivido'`. El webhook loguea `[webhook-mp] REVIVIDO … REVISAR` y usa `dispararNotificaciones(pedido,'pagado_revivido')` (hook para Fase 9). En el panel: badge **⚠ Revisar** en la lista, filtro "Solo revisar", banner con motivo en el detalle y botón "Marcar como revisado" (`PATCH requiere_revision=false`). Cubierto por tests (webhook 12/12, admin 26/26).
 
+## Fase 9 — Notificaciones con Resend (IMPLEMENTADA + desplegada; falta verificar dominio para envío real)
+Correos transaccionales desde el **dominio propio** (`pedidos@oniyouth.xyz`) vía **Resend** (fetch crudo, sin SDK).
+- **`api/_lib/mailer.js`** (nuevo): `sendEmail()` (POST a `api.resend.com/emails`, `Authorization: Bearer RESEND_API_KEY`, timeout 6s, **NUNCA lanza** → `{ok:false}`), plantillas HTML+texto, y `notificarPago(pedido,tipo)` / `notificarContraentrega(pedido)` (cada envío aislado con `Promise.allSettled`).
+- **`webhook-mp.js`**: `dispararNotificaciones` llama a `notificarPago` (tipos `pagado`/`pagado_revivido`/`stock_error`); se amplió el `select` del pedido para el correo al admin.
+- **`crear-preferencia.js`**: contraentrega llama a `notificarContraentrega`, envuelto en try/catch para no romper el alta.
+- **Config (sin env vars nuevas):** `MAIL_FROM` default `OniYouth <pedidos@oniyouth.xyz>`; `NOTIFY_ADMIN_EMAIL` cae a `ADMIN_EMAIL` (= `chocolatitoprueba4@gmail.com`, que es también el Reply-To de los correos al cliente); `SITE_URL` default `https://oniyouth.xyz` (link de seguimiento).
+- **Matriz:** pagado → cliente "confirmado" + admin "nueva venta"; revivido → cliente igual + admin ⚠ "REVISAR"; sin-stock → cliente "recibimos tu pago" (suave) + admin ⚠ "PAGADO SIN STOCK"; contraentrega → cliente "pagás al recibir" + admin "coordinar". Rechazado/pendiente → nada. Si el pedido no tiene `cliente_email`, se omite el del cliente sin error.
+- **ROBUSTEZ (requisito del dueño):** el correo es best-effort, va DESPUÉS de marcar pagado; si Resend falla/timeout/dominio sin verificar → log + se traga el error, webhook responde 200, pedido sigue `pagado`. Probado: webhook 14/14 (incluye "Resend 500 → 200"), mailer 11/11, admin 26/26.
+- **PENDIENTE:** que **Resend verifique `oniyouth.xyz`** (registros en Hostinger, puede tardar horas) → recién ahí salen correos reales; luego probar un envío end-to-end. `NOTIFY_ADMIN_EMAIL`/`ADMIN_EMAIL` solo en Preview (falta en Production para cuando se pase a prod). `RESEND_API_KEY` ya en Preview+Prod.
+
 ## Falta (fases pendientes)
-- **9** Notificaciones automáticas (correo al cliente + aviso al admin). Necesita **proveedor de correo**.
-- **12** ✅ Verificada (29 asserts automatizados + 2 E2E reales confirmados por logs). Queda solo implementar el aviso de "rechazado→pagado revivido" (decisión ya tomada, diseño en discusión).
+- **9** ✅ Implementada y desplegada. Solo falta el envío real cuando el dominio verifique en Resend + una prueba end-to-end.
+- **12** ✅ Verificada (29 asserts + 2 E2E por logs) y "revivido" implementado (migración 006).
 - **14** Animaciones (fade-in scroll, hover, vuelo a la bolsa; respetar `prefers-reduced-motion`).
 - **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
 
