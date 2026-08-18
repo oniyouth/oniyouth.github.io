@@ -100,6 +100,17 @@ module.exports = async function handler(req, res) {
   if (tipo && String(tipo) !== 'payment') { console.log('[webhook-mp] ignorado por tipo:', String(tipo)); return res.status(200).json({ ignored: String(tipo) }); }
   if (!dataId) { console.log('[webhook-mp] ignorado: sin data.id'); return res.status(200).json({ ignored: 'sin data.id' }); }
 
+  // MP manda cada evento por DOS canales: el Webhook moderno (query `type` +
+  // `data.id`, firmado, AUTORITATIVO) y la IPN legacy (query `topic` + `id`).
+  // La IPN legacy es un duplicado que NO valida contra el esquema de firma del
+  // webhook: antes devolvía 401 y MP reintentaba (ruido). La ignoramos con 200
+  // porque el mismo pago ya se procesa por el canal firmado.
+  const esIPNLegacy = !!query.topic && !query.type && !(body && body.type);
+  if (esIPNLegacy) {
+    console.log('[webhook-mp] ignorado: IPN legacy duplicada (topic) — el canal firmado es autoritativo', JSON.stringify({ topic: query.topic, id: query.id }));
+    return res.status(200).json({ ok: true, ignored: 'ipn_legacy' });
+  }
+
   // 1. Firma
   if (!firmaValida(req, dataId)) { console.log('[webhook-mp] -> 401 firma inválida (data.id=' + dataId + ')'); return res.status(401).json({ error: 'firma' }); }
 

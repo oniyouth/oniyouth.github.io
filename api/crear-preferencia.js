@@ -195,6 +195,8 @@ module.exports = async function handler(req, res) {
     const host  = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
     const baseUrl = proto + '://' + host;
     const trackUrl = baseUrl + '/pedido.html?codigo=' + encodeURIComponent(pedidoRow.codigo);
+    // En rechazo, MP vuelve a NUESTRA pantalla en la tienda (no a la de seguimiento).
+    const failUrl = baseUrl + '/?pago=rechazado&codigo=' + encodeURIComponent(pedidoRow.codigo);
 
     // Ítems para MP. Regla de oro: el importe cobrado debe ser EXACTAMENTE
     // `total` (recalculado en el servidor). MP no admite descuentos a nivel
@@ -223,7 +225,7 @@ module.exports = async function handler(req, res) {
       items: mpItems,
       external_reference: pedidoRow.codigo,
       notification_url: baseUrl + '/api/webhook-mp',
-      back_urls: { success: trackUrl, pending: trackUrl, failure: trackUrl },
+      back_urls: { success: trackUrl, pending: trackUrl, failure: failUrl },
       auto_return: 'approved',
       statement_descriptor: 'ONIYOUTH',
       metadata: { codigo: pedidoRow.codigo },
