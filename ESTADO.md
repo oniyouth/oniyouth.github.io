@@ -138,8 +138,12 @@ Botón en Resumen del panel → `POST /api/admin?r=test-email` → `mailer.envia
 - **14** ✅ Implementada y desplegada (falta review visual).
 - **15** ✅ Implementada y desplegada (WebP -79%, lazy, foco por teclado, contraste AA). Falta review visual en móvil + pase de foco/contraste a pedido.html.
 
-## Pendientes de DECISIÓN
-- **Dominio:** `/api` solo corre en Vercel, pero `oniyouth.xyz` sigue en GitHub Pages. Hay que decidir cómo queda (mover todo el sitio a Vercel, o apuntar el dominio a Vercel, o un subdominio para la API). Hoy las pruebas viven en el alias de Vercel.
+## Camino a producción (dominio DECIDIDO: Opción A)
+**Opción A elegida (2026-08-18):** mover TODO a Vercel y apuntar `oniyouth.xyz` a Vercel; GitHub Pages queda fuera. El código ya asume same-origin (`fetch('/api')` relativo).
+- **CORS parametrizado:** `_lib/store.js` `ALLOWED_ORIGIN = process.env.SITE_ORIGIN || 'https://oniyouth.xyz'`; `pedido.js` ya lo importa de store (se dedupe). `SITE_URL` (correos) ya era env-driven con default `oniyouth.xyz`. Con same-origin el CORS ni se dispara, pero queda correcto.
+- **DNS a poner en Hostinger (en el cutover, aún NO):** A `@` → `76.76.21.21`; CNAME `www` → `cname.vercel-dns.com`. Quitar los A de GitHub Pages (185.199.108–111.153) y el CNAME `www`→`oniyouth.github.io` si existe. NO tocar los registros de Resend (`send`/`resend._domainkey`/`_dmarc`) ni el MX del correo. Vercel confirma los registros exactos al agregar el dominio en Settings→Domains.
+- **Deployment Protection (postura definida, se aplica en el cutover):** Producción **pública** (clientes + webhook MP); Preview **protegida**. NO se cambió aún para no romper el testing actual en el alias de preview.
+- **Pasos restantes (NO ejecutar sin OK):** conectar repo a Vercel (Git), MP a credenciales productivas + webhook prod, completar env en Production, rotar credenciales de prueba, aplicar Deployment Protection, mergear dev→main + cutover DNS, prueba real end-to-end. Detalle y responsables en el plan de la sesión.
 
 ## Pendientes de SEGURIDAD antes de producción
 - **Rotar las credenciales que se expusieron** durante las pruebas (revisar y regenerar lo que haya quedado a la vista).

@@ -11,9 +11,7 @@
 // Runtime: función serverless de Vercel (Node). No corre en Pages.
 // ============================================================
 
-const { configOK, sb } = require('./_lib/store');
-
-const ALLOWED_ORIGIN = 'https://oniyouth.xyz';
+const { configOK, sb, ALLOWED_ORIGIN } = require('./_lib/store');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);

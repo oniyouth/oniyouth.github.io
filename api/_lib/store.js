@@ -11,7 +11,10 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const ALLOWED_ORIGIN = 'https://oniyouth.xyz';
+// Origen permitido para CORS. Parametrizable por env (dominio final);
+// default = producción. Con todo en Vercel (mismo origen) el CORS ni se
+// dispara, pero deja fuera peticiones cross-origin de otros sitios.
+const ALLOWED_ORIGIN = process.env.SITE_ORIGIN || 'https://oniyouth.xyz';
 
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
