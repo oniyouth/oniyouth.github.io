@@ -194,10 +194,74 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // TODO (Fase 7b): crear la preferencia en MP con external_reference =
-    // pedidoRow.codigo, items/total recalculados, back_urls y notification_url
-    // (webhook). Luego: UPDATE pedidos SET preference_id=... y devolver init_point.
-    return res.status(501).json({ error: 'mp_pendiente', pedido: resumen, mensaje: 'Integración de pago en construcción' });
+    // Base URL del propio deploy. notification_url y back_urls se derivan del
+    // host del request: en el preview de una rama apuntan al preview; en
+    // producción, a producción. No se hardcodea ninguna URL.
+    const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host  = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+    const baseUrl = proto + '://' + host;
+    const trackUrl = baseUrl + '/pedido.html?codigo=' + encodeURIComponent(pedidoRow.codigo);
+
+    // Ítems para MP. Regla de oro: el importe cobrado debe ser EXACTAMENTE
+    // `total` (recalculado en el servidor). MP no admite descuentos a nivel
+    // preferencia ni precios negativos, así que:
+    //   - sin cupón: una línea por producto (= subtotal) + línea de envío.
+    //   - con cupón: una sola línea consolidada = total.
+    let mpItems;
+    if (descuento > 0) {
+      mpItems = [{
+        id: pedidoRow.codigo,
+        title: 'OniYouth · Pedido ' + pedidoRow.codigo + ' (' + pedidoItems.length + ' art.)',
+        quantity: 1, unit_price: total, currency_id: 'PEN'
+      }];
+    } else {
+      mpItems = pedidoItems.map(it => ({
+        id: String(it.variante_id),
+        title: (it.nombre + ' · Talla ' + it.talla).slice(0, 250),
+        quantity: it.qty,
+        unit_price: money(it.precio_unit),
+        currency_id: 'PEN'
+      }));
+      if (envio > 0) mpItems.push({ id: 'envio', title: 'Envío', quantity: 1, unit_price: money(envio), currency_id: 'PEN' });
+    }
+
+    const preferencia = {
+      items: mpItems,
+      external_reference: pedidoRow.codigo,
+      notification_url: baseUrl + '/api/webhook-mp',
+      back_urls: { success: trackUrl, pending: trackUrl, failure: trackUrl },
+      auto_return: 'approved',
+      statement_descriptor: 'ONIYOUTH',
+      metadata: { codigo: pedidoRow.codigo },
+      payer: email ? { name: nombre, email: email } : { name: nombre }
+    };
+
+    const mpr = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + process.env.MP_ACCESS_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(preferencia)
+    });
+    if (!mpr.ok) {
+      const t = await mpr.text();
+      throw new Error('MP preference ' + mpr.status + ' ' + t);
+    }
+    const pref = await mpr.json();
+
+    // Guarda el preference_id en el pedido (conciliación / depuración).
+    await sb('pedidos?codigo=eq.' + encodeURIComponent(pedidoRow.codigo), {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ preference_id: pref.id })
+    });
+
+    return res.status(200).json({
+      ok: true,
+      pedido: resumen,
+      preference_id: pref.id,
+      init_point: pref.init_point
+    });
 
   } catch (e) {
     console.error('crear-preferencia:', e);

@@ -25,6 +25,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SDK de Mercado Pago (Checkout Pro, Fase 7b). La Public Key es publica. -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1818,6 +1820,26 @@
         // distrito, cupón y datos del cliente a /api/crear-preferencia, que
         // recalcula y valida TODO en el servidor. Requiere backend (Vercel).
         const CREAR_PREF_API = '/api/crear-preferencia';
+        // Public Key de Mercado Pago (publica; el cobro real usa el access token
+        // del servidor). Abre el modal de Checkout Pro con el preference_id.
+        const MP_PUBLIC_KEY = 'TEST-89d43404-8eb5-4c8e-93b7-94c40c4a87b7';
+        let mpInstance = null;
+
+        function openCheckoutPro(preferenceId, initPoint) {
+            try {
+                if (typeof MercadoPago === 'undefined') {
+                    if (initPoint) { window.location.href = initPoint; return; }
+                    throw new Error('SDK de Mercado Pago no disponible');
+                }
+                if (!mpInstance) mpInstance = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
+                setCheckoutMsg('Abriendo el pago seguro de Mercado Pago...', '');
+                mpInstance.checkout({ preference: { id: preferenceId }, autoOpen: true });
+            } catch (e) {
+                console.error('checkout pro:', e);
+                if (initPoint) { window.location.href = initPoint; return; }
+                setCheckoutMsg('No se pudo abrir el pago. Intenta de nuevo.', 'error');
+            }
+        }
 
         function setCheckoutMsg(text, kind) {
             const el = document.getElementById('checkoutMsg');
@@ -1904,10 +1926,10 @@
                 return;
             }
 
-            // Enganche con Checkout Pro (Fase 7b): cuando el servidor devuelva
-            // init_point, aquí se abrirá el modal de pago de Mercado Pago.
-            if (data.init_point) {
-                // TODO Fase 7b: abrir Checkout Pro (modal) con data.init_point
+            // Checkout Pro (Fase 7b): el servidor creó la preferencia. Abrimos
+            // el modal de pago de Mercado Pago con el preference_id.
+            if (data.preference_id) {
+                openCheckoutPro(data.preference_id, data.init_point);
                 return;
             }
 
