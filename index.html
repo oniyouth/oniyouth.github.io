@@ -5,8 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>OniYouth - Streetwear</title>
     <link rel="icon" href="assets/images/logo.png" type="image/png">
-    <meta name="description" content="OniYouth - Streetwear Culture">
+    <meta name="description" content="OniYouth - Streetwear Culture. Envio a todo el Peru.">
     <meta name="theme-color" content="#000000">
+
+    <!-- Open Graph / compartir en redes (WhatsApp, Instagram, Facebook, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="OniYouth">
+    <meta property="og:title" content="OniYouth — Streetwear">
+    <meta property="og:description" content="Streetwear culture. Envio a todo el Peru.">
+    <meta property="og:url" content="https://oniyouth.xyz/">
+    <meta property="og:image" content="https://oniyouth.xyz/assets/images/hero-bg.jpg">
+    <meta property="og:image:alt" content="OniYouth Streetwear">
+    <meta property="og:locale" content="es_PE">
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="OniYouth — Streetwear">
+    <meta name="twitter:description" content="Streetwear culture. Envio a todo el Peru.">
+    <meta name="twitter:image" content="https://oniyouth.xyz/assets/images/hero-bg.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -402,10 +417,33 @@
         .shop-logo img:hover { transform: scale(1.1); }
         .shop-page .collection-header { padding: 0 3rem; margin-bottom: 3rem; padding-top: 4rem; }
         .shop-page .products-grid { padding: 0 3rem; }
+        .shop-page .shop-filters { padding: 0 3rem; }
+
+        /* ===== FILTROS POR CATEGORIA (Fase 13) ===== */
+        .shop-filters {
+            display: flex; flex-wrap: wrap; gap: 0.6rem;
+            margin: 0 0 2rem;
+        }
+        .filter-chip {
+            padding: 0.5rem 1.1rem;
+            background: transparent;
+            color: var(--text3);
+            border: 1px solid var(--border);
+            font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; border-radius: 100px;
+            transition: all 0.3s;
+        }
+        .filter-chip:hover { color: var(--text); border-color: var(--text); }
+        .filter-chip.active {
+            background: var(--text); color: var(--bg);
+            border-color: var(--text);
+        }
 
         @media (max-width: 900px) {
             .shop-page .collection-header { padding: 0 1.5rem; padding-top: 4rem; }
             .shop-page .products-grid { padding: 0 1.5rem; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+            .shop-page .shop-filters { padding: 0 1.5rem; }
         }
         @media (max-width: 480px) {
             .shop-page .collection-header { padding: 0 1.2rem; padding-top: 3.5rem; }
@@ -783,6 +821,7 @@
                 <div class="collection-title">SS26</div>
             </div>
         </div>
+        <div class="shop-filters" id="shopFilters" style="display:none;"></div>
         <div class="products-grid" id="track">
             <div class="grid-status" id="gridStatus">Cargando coleccion...</div>
         </div>
@@ -1235,15 +1274,47 @@
                     variantes: variantes, soldOut: soldOut
                 };
             });
+            renderFilters();
+            renderGrid();
+        }
+
+        // ===== FILTROS POR CATEGORIA (Fase 13) =====
+        // Chips generados desde las categorias distintas del catalogo. Con una
+        // sola categoria la barra se oculta (no aporta). Reusa renderGrid().
+        let currentFilter = 'ALL';
+
+        function renderFilters() {
+            const bar = document.getElementById('shopFilters');
+            if (!bar) return;
+            const cats = [];
+            Object.values(data).forEach(p => { if (p.cat && cats.indexOf(p.cat) === -1) cats.push(p.cat); });
+            if (cats.length < 2) { bar.style.display = 'none'; bar.innerHTML = ''; currentFilter = 'ALL'; return; }
+            if (currentFilter !== 'ALL' && cats.indexOf(currentFilter) === -1) currentFilter = 'ALL';
+            bar.style.display = 'flex';
+            bar.innerHTML = '';
+            [['ALL', 'Todos']].concat(cats.map(c => [c, c])).forEach(pair => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-chip' + (pair[0] === currentFilter ? ' active' : '');
+                btn.textContent = pair[1];
+                btn.dataset.cat = pair[0];
+                btn.addEventListener('click', () => setFilter(pair[0]));
+                bar.appendChild(btn);
+            });
+        }
+
+        function setFilter(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('#shopFilters .filter-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
             renderGrid();
         }
 
         function renderGrid() {
             const track = document.getElementById('track');
             if (!track) return;
-            const list = Object.values(data);
+            let list = Object.values(data);
+            if (currentFilter !== 'ALL') list = list.filter(p => p.cat === currentFilter);
             if (list.length === 0) {
-                track.innerHTML = '<div class="grid-status">No hay productos disponibles.</div>';
+                track.innerHTML = '<div class="grid-status">' + (currentFilter === 'ALL' ? 'No hay productos disponibles.' : 'No hay productos en esta categoria.') + '</div>';
                 return;
             }
             // Agotados al final (el sort estable conserva el orden por "orden")
@@ -1381,6 +1452,11 @@
                 thumb.appendChild(img);
                 thumbsEl.appendChild(thumb);
             });
+
+            // Con una sola imagen, las flechas y las miniaturas no aportan: se ocultan.
+            const multiImg = p.slides.length > 1;
+            thumbsEl.style.display = multiImg ? 'flex' : 'none';
+            document.querySelectorAll('#pdMainImgWrap .pd-img-nav').forEach(a => { a.style.display = multiImg ? 'flex' : 'none'; });
         }
 
         function goToSlide(index) {
