@@ -195,7 +195,8 @@ async function recPedidos(req, res) {
   if (req.method === 'GET') {
     const codigo = String((req.query && req.query.codigo) || '').trim().toUpperCase();
     const campos = 'id,codigo,estado,payment_id,preference_id,items,subtotal,envio,descuento,total,'
-      + 'cliente_nombre,cliente_telefono,cliente_email,direccion,distrito,creado_en';
+      + 'cliente_nombre,cliente_telefono,cliente_email,direccion,distrito,creado_en,'
+      + 'requiere_revision,revision_motivo';
     if (codigo) {
       const rr = await sb('pedidos?select=' + campos + '&codigo=eq.' + encodeURIComponent(codigo) + '&limit=1');
       if (!rr.ok) throw new Error('pedido ' + rr.status);
@@ -215,12 +216,19 @@ async function recPedidos(req, res) {
     const b = parseBody(req);
     const codigo = String(b.codigo || '').trim().toUpperCase();
     const id = String(b.id || '').trim();
-    const estado = String(b.estado || '').trim();
     if (!codigo && !id) return res.status(400).json({ error: 'id', mensaje: 'Falta código o id' });
-    if (!ESTADOS_PEDIDO.includes(estado)) return res.status(400).json({ error: 'estado', mensaje: 'Estado inválido' });
+    // Acepta cambiar el estado y/o bajar la bandera de revisión ("Marcar revisado").
+    const patch = {};
+    if (b.estado !== undefined) {
+      const estado = String(b.estado).trim();
+      if (!ESTADOS_PEDIDO.includes(estado)) return res.status(400).json({ error: 'estado', mensaje: 'Estado inválido' });
+      patch.estado = estado;
+    }
+    if (b.requiere_revision !== undefined) patch.requiere_revision = !!b.requiere_revision;
+    if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'vacio', mensaje: 'Nada que actualizar' });
     const filtro = codigo ? ('codigo=eq.' + encodeURIComponent(codigo)) : ('id=eq.' + encodeURIComponent(id));
     const up = await sb('pedidos?' + filtro, {
-      method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ estado })
+      method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch)
     });
     if (!up.ok) throw new Error('patch pedido ' + up.status + ' ' + (await up.text()));
     const arr = await up.json();

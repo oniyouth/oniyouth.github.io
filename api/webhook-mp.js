@@ -7,6 +7,9 @@
 //  - Idempotente: si el payment_id ya se aplicó, responde 200 y no hace nada.
 //  - Aprobado: descuenta stock (atómico) y marca 'pagado' en UNA transacción
 //    vía registrar_pago_pedido (migración 003); dispara notificaciones (Fase 9).
+//  - Revivido (migración 006): si el pedido estaba 'rechazado'/'cancelado' y
+//    llega un approved de un intento paralelo, se marca 'pagado' igual PERO se
+//    enciende una bandera de revisión y se avisa distinto (tipo 'pagado_revivido').
 //  - Rechazado/cancelado: marca el pedido 'rechazado' (no hay stock que
 //    liberar: solo se descuenta al aprobar).
 //
@@ -121,13 +124,20 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ p_codigo: ref, p_payment_id: paymentId })
       });
       if (!rRpc.ok) { const t = await rRpc.text(); console.error('[webhook-mp] rpc ERROR', rRpc.status, t); throw new Error('rpc ' + rRpc.status + ' ' + t); }
-      const resultado = await rRpc.json();   // 'ok' | 'duplicado' | 'no_encontrado' | 'pagado_sin_stock'
+      const resultado = await rRpc.json();   // 'ok' | 'revivido' | 'duplicado' | 'no_encontrado' | 'pagado_sin_stock'
       console.log('[webhook-mp] registrar_pago_pedido ->', JSON.stringify(resultado), 'ref', ref);
 
-      if (resultado === 'ok' || resultado === 'pagado_sin_stock') {
+      if (resultado === 'ok' || resultado === 'revivido' || resultado === 'pagado_sin_stock') {
         const rp = await sb('pedidos?select=codigo,cliente_email,cliente_nombre,items,total&codigo=eq.' + encodeURIComponent(ref) + '&limit=1');
         const pedido = rp.ok ? (await rp.json())[0] : { codigo: ref };
-        await dispararNotificaciones(pedido, resultado === 'ok' ? 'pagado' : 'stock_error');
+        // Aviso DISTINTO por caso: 'pagado' normal, 'pagado_revivido' (pagó tras
+        // rechazo/cancelación previa; el pedido quedó marcado para revisión),
+        // 'stock_error' (pagó pero faltó stock).
+        const tipoNotif = resultado === 'revivido' ? 'pagado_revivido'
+                        : resultado === 'pagado_sin_stock' ? 'stock_error'
+                        : 'pagado';
+        await dispararNotificaciones(pedido, tipoNotif);
+        if (resultado === 'revivido') console.warn('[webhook-mp] REVIVIDO: pedido pagado tras rechazo/cancelación previa, REVISAR', ref);
         if (resultado === 'pagado_sin_stock') console.error('PAGADO SIN STOCK, revisar pedido', ref);
       }
       return res.status(200).json({ ok: true, resultado });

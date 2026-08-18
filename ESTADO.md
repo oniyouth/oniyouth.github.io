@@ -100,7 +100,7 @@ Ambos cayeron sobre el mismo pedido `ONI-80BE2001` (se reusó el checkout para l
 - **Stock:** las 10 variantes en 10/10; ni el rechazado ni el pendiente descuentan (solo `approved` descuenta). ✅
 - Para ver el pending "limpio" (queda `pendiente`): comprar CON `CONT` en un checkout NUEVO, sin un OTHE previo.
 
-**DECISIÓN TOMADA (pendiente de implementar) — "rechazado que revive a pagado":** si un pedido está `rechazado` y luego llega un `approved` de un intento paralelo, el dueño QUIERE que se marque `pagado` normalmente (el cliente pagó, hay que atenderlo) PERO con un **aviso distinto** porque es un caso raro que él quiere revisar. Diseño en discusión; NO implementado aún.
+**"Rechazado que revive a pagado" — IMPLEMENTADO (migración 006 aplicada + desplegado, 2026-08-18):** si un pedido `rechazado`/`cancelado` recibe luego un `approved` de un intento paralelo, se marca `pagado` normalmente (cliente pagó → se atiende) PERO se enciende `pedidos.requiere_revision` con `revision_motivo`, y se avisa distinto. Detección atómica en `registrar_pago_pedido` (bajo el `for update`): si el estado previo era rechazado/cancelado devuelve `'revivido'`. El webhook loguea `[webhook-mp] REVIVIDO … REVISAR` y usa `dispararNotificaciones(pedido,'pagado_revivido')` (hook para Fase 9). En el panel: badge **⚠ Revisar** en la lista, filtro "Solo revisar", banner con motivo en el detalle y botón "Marcar como revisado" (`PATCH requiere_revision=false`). Cubierto por tests (webhook 12/12, admin 26/26).
 
 ## Falta (fases pendientes)
 - **9** Notificaciones automáticas (correo al cliente + aviso al admin). Necesita **proveedor de correo**.

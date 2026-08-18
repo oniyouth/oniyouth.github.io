@@ -88,6 +88,9 @@
     .pill.enviado { color: var(--info); border-color: #124; }
     .pill.contraentrega { color: var(--info); border-color: #124; }
     .pill.rechazado, .pill.cancelado { color: var(--bad); border-color: #402; }
+    .pill.revisar { color: var(--warn); border-color: #442; }
+    .banner-rev { border: 1px solid #442; background: #1a1608; border-radius: 12px; padding: .9rem 1rem; margin-bottom: .8rem; }
+    .banner-rev strong { color: var(--warn); }
 
     .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; background: var(--card2); border: 1px solid var(--border); }
     .stat { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: .8rem; margin-bottom: 1.2rem; }
@@ -414,22 +417,29 @@
   // ============================================================
   const ESTADOS = ['pendiente', 'pagado', 'contraentrega', 'enviado', 'entregado', 'rechazado', 'cancelado'];
   let filtroEstado = '';
+  let soloRevisar = false;
   async function viewPedidos(el) {
     loading(el);
     try {
-      const pedidos = await api('pedidos', { query: filtroEstado ? { estado: filtroEstado } : {} });
+      let pedidos = await api('pedidos', { query: filtroEstado ? { estado: filtroEstado } : {} });
+      if (soloRevisar) pedidos = pedidos.filter(p => p.requiere_revision);
       const opts = '<option value="">Todos</option>' + ESTADOS.map(e => '<option value="' + e + '"' + (e === filtroEstado ? ' selected' : '') + '>' + e + '</option>').join('');
-      el.innerHTML = '<h2 class="title">Pedidos <span class="spacer"></span><select id="fEstado" style="width:auto">' + opts + '</select></h2>' +
+      el.innerHTML = '<h2 class="title">Pedidos <span class="spacer"></span>' +
+          '<label style="display:flex;align-items:center;gap:.35rem;font-size:.72rem;text-transform:none;letter-spacing:0;color:var(--warn);margin:0;cursor:pointer">' +
+            '<input type="checkbox" id="fRev" style="width:auto"' + (soloRevisar ? ' checked' : '') + '> ⚠ Solo revisar</label>' +
+          '<select id="fEstado" style="width:auto">' + opts + '</select></h2>' +
         (pedidos.length ? '<div class="tbl-wrap card"><table><thead><tr><th>Código</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody>' +
           pedidos.map(p => '<tr style="cursor:pointer" data-cod="' + p.codigo + '">' +
             '<td><strong>' + esc(p.codigo) + '</strong></td>' +
             '<td class="muted">' + fmtFecha(p.creado_en) + '</td>' +
             '<td>' + esc(p.cliente_nombre || '—') + '</td>' +
             '<td>' + money(p.total) + '</td>' +
-            '<td><span class="pill ' + esc(p.estado) + '">' + esc(p.estado) + '</span></td></tr>').join('') +
+            '<td><span class="pill ' + esc(p.estado) + '">' + esc(p.estado) + '</span>' +
+              (p.requiere_revision ? ' <span class="pill revisar">⚠ Revisar</span>' : '') + '</td></tr>').join('') +
           '</tbody></table></div>'
-          : '<div class="card"><p class="muted">No hay pedidos' + (filtroEstado ? ' en ese estado' : '') + '.</p></div>');
+          : '<div class="card"><p class="muted">No hay pedidos' + (soloRevisar ? ' por revisar' : (filtroEstado ? ' en ese estado' : '')) + '.</p></div>');
       $('#fEstado').onchange = e => { filtroEstado = e.target.value; viewPedidos(el); };
+      $('#fRev').onchange = e => { soloRevisar = e.target.checked; viewPedidos(el); };
       el.querySelectorAll('[data-cod]').forEach(tr => tr.onclick = () => detallePedido(tr.dataset.cod));
     } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
   }
@@ -442,6 +452,9 @@
       const opts = ESTADOS.map(e => '<option value="' + e + '"' + (e === p.estado ? ' selected' : '') + '>' + e + '</option>').join('');
       openModal(
         '<h3>' + esc(p.codigo) + ' <span class="pill ' + esc(p.estado) + '">' + esc(p.estado) + '</span></h3>' +
+        (p.requiere_revision ? '<div class="banner-rev"><strong>⚠ Requiere revisión</strong>' +
+          '<div class="muted" style="margin-top:.35rem;font-size:.82rem">' + esc(p.revision_motivo || 'Marcado para revisión.') + '</div>' +
+          '<button class="btn sm" id="pe-revisado" style="margin-top:.7rem">Marcar como revisado</button></div>' : '') +
         '<div class="card" style="background:var(--card2)"><div class="tbl-wrap"><table><tbody>' +
           items.map(it => '<tr><td>' + esc(it.nombre) + ' · <span class="muted">T. ' + esc(it.talla) + '</span></td><td class="muted">x' + (it.qty || 0) + '</td><td style="text-align:right">' + money(it.subtotal) + '</td></tr>').join('') +
           '<tr><td colspan="2" class="muted">Subtotal</td><td style="text-align:right">' + money(p.subtotal) + '</td></tr>' +
@@ -461,6 +474,11 @@
         '<div class="actions"><button class="btn ghost" id="pe-cancel">Cerrar</button><button class="btn" id="pe-save">Guardar estado</button></div>'
       );
       $('#pe-cancel').onclick = closeModal;
+      if (p.requiere_revision) $('#pe-revisado').onclick = async () => {
+        $('#pe-revisado').disabled = true;
+        try { await api('pedidos', { method: 'PATCH', body: { codigo: p.codigo, requiere_revision: false } }); toast('Marcado como revisado', 'ok'); closeModal(); viewPedidos($('#view')); }
+        catch (e) { toast(e.message, 'bad'); $('#pe-revisado').disabled = false; }
+      };
       $('#pe-save').onclick = async () => {
         const estado = $('#pe-estado').value;
         $('#pe-save').disabled = true;
