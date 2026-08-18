@@ -226,7 +226,16 @@
   }
 
   // ---------- subir imagen directo a Storage (bucket productos) ----------
+  const IMG_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB (coincide con el límite del bucket)
+  const IMG_TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
   async function uploadImagen(file) {
+    // Validación en el cliente: mensaje claro antes de tocar Storage.
+    if (file.type && !IMG_TIPOS.includes(file.type)) {
+      throw new Error('Formato no permitido (' + (file.type || 'desconocido') + '). Usá JPG, PNG, WebP, GIF o AVIF.');
+    }
+    if (file.size > IMG_MAX_BYTES) {
+      throw new Error('La imagen pesa ' + (file.size / 1048576).toFixed(1) + ' MB; el máximo es 5 MB.');
+    }
     const token = await freshToken();
     const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const path = Date.now() + '-' + safe;
@@ -235,7 +244,20 @@
       headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
       body: file
     });
-    if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error('No se pudo subir la imagen (' + r.status + ')'); }
+    if (!r.ok) {
+      // Muestra el motivo REAL que devuelve Supabase, no solo el código.
+      let motivo = '';
+      try { const j = await r.json(); motivo = j.message || j.error || ''; }
+      catch (e) { motivo = (await r.text().catch(() => '')).slice(0, 140); }
+      if (/row-level security/i.test(motivo)) {
+        motivo = 'Storage rechazó por permisos: falta o no coincide la política de subida del bucket "productos" (ver policies de Storage).';
+      } else if (/mime|content.?type/i.test(motivo)) {
+        motivo = 'Ese tipo de archivo no está permitido en el bucket. ' + motivo;
+      } else if (/exceeded|too large|maximum size/i.test(motivo)) {
+        motivo = 'La imagen supera el tamaño máximo del bucket. ' + motivo;
+      }
+      throw new Error('No se pudo subir la imagen: ' + (motivo || ('error ' + r.status)));
+    }
     return SB_URL + '/storage/v1/object/public/productos/' + path;
   }
 
