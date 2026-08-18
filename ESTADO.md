@@ -124,11 +124,18 @@ En `index.html`, aditivo y con guard de `prefers-reduced-motion`:
 ## Correo de prueba (panel, Fase 9)
 Botón en Resumen del panel → `POST /api/admin?r=test-email` → `mailer.enviarPrueba(to)` manda un ejemplo (cliente + admin) al destino o al `ADMIN_EMAIL`. Falla suave hasta que el dominio verifique en Resend. Tests: admin 28/28.
 
+## Fase 15 — Rendimiento y accesibilidad (IMPLEMENTADA + desplegada, 2026-08-18)
+**WebP con fallback + lazy:** todas las imágenes convertidas a WebP con `sharp` (fotos q80; logos/íconos lossless) — los originales quedan como fallback. Hero y grid usan `<picture><source type="image/webp"><img …fallback></picture>`; el detalle y thumbnails usan WebP con `onerror`→original (`setPdImg`, `oniPicture`, `oniWebp` en index.html). Lazy: grid ya lazy; hero slide 1 (LCP) `fetchpriority="high"` + eager, slides 2–4 `loading="lazy"`; thumbnails lazy.
+- **Números (medido con `sharp` + `du`):** TODAS las imágenes **4824 KB → 1012 KB (-79%)**. Imágenes core del home (4 hero + logo + ícono + 2 fronts de producto) **~2966 KB → ~337 KB (-89%)**. Hero-slide-4 1263KB→43KB (-97%), hero-slide-3 1111KB→41KB (-96%). Con lazy, el crítico inicial baja aún más (solo hero-bg.webp ~40KB con prioridad alta).
+- **Accesibilidad:** `:focus-visible` con anillo blanco (negro en tema claro) global + en product-card; **product-card ahora operables por teclado** (`role="button"` + `tabindex="0"` + `aria-label` + `onkeydown` Enter/Espacio → `oniCardKey`). **Contraste:** `--text3` subido para pasar AA (dark `#555`→`#7a7a7a` ≈4.8:1; light `#aaa`→`#6f6f6f` ≈5.1:1).
+- **sharp** se instaló vía npm en scratchpad (v0.35.3; binario precompilado); no quedó en el repo.
+- **PENDIENTE:** review visual en móvil (no hay navegador headless en el entorno — verificar en el teléfono: LCP, foco por teclado, que no haya scroll horizontal). Aplicar el mismo pase de foco/contraste a `pedido.html` (secundario, se abre desde el correo).
+
 ## Falta (fases pendientes)
 - **9** ✅ Implementada y desplegada. Solo falta el envío real cuando el dominio verifique en Resend + prueba end-to-end (ya hay botón de prueba en el panel).
 - **12** ✅ Verificada (29 asserts + 2 E2E por logs) y "revivido" implementado (migración 006).
 - **14** ✅ Implementada y desplegada (falta review visual).
-- **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
+- **15** ✅ Implementada y desplegada (WebP -79%, lazy, foco por teclado, contraste AA). Falta review visual en móvil + pase de foco/contraste a pedido.html.
 
 ## Pendientes de DECISIÓN
 - **Dominio:** `/api` solo corre en Vercel, pero `oniyouth.xyz` sigue en GitHub Pages. Hay que decidir cómo queda (mover todo el sitio a Vercel, o apuntar el dominio a Vercel, o un subdominio para la API). Hoy las pruebas viven en el alias de Vercel.

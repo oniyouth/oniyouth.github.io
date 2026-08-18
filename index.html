@@ -32,7 +32,7 @@
 
         :root {
             --bg: #000; --bg2: #0a0a0a; --bg-card: #111;
-            --text: #fff; --text2: #888; --text3: #555;
+            --text: #fff; --text2: #888; --text3: #7a7a7a;
             --border: #222; --accent: #fff;
             --logo-filter: brightness(0) invert(1);
             --nav-bg: rgba(0,0,0,0.85);
@@ -40,7 +40,7 @@
 
         [data-theme="light"] {
             --bg: #fff; --bg2: #f5f5f5; --bg-card: #f0f0f0;
-            --text: #000; --text2: #666; --text3: #aaa;
+            --text: #000; --text2: #666; --text3: #6f6f6f;
             --border: #e0e0e0; --accent: #000;
             --logo-filter: none;
             --nav-bg: rgba(255,255,255,0.9);
@@ -791,6 +791,12 @@
             .oni-fly { display: none !important; }
         }
 
+        /* ===== FASE 15 — accesibilidad ===== */
+        :focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 1px; }
+        [data-theme="light"] :focus-visible { outline-color: #000; }
+        .product-card:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
+        .product-card:focus-visible .product-overlay { opacity: 1; }
+
     </style>
 </head>
 <body>
@@ -799,7 +805,7 @@
     <section class="hero">
         <nav>
             <a href="#" class="nav-logo">
-                <img src="assets/images/logo.png" alt="O">
+                <img src="assets/images/logo.webp" alt="O">
                 <span>OniYouth</span>
             </a>
             <div class="nav-right">
@@ -811,14 +817,14 @@
             </div>
         </nav>
         <div class="hero-slideshow" id="heroSlideshow">
-            <div class="hero-slide active"><img src="assets/images/hero-bg.jpg" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-3.png" alt="OniYouth"></div>
-            <div class="hero-slide"><img src="assets/images/hero-slide-4.png" alt="OniYouth"></div>
+            <div class="hero-slide active"><picture><source srcset="assets/images/hero-bg.webp" type="image/webp"><img src="assets/images/hero-bg.jpg" alt="OniYouth" fetchpriority="high" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-2.webp" type="image/webp"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-3.webp" type="image/webp"><img src="assets/images/hero-slide-3.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
+            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-4.webp" type="image/webp"><img src="assets/images/hero-slide-4.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
         </div>
         <div class="hero-gradient"></div>
         <button class="cart-btn" id="cartBtnHero" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeHero">0</span>
         </button>
         <a href="javascript:void(0)" class="hero-shop-btn" onclick="openShop()">NEW ARRIVALS</a>
@@ -828,10 +834,10 @@
     <!-- SHOP PAGE (overlay — same page, no lag) -->
     <div class="shop-page" id="shopPage">
         <div class="shop-logo">
-            <img src="assets/images/logo.png" alt="OniYouth" onclick="closeShop()">
+            <img src="assets/images/logo.webp" alt="OniYouth" onclick="closeShop()">
         </div>
         <button class="cart-btn" id="cartBtnShop" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeShop">0</span>
         </button>
         <div class="collection-header reveal">
@@ -850,7 +856,7 @@
     <div class="product-detail" id="productDetail">
         <button class="pd-close" onclick="closeProduct()">&times;</button>
         <button class="cart-btn" id="cartBtnDetail" onclick="openCart()">
-            <img src="assets/images/cart-icon-new.png" alt="Bolsa">
+            <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
             <span class="cart-badge" id="cartBadgeDetail">0</span>
         </button>
         <div class="pd-layout">
@@ -889,7 +895,7 @@
     <!-- CART PAGE (full-screen overlay — like shop) -->
     <div class="cart-page" id="cartPage">
         <div class="cart-page-logo">
-            <img src="assets/images/logo.png" alt="OniYouth" onclick="closeCart()">
+            <img src="assets/images/logo.webp" alt="OniYouth" onclick="closeCart()">
         </div>
         <div class="cart-page-content">
             <div class="cart-header">
@@ -1339,9 +1345,9 @@
             // Agotados al final (el sort estable conserva el orden por "orden")
             list.sort((a, b) => (a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0));
             track.innerHTML = list.map(p =>
-                '<div class="product-card reveal-fade' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" onclick="openProduct(\'' + p.id + '\')">' +
+                '<div class="product-card reveal-fade' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" role="button" tabindex="0" aria-label="Ver ' + escapeHtml(p.name) + '" onclick="openProduct(\'' + p.id + '\')" onkeydown="oniCardKey(event,\'' + p.id + '\')">' +
                     '<div class="product-img-wrap">' +
-                        '<img src="' + escapeHtml(p.slides[0]) + '" alt="' + escapeHtml(p.name) + '" loading="lazy">' +
+                        oniPicture(p.slides[0], p.name, ' loading="lazy"') +
                         '<div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>' +
                         (p.soldOut ? '<div class="product-badge-sold">AGOTADO</div>' : '') +
                     '</div>' +
@@ -1455,8 +1461,8 @@
                 else { addBtn.textContent = 'AGREGAR A LA BOLSA'; addBtn.disabled = false; }
             }
 
-            // Set main image
-            document.getElementById('pdMainImg').src = p.slides[0];
+            // Set main image (WebP con fallback a PNG/JPG)
+            setPdImg(p.slides[0]);
             document.getElementById('pdMainImg').alt = p.name;
 
             // Build thumbnails
@@ -1467,7 +1473,10 @@
                 thumb.className = 'pd-thumb' + (i === 0 ? ' active' : '');
                 thumb.onclick = () => goToSlide(i);
                 const img = document.createElement('img');
-                img.src = src;
+                const tw = oniWebp(src);
+                img.onerror = tw ? function(){ img.onerror = null; img.src = src; } : null;
+                img.loading = 'lazy'; img.decoding = 'async';
+                img.src = tw || src;
                 img.alt = p.name + ' ' + (i + 1);
                 thumb.appendChild(img);
                 thumbsEl.appendChild(thumb);
@@ -1485,7 +1494,7 @@
             currentSlide = index;
 
             if (currentProductData) {
-                document.getElementById('pdMainImg').src = currentProductData.slides[currentSlide];
+                setPdImg(currentProductData.slides[currentSlide]);
             }
             document.querySelectorAll('.pd-thumb').forEach((t, i) => t.classList.toggle('active', i === currentSlide));
         }
@@ -1673,6 +1682,21 @@
             setTimeout(finish, 950);
         }
         oniObserveReveals(document);
+
+        // ===== FASE 15 — WebP con fallback + accesibilidad por teclado =====
+        function oniWebp(src){ return /^assets\/images\/.+\.(png|jpe?g)$/i.test(src) ? src.replace(/\.(png|jpe?g)$/i, '.webp') : null; }
+        function oniPicture(src, alt, extra){
+            var webp = oniWebp(src);
+            var img = '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt || '') + '" decoding="async"' + (extra || '') + '>';
+            return webp ? '<picture><source srcset="' + escapeHtml(webp) + '" type="image/webp">' + img + '</picture>' : img;
+        }
+        function setPdImg(src){
+            var img = document.getElementById('pdMainImg'); if (!img) return;
+            var webp = oniWebp(src);
+            img.onerror = webp ? function(){ img.onerror = null; img.src = src; } : null;
+            img.src = webp || src;
+        }
+        function oniCardKey(e, id){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProduct(id); } }
 
         function addCart(btn) {
             if (!currentProductData) return;
