@@ -1,7 +1,7 @@
 # OniYouth — Estado del proyecto
 
 > Documento canónico de estado. Una sesión nueva debe poder retomar leyendo esto + `PLAN.md`.
-> Última actualización: 2026-08-18 (Fase 11 panel admin: código listo + desplegado en preview).
+> Última actualización: 2026-08-18 (Fase 12: 29 pruebas de pago automatizadas en verde; faltan 2 E2E de navegador).
 
 ## Stack
 - Web: HTML/CSS/JS puro, sin frameworks.
@@ -70,9 +70,36 @@ Panel en `admin.html` (SPA vanilla, sin dependencias) servido desde el deploy de
 - **(b) Crear el usuario admin** en Supabase → Authentication → Users → Add user: `chocolatitoprueba4@gmail.com` + contraseña + Auto Confirm. Y **desactivar** "Allow new users to sign up".
 - Tras (a) y (b): entrar a `oniyouth-dev.vercel.app/admin.html` y probar cada pantalla.
 
+## Fase 12 — Pruebas de pago (AUTOMATIZADAS EN VERDE · faltan 2 E2E de navegador)
+Fase 12 es **verificación, no código nuevo**: el comportamiento ya estaba implementado (webhook + RPCs). Tests en `scratchpad` de la sesión: `test_webhook.js`, `test_live_server.js`, `test_live_stock.js`. **29 asserts, todos pasan (2026-08-18).**
+
+**Webhook (11 tests mockeados, cero efecto en BD):**
+- **Rechazado/cancelled** → `PATCH estado='rechazado'` SOLO si estaba `pendiente`; NUNCA descuenta stock (`webhook-mp.js:137`).
+- **Pendiente/in_process** → 200 sin cambios, queda `pendiente`.
+- **Duplicado** → doble candado: (1) `payment_id` ya aplicado → 200 sin llamar al RPC (`:110`); (2) el RPC `registrar_pago_pedido` devuelve `'duplicado'` (lock + chequeo `estado`).
+- **Firma** HMAC-SHA256: secreto malo o `v1` forjado → 401 sin tocar la BD.
+
+**Servidor en vivo (10 tests contra `/api/crear-preferencia`, sin tocar stock, crean pedidos `pendiente`):**
+- **Envío gratis > S/299** lo calcula el servidor (4u=S/359.96→envío 0; 1u→envío 12).
+- **No manipulable**: precio en el ítem, y `subtotal`/`descuento`/`envio`/`total` de nivel superior son IGNORADOS; usa la BD.
+- **Cupón** inexistente → 409 `cupon` (lo valida el servidor, no el navegador).
+
+**Stock en vivo (8 tests, SÍ consumen stock — vía zona contraentrega):**
+- **Contraentrega**: crea pedido sin pago online (`ok+contraentrega=true`, sin `init_point`) y reserva stock al instante (-1). Pedido `ONI-D7B09897`.
+- **Carrera**: 2 pedidos concurrentes por TODO el stock (8u c/u) → exactamente 1 gana (`ONI-FB383A55`, 8→0), el otro 409 `stock`. Stock final 0, nunca negativo (lock de fila de `descontar_stock_pedido`).
+
+**⚠️ RESIDUO DE PRUEBAS (limpiar/restock cuando el panel esté activo):**
+- Stock consumido: **`oniyouth stars / XS` quedó en 0** (restock), **`ONIYOUTH TRIBAL TEE / S` en 9**.
+- Pedidos de prueba creados (varios `pendiente` de los tests de envío/cupón, 2 `contraentrega` reales `ONI-D7B09897`/`ONI-FB383A55`, y 1 `cancelado` del perdedor de la carrera).
+
+**PENDIENTE (requieren TU navegador, MP solo firma webhooks tras un pago real):**
+- **Pago rechazado E2E**: comprar en `oniyouth-dev.vercel.app` con titular de tarjeta **`OTHE`** → el pedido debe quedar `rechazado` y el stock intacto.
+- **Pago pendiente E2E**: comprar con titular **`CONT`** → pedido `pendiente`, y el seguimiento `/pedido?codigo=` debe mostrarlo bien.
+- (Opcional) **Webhook duplicado real**: reenviar la misma notificación desde el panel de MP y confirmar que no descuenta doble.
+
 ## Falta (fases pendientes)
 - **9** Notificaciones automáticas (correo al cliente + aviso al admin). Necesita **proveedor de correo**.
-- **12** Pruebas de pago completas (aprobado/rechazado/pendiente, stock en carrera, webhook duplicado).
+- **12** Cerrar los 2 E2E de navegador (rechazado con `OTHE`, pendiente con `CONT`); restock del stock de prueba.
 - **14** Animaciones (fade-in scroll, hover, vuelo a la bolsa; respetar `prefers-reduced-motion`).
 - **15** Rendimiento y accesibilidad (WebP, lazy, teclado, contraste, móvil).
 
