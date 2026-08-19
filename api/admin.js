@@ -26,6 +26,9 @@ const mailer = require('./_lib/mailer');
 
 const ESTADOS_PEDIDO = ['pendiente', 'pagado', 'rechazado', 'cancelado', 'enviado', 'entregado', 'contraentrega'];
 const TALLAS_DEFAULT = ['XS', 'S', 'M', 'L', 'XL'];
+const IMG_BUCKET = 'productos';
+const IMG_TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+const IMG_MAX_BYTES = Math.floor(4.5 * 1024 * 1024); // límite de body de una función de Vercel
 
 // ---------- helpers de saneo (nada se cree del navegador sin validar) ----------
 function toInt(v) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : null; }
@@ -46,6 +49,7 @@ module.exports = async function handler(req, res) {
       case 'pedidos':   return await recPedidos(req, res);
       case 'cupones':   return await recCupones(req, res);
       case 'zonas':     return await recZonas(req, res);
+      case 'subir-imagen': return await recSubirImagen(req, res);
       case 'test-email':return await recTestEmail(req, res);
       default:          return res.status(404).json({ error: 'recurso' });
     }
@@ -364,4 +368,66 @@ async function recTestEmail(req, res) {
     return res.status(502).json({ error: 'envio', mensaje: 'No se pudo enviar. ¿El dominio ya está verificado en Resend?', detalle: r });
   }
   return res.status(200).json({ ok: true, enviado_a: r.to });
+}
+
+// ============================================================
+// SUBIR IMAGEN (Storage con service_role)
+//
+// El navegador manda el archivo crudo (application/octet-stream) con el
+// nombre y el mime en la query. requireAdmin ya validó que es el admin;
+// acá subimos al bucket con service_role, que IGNORA RLS. Por eso el
+// permiso ya NO depende del token que el navegador le pase a Storage
+// (era el punto frágil de la subida directa).
+//
+// Límite: el body de una función de Vercel no puede pasar ~4.5 MB; el
+// cliente ya corta en 4 MB. Para archivos mayores habría que usar una
+// signed upload URL (subida directa del navegador con token de un solo uso).
+// ============================================================
+async function leerBinario(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (req.body && req.body.type === 'Buffer' && Array.isArray(req.body.data)) return Buffer.from(req.body.data);
+  if (typeof req.body === 'string') return Buffer.from(req.body, 'binary');
+  const chunks = [];
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
+
+async function recSubirImagen(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'metodo' });
+
+  const tipo = String((req.query && req.query.tipo) || '').trim().toLowerCase();
+  const nombre = String((req.query && req.query.nombre) || 'imagen').trim();
+  if (!IMG_TIPOS.includes(tipo)) {
+    return res.status(400).json({ error: 'tipo', mensaje: 'Formato no permitido. Usá JPG, PNG, WebP, GIF o AVIF.' });
+  }
+
+  let buf;
+  try { buf = await leerBinario(req); }
+  catch (e) { return res.status(400).json({ error: 'body', mensaje: 'No se pudo leer el archivo' }); }
+  if (!buf || !buf.length) return res.status(400).json({ error: 'vacio', mensaje: 'Archivo vacío' });
+  if (buf.length > IMG_MAX_BYTES) return res.status(413).json({ error: 'grande', mensaje: 'La imagen supera el máximo (4 MB).' });
+
+  const safe = (nombre.replace(/[^a-zA-Z0-9._-]/g, '_') || 'imagen');
+  const path = Date.now() + '-' + safe;
+  const base = process.env.SUPABASE_URL;
+  const SR = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const up = await fetch(base + '/storage/v1/object/' + IMG_BUCKET + '/' + encodeURIComponent(path), {
+    method: 'POST',
+    headers: {
+      apikey: SR,
+      Authorization: 'Bearer ' + SR,
+      'Content-Type': tipo,
+      'x-upsert': 'true'
+    },
+    body: buf
+  });
+  if (!up.ok) {
+    const detalle = (await up.text().catch(() => '')).slice(0, 200);
+    console.error('subir-imagen storage', up.status, detalle);
+    return res.status(502).json({ error: 'storage', mensaje: 'Storage rechazó la subida', detalle });
+  }
+
+  const url = base + '/storage/v1/object/public/' + IMG_BUCKET + '/' + path;
+  return res.status(201).json({ url });
 }
