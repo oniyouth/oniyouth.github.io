@@ -225,40 +225,37 @@
     return data;
   }
 
-  // ---------- subir imagen directo a Storage (bucket productos) ----------
-  const IMG_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB (coincide con el límite del bucket)
+  // ---------- subir imagen vía /api (service_role; NO depende de RLS del navegador) ----------
+  // El navegador manda el archivo crudo a /api/admin?r=subir-imagen con su
+  // Bearer de admin; el servidor valida (requireAdmin) y sube con service_role.
+  // Así el permiso ya no depende de que Storage acepte el token del navegador.
+  const IMG_MAX_BYTES = 4 * 1024 * 1024;   // 4 MB (el body de una función de Vercel no puede pasar ~4.5 MB)
   const IMG_TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
   async function uploadImagen(file) {
-    // Validación en el cliente: mensaje claro antes de tocar Storage.
+    // Validación en el cliente: mensaje claro antes de subir.
     if (file.type && !IMG_TIPOS.includes(file.type)) {
       throw new Error('Formato no permitido (' + (file.type || 'desconocido') + '). Usá JPG, PNG, WebP, GIF o AVIF.');
     }
     if (file.size > IMG_MAX_BYTES) {
-      throw new Error('La imagen pesa ' + (file.size / 1048576).toFixed(1) + ' MB; el máximo es 5 MB.');
+      throw new Error('La imagen pesa ' + (file.size / 1048576).toFixed(1) + ' MB; el máximo por subida es 4 MB. Comprimila e intentá de nuevo.');
     }
-    const token = await freshToken();
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = Date.now() + '-' + safe;
-    const r = await fetch(SB_URL + '/storage/v1/object/productos/' + encodeURIComponent(path), {
-      method: 'POST',
-      headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
-      body: file
-    });
+    const qs = '?r=subir-imagen&nombre=' + encodeURIComponent(file.name) +
+               '&tipo=' + encodeURIComponent(file.type || 'application/octet-stream');
+    async function go() {
+      const token = await freshToken();
+      return fetch('/api/admin' + qs, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/octet-stream' },
+        body: file
+      });
+    }
+    let r = await go();
+    if (r.status === 401) { try { await refresh(); r = await go(); } catch (e) { doLogout(); throw new Error('Sesión expirada'); } }
+    const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      // Muestra el motivo REAL que devuelve Supabase, no solo el código.
-      let motivo = '';
-      try { const j = await r.json(); motivo = j.message || j.error || ''; }
-      catch (e) { motivo = (await r.text().catch(() => '')).slice(0, 140); }
-      if (/row-level security/i.test(motivo)) {
-        motivo = 'Storage rechazó por permisos: falta o no coincide la política de subida del bucket "productos" (ver policies de Storage).';
-      } else if (/mime|content.?type/i.test(motivo)) {
-        motivo = 'Ese tipo de archivo no está permitido en el bucket. ' + motivo;
-      } else if (/exceeded|too large|maximum size/i.test(motivo)) {
-        motivo = 'La imagen supera el tamaño máximo del bucket. ' + motivo;
-      }
-      throw new Error('No se pudo subir la imagen: ' + (motivo || ('error ' + r.status)));
+      throw new Error('No se pudo subir la imagen: ' + (data.mensaje || data.error || ('error ' + r.status)));
     }
-    return SB_URL + '/storage/v1/object/public/productos/' + path;
+    return data.url;
   }
 
   // ============================================================
