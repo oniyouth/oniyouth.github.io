@@ -132,7 +132,7 @@ async function recProductos(req, res) {
     // Un color por defecto (hereda las imágenes del producto) + sus tallas XS–XL
     // stock 0. Las variantes ahora exigen color_id (NOT NULL), así que el color
     // se crea PRIMERO. Best-effort: si algo falla, el producto igual se creó.
-    await crearColorConTallas(prod.id, 'Único', prod.imagenes || [], null);
+    await crearColorConTallas(prod.id, 'Unico', prod.imagenes || [], null);
     return res.status(201).json(prod);
   }
 
