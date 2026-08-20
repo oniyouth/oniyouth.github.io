@@ -283,6 +283,7 @@
     { id: 'resumen',  label: 'Resumen',   render: viewResumen },
     { id: 'productos',label: 'Productos',  render: viewProductos },
     { id: 'stock',    label: 'Stock',      render: viewStock },
+    { id: 'guias',    label: 'Guías',      render: viewGuias },
     { id: 'pedidos',  label: 'Pedidos',    render: viewPedidos },
     { id: 'cupones',  label: 'Cupones',    render: viewCupones },
     { id: 'zonas',    label: 'Envíos',     render: viewZonas }
@@ -355,12 +356,14 @@
             '<td><span class="pill ' + (p.activo ? 'on' : 'off') + '">' + (p.activo ? 'Activo' : 'Oculto') + '</span></td>' +
             '<td class="row" style="justify-content:flex-end">' +
               '<button class="btn ghost sm" data-edit="' + p.id + '">Editar</button>' +
+              '<button class="btn ghost sm" data-colores="' + p.id + '">Colores</button>' +
               '<button class="btn ghost sm" data-toggle="' + p.id + '">' + (p.activo ? 'Ocultar' : 'Activar') + '</button>' +
             '</td></tr>';
         }).join('') +
         '</tbody></table></div>';
       $('#nuevoProd').onclick = () => formProducto(null);
       el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => formProducto(productosCache.find(p => p.id === b.dataset.edit)));
+      el.querySelectorAll('[data-colores]').forEach(b => b.onclick = () => formColores(productosCache.find(p => p.id === b.dataset.colores)));
       el.querySelectorAll('[data-toggle]').forEach(b => b.onclick = async () => {
         const p = productosCache.find(x => x.id === b.dataset.toggle);
         b.disabled = true;
@@ -419,22 +422,119 @@
   }
 
   // ============================================================
-  // VISTA: STOCK (edición rápida por talla)
+  // COLORES de un producto (galería + stock por talla, por color)
   // ============================================================
+  async function formColores(p) {
+    if (!p) return;
+    openModal('<h3>Colores · ' + esc(p.nombre) + '</h3><div id="coloresBox"><div class="center-msg"><span class="spin"></span> Cargando…</div></div>' +
+      '<div class="actions"><button class="btn ghost" id="c-cerrar">Cerrar</button><button class="btn" id="c-nuevo">+ Nuevo color</button></div>');
+    $('#c-cerrar').onclick = closeModal;
+    $('#c-nuevo').onclick = () => formColor(p, null);
+    async function pinta() {
+      try {
+        const cols = await api('colores', { query: { producto_id: p.id } });
+        const box = $('#coloresBox');
+        if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:.5rem 0">Sin colores. Creá el primero.</div>'; return; }
+        box.innerHTML = cols.map(c => {
+          const img = (c.imagenes && c.imagenes[0]) || '';
+          const nStock = (c.variantes || []).reduce((s, v) => s + (v.stock || 0), 0);
+          return '<div class="between card" style="background:var(--card2);margin-bottom:.5rem">' +
+            '<div class="row" style="align-items:center;gap:.6rem">' +
+              (img ? '<img class="thumb" src="' + esc(img) + '" alt="">' : '<div class="thumb"></div>') +
+              '<div><strong>' + esc(c.nombre) + '</strong><div class="muted" style="font-size:.72rem">' +
+                (c.imagenes ? c.imagenes.length : 0) + ' foto(s) · ' + nStock + ' en stock</div></div>' +
+            '</div>' +
+            '<div class="row">' +
+              '<button class="btn ghost sm" data-cedit="' + c.id + '">Editar</button>' +
+              '<button class="btn ghost sm" data-cdel="' + c.id + '">Borrar</button>' +
+            '</div></div>';
+        }).join('');
+        box.querySelectorAll('[data-cedit]').forEach(b => b.onclick = () => formColor(p, cols.find(c => c.id === b.dataset.cedit)));
+        box.querySelectorAll('[data-cdel]').forEach(b => b.onclick = async () => {
+          const c = cols.find(x => x.id === b.dataset.cdel);
+          if (!confirm('Borrar el color "' + c.nombre + '"? Se elimina también su stock por talla. (No borra ventas ya hechas.)')) return;
+          b.disabled = true;
+          try { await api('colores', { method: 'DELETE', query: { id: c.id } }); toast('Color borrado', 'ok'); pinta(); }
+          catch (e) { toast(e.message, 'bad'); b.disabled = false; }
+        });
+      } catch (e) { $('#coloresBox').innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
+    }
+    // Exponer para refrescar desde formColor.
+    formColores._refresh = pinta;
+    pinta();
+  }
+
+  function formColor(p, c) {
+    const nuevo = !c;
+    let imgs = c && Array.isArray(c.imagenes) ? c.imagenes.slice() : [];
+    function imgsHtml() {
+      return imgs.map((u, i) => '<div class="ii"><img src="' + esc(u) + '"><button type="button" data-rm="' + i + '">×</button></div>').join('') +
+        '<label class="btn ghost sm" style="display:inline-flex;align-items:center;margin:0;cursor:pointer">+ Foto<input type="file" accept="image/*" id="cImgFile" style="display:none"></label>';
+    }
+    openModal(
+      '<h3>' + (nuevo ? 'Nuevo color' : 'Editar color') + ' · ' + esc(p.nombre) + '</h3>' +
+      '<div class="field"><label>Nombre del color</label><input id="fc-nombre" placeholder="Ej: Negro" value="' + esc(c ? c.nombre : '') + '"></div>' +
+      '<div class="field"><label>Fotos del color <span class="muted">(la 1ª es la miniatura del selector)</span></label><div class="imgs" id="cImgsBox">' + imgsHtml() + '</div></div>' +
+      (nuevo ? '<div class="muted" style="font-size:.75rem;margin-bottom:.5rem">Se crean las tallas XS–XL con stock 0; el stock se ajusta en la pestaña Stock.</div>' : '') +
+      '<div class="actions"><button class="btn ghost" id="fc-cancel">Volver</button><button class="btn" id="fc-save">Guardar</button></div>'
+    );
+    function bind() {
+      $('#cImgsBox').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { imgs.splice(+b.dataset.rm, 1); $('#cImgsBox').innerHTML = imgsHtml(); bind(); });
+      const fi = $('#cImgFile');
+      if (fi) fi.onchange = async () => {
+        const file = fi.files[0]; if (!file) return;
+        toast('Subiendo foto…');
+        try { const url = await uploadImagen(file); imgs.push(url); $('#cImgsBox').innerHTML = imgsHtml(); bind(); toast('Foto subida', 'ok'); }
+        catch (e) { toast(e.message, 'bad'); }
+      };
+    }
+    bind();
+    $('#fc-cancel').onclick = () => formColores(p);
+    $('#fc-save').onclick = async () => {
+      const nombre = $('#fc-nombre').value.trim();
+      if (!nombre) return toast('Falta el nombre del color', 'bad');
+      $('#fc-save').disabled = true;
+      try {
+        if (nuevo) await api('colores', { method: 'POST', body: { producto_id: p.id, nombre, imagenes: imgs } });
+        else await api('colores', { method: 'PATCH', body: { id: c.id, nombre, imagenes: imgs } });
+        toast('Color guardado', 'ok'); formColores(p);
+      } catch (e) { toast(e.message, 'bad'); $('#fc-save').disabled = false; }
+    };
+  }
+
+  // ============================================================
+  // VISTA: STOCK (edición rápida por color y talla)
+  // ============================================================
+  const SIZE_ORDER_ADMIN = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  function sizeRankAdmin(t) { const i = SIZE_ORDER_ADMIN.indexOf(String(t || '').toUpperCase()); return i < 0 ? 99 : i; }
+
   async function viewStock(el) {
     loading(el);
     try {
       const prods = await api('productos');
-      el.innerHTML = '<h2 class="title">Stock por talla</h2>' +
+      el.innerHTML = '<h2 class="title">Stock por color y talla</h2>' +
         prods.map(p => {
-          const vs = (p.variantes || []).slice().sort((a, b) => a.talla.localeCompare(b.talla));
-          return '<div class="card"><div class="between" style="margin-bottom:.7rem"><strong>' + esc(p.nombre) + '</strong>' +
-            '<button class="btn sm" data-save="' + p.id + '">Guardar</button></div>' +
-            '<div class="row" data-prod="' + p.id + '">' +
-            (vs.length ? vs.map(v => '<div style="text-align:center"><label style="text-align:center">' + esc(v.talla) + '</label>' +
+          const vars = p.variantes || [];
+          // Agrupa por color usando la lista de colores del producto; añade un
+          // grupo "Sin color" defensivo por si quedara alguna variante suelta.
+          const colores = (p.colores || []).slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+          const grupos = colores.map(c => ({
+            id: c.id, nombre: c.nombre,
+            vs: vars.filter(v => v.color_id === c.id).sort((a, b) => sizeRankAdmin(a.talla) - sizeRankAdmin(b.talla))
+          }));
+          const sueltas = vars.filter(v => !v.color_id);
+          if (sueltas.length) grupos.push({ id: '_none', nombre: 'Sin color', vs: sueltas.sort((a, b) => sizeRankAdmin(a.talla) - sizeRankAdmin(b.talla)) });
+
+          const cuerpo = grupos.length ? grupos.map(g =>
+            '<div style="margin-top:.6rem"><div class="muted" style="font-size:.75rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:.3rem">' + esc(g.nombre || 'Color') + '</div>' +
+            '<div class="row">' +
+            (g.vs.length ? g.vs.map(v => '<div style="text-align:center"><label style="text-align:center">' + esc(v.talla) + '</label>' +
               '<input class="mini" type="number" min="0" value="' + (v.stock || 0) + '" data-vid="' + v.id + '"></div>').join('')
               : '<span class="muted">Sin tallas</span>') +
-            '</div></div>';
+            '</div></div>').join('') : '<span class="muted">Sin colores</span>';
+
+          return '<div class="card" data-prod="' + p.id + '"><div class="between" style="margin-bottom:.4rem"><strong>' + esc(p.nombre) + '</strong>' +
+            '<button class="btn sm" data-save="' + p.id + '">Guardar</button></div>' + cuerpo + '</div>';
         }).join('');
       el.querySelectorAll('[data-save]').forEach(btn => btn.onclick = async () => {
         const box = el.querySelector('[data-prod="' + btn.dataset.save + '"]');
@@ -443,6 +543,75 @@
         try { await api('variantes', { method: 'PATCH', body: { cambios } }); toast('Stock guardado', 'ok'); }
         catch (e) { toast(e.message, 'bad'); }
         btn.disabled = false;
+      });
+    } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
+  }
+
+  // ============================================================
+  // VISTA: GUÍAS DE TALLA (imagen por producto o por categoría)
+  // ============================================================
+  async function viewGuias(el) {
+    loading(el);
+    try {
+      const [guias, prods] = await Promise.all([api('guias'), api('productos')]);
+      const prodById = {}; prods.forEach(p => prodById[p.id] = p);
+      const cats = []; prods.forEach(p => { if (p.categoria && cats.indexOf(p.categoria) === -1) cats.push(p.categoria); });
+
+      const lista = guias.length ? guias.map(g => {
+        const destino = g.producto_id
+          ? ('Producto: ' + esc((prodById[g.producto_id] || {}).nombre || g.producto_id))
+          : ('Categoría: ' + esc(g.categoria || '—'));
+        return '<div class="between card" style="background:var(--card2);margin-bottom:.5rem">' +
+          '<div class="row" style="align-items:center;gap:.6rem">' +
+            '<img class="thumb" src="' + esc(g.imagen_url) + '" alt="">' +
+            '<div><strong>' + destino + '</strong></div>' +
+          '</div>' +
+          '<button class="btn ghost sm" data-gdel="' + g.id + '">Borrar</button></div>';
+      }).join('') : '<div class="muted" style="padding:.5rem 0">Todavía no hay guías.</div>';
+
+      el.innerHTML = '<h2 class="title">Guías de tallas</h2>' +
+        '<div class="card"><strong>Subir / actualizar guía</strong>' +
+        '<div class="field" style="margin-top:.6rem"><label>Aplicar a</label>' +
+          '<select id="g-ambito"><option value="producto">Un producto</option><option value="categoria">Una categoría</option></select></div>' +
+        '<div class="field" id="g-prod-wrap"><label>Producto</label><select id="g-prod">' +
+          prods.map(p => '<option value="' + p.id + '">' + esc(p.nombre) + '</option>').join('') + '</select></div>' +
+        '<div class="field" id="g-cat-wrap" style="display:none"><label>Categoría</label>' +
+          (cats.length ? '<select id="g-cat">' + cats.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</select>'
+                       : '<input id="g-cat" placeholder="Nombre de categoría">') + '</div>' +
+        '<div class="field"><label>Imagen de la guía</label><div class="imgs" id="gImgBox">' +
+          '<label class="btn ghost sm" style="display:inline-flex;align-items:center;margin:0;cursor:pointer">+ Imagen<input type="file" accept="image/*" id="gImgFile" style="display:none"></label></div></div>' +
+        '<div class="actions"><button class="btn" id="g-save" disabled>Guardar guía</button></div></div>' +
+        '<h2 class="title" style="margin-top:1rem">Guías actuales</h2>' + lista;
+
+      let imgUrl = '';
+      const amb = $('#g-ambito');
+      amb.onchange = () => {
+        $('#g-prod-wrap').style.display = amb.value === 'producto' ? '' : 'none';
+        $('#g-cat-wrap').style.display = amb.value === 'categoria' ? '' : 'none';
+      };
+      $('#gImgFile').onchange = async () => {
+        const file = $('#gImgFile').files[0]; if (!file) return;
+        toast('Subiendo imagen…');
+        try {
+          imgUrl = await uploadImagen(file);
+          $('#gImgBox').innerHTML = '<div class="ii"><img src="' + esc(imgUrl) + '"></div>' + $('#gImgBox').innerHTML;
+          $('#g-save').disabled = false; toast('Imagen lista', 'ok');
+        } catch (e) { toast(e.message, 'bad'); }
+      };
+      $('#g-save').onclick = async () => {
+        if (!imgUrl) return toast('Subí la imagen primero', 'bad');
+        const body = { imagen_url: imgUrl };
+        if (amb.value === 'producto') body.producto_id = $('#g-prod').value;
+        else { const cv = $('#g-cat').value; if (!cv) return toast('Elegí o escribí la categoría', 'bad'); body.categoria = cv; }
+        $('#g-save').disabled = true;
+        try { await api('guias', { method: 'POST', body }); toast('Guía guardada', 'ok'); viewGuias(el); }
+        catch (e) { toast(e.message, 'bad'); $('#g-save').disabled = false; }
+      };
+      el.querySelectorAll('[data-gdel]').forEach(b => b.onclick = async () => {
+        if (!confirm('¿Borrar esta guía?')) return;
+        b.disabled = true;
+        try { await api('guias', { method: 'DELETE', query: { id: b.dataset.gdel } }); toast('Guía borrada', 'ok'); viewGuias(el); }
+        catch (e) { toast(e.message, 'bad'); b.disabled = false; }
       });
     } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
   }

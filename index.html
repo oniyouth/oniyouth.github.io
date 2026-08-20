@@ -641,6 +641,57 @@
             color: #fff;
         }
 
+        /* Color swatches (miniatura = 1ª foto del color) */
+        .pd-colors-label {
+            font: 600 0.6rem 'Syne', sans-serif; letter-spacing: 3px; text-transform: uppercase;
+            color: var(--text3); margin-bottom: 0.7rem;
+        }
+        .pd-color-name { color: rgba(255,255,255,0.75); margin-left: 0.6rem; letter-spacing: 1px; }
+        .pd-colors { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.8rem; }
+        .pd-swatch {
+            width: 52px; height: 52px; padding: 0; border: none; cursor: pointer;
+            background: #111 center/cover no-repeat; border-radius: 0;
+            outline: 1px solid rgba(255,255,255,0.15); transition: outline-color 0.2s, transform 0.2s;
+            position: relative; overflow: hidden;
+        }
+        .pd-swatch img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pd-swatch:hover { outline-color: rgba(255,255,255,0.5); }
+        .pd-swatch.sel { outline: 2px solid #fff; }
+        .pd-swatch.sin-stock::after {
+            content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+        }
+
+        /* Encabezado de tallas + enlace de guía */
+        .pd-sizes-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+        .pd-size-guide-link {
+            font: 600 0.6rem 'Syne', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+            color: var(--text3); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+        }
+        .pd-size-guide-link:hover { color: #fff; }
+
+        /* Modal de guía de tallas */
+        .size-guide-modal {
+            position: fixed; inset: 0; z-index: 400; display: none;
+            background: rgba(0,0,0,0.9); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; padding: 4vh 4vw;
+        }
+        .size-guide-modal.active { display: flex; }
+        .size-guide-modal .sg-inner { max-width: 900px; width: 100%; text-align: center; }
+        .size-guide-modal .sg-title {
+            font: 600 0.7rem 'Syne', sans-serif; letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(255,255,255,0.6); margin-bottom: 1rem;
+        }
+        .size-guide-modal img {
+            max-width: 100%; max-height: 80vh; object-fit: contain; background: #fff;
+        }
+        .sg-close {
+            position: fixed; top: 20px; right: 24px; z-index: 401;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #fff; font-size: 1.3rem; cursor: pointer;
+        }
+        .sg-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+
         /* Add to cart button — OniYouth style */
         .pd-add-btn {
             width: 100%; padding: 16px;
@@ -887,11 +938,25 @@
                 <div class="pd-cat" id="pdCat"></div>
                 <div class="pd-name" id="pdName"></div>
                 <div class="pd-price" id="pdPrice"></div>
-                <div class="pd-sizes-label">Talla</div>
+                <div class="pd-colors-label" id="pdColorsLabel" style="display:none;">Color<span class="pd-color-name" id="pdColorName"></span></div>
+                <div class="pd-colors" id="pdColors" style="display:none;"></div>
+                <div class="pd-sizes-head">
+                    <span class="pd-sizes-label">Talla</span>
+                    <a href="javascript:void(0)" class="pd-size-guide-link" id="pdSizeGuideLink" style="display:none;" onclick="openSizeGuide()">Guía de tallas</a>
+                </div>
                 <div class="pd-sizes" id="pdSizes"></div>
                 <button class="pd-add-btn" id="pdAddBtn" onclick="addCart(this)">AGREGAR A LA BOLSA</button>
                 <div class="pd-desc" id="pdDesc"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- SIZE GUIDE MODAL -->
+    <div class="size-guide-modal" id="sizeGuideModal" onclick="closeSizeGuide(event)">
+        <button class="sg-close" onclick="closeSizeGuide()">&times;</button>
+        <div class="sg-inner">
+            <div class="sg-title">Guía de tallas</div>
+            <img id="sizeGuideImg" src="" alt="Guía de tallas">
         </div>
     </div>
 
@@ -1303,25 +1368,81 @@
             return r.json();
         }
 
+        // Guías de tallas: {prod:{producto_id:url}, cat:{categoria:url}}. Se resuelve
+        // producto -> categoría. Best-effort: si la tabla aún no existe, queda vacío.
+        let sizeGuides = { prod: {}, cat: {} };
+
         async function loadCatalog() {
-            const rows = await sbFetch(
-                'productos?activo=eq.true' +
-                '&select=id,nombre,descripcion,precio,categoria,imagenes,orden,variantes(id,talla,stock,sku)' +
-                '&order=orden.asc'
-            );
+            // Intento con colores (esquema nuevo). Si la tabla `colores` aún no existe
+            // (migración 008 sin aplicar), PostgREST devuelve error y caemos a legacy:
+            // un color implícito por producto con las imágenes del propio producto.
+            let rows, conColores = true;
+            try {
+                rows = await sbFetch(
+                    'productos?activo=eq.true' +
+                    '&select=id,nombre,descripcion,precio,categoria,imagenes,orden,' +
+                    'colores(id,nombre,hex,imagenes,orden),variantes(id,talla,stock,sku,color_id)' +
+                    '&order=orden.asc'
+                );
+            } catch (e) {
+                conColores = false;
+                rows = await sbFetch(
+                    'productos?activo=eq.true' +
+                    '&select=id,nombre,descripcion,precio,categoria,imagenes,orden,variantes(id,talla,stock,sku)' +
+                    '&order=orden.asc'
+                );
+            }
+
             data = {};
             rows.forEach(p => {
-                const variantes = (p.variantes || []).slice().sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
-                const soldOut = variantes.length > 0 && variantes.every(v => (v.stock || 0) <= 0);
                 const precioNum = Number(p.precio) || 0;
-                const imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : ['assets/images/logo.png'];
+                const prodImgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : ['assets/images/logo.png'];
+                const allVars = p.variantes || [];
+
+                let colores;
+                if (conColores && Array.isArray(p.colores) && p.colores.length) {
+                    colores = p.colores.slice()
+                        .sort((a, b) => (a.orden || 0) - (b.orden || 0))
+                        .map(c => {
+                            const vs = allVars.filter(v => v.color_id === c.id)
+                                .sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
+                            const imgs = (Array.isArray(c.imagenes) && c.imagenes.length) ? c.imagenes : prodImgs;
+                            return { id: c.id, nombre: c.nombre || '', hex: c.hex || null, slides: imgs, variantes: vs };
+                        });
+                } else {
+                    // Legacy / producto sin colores: un color implícito, sin nombre.
+                    const vs = allVars.slice().sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
+                    colores = [{ id: '_legacy', nombre: '', hex: null, slides: prodImgs, variantes: vs }];
+                }
+
+                const allV = colores.reduce((acc, c) => acc.concat(c.variantes), []);
+                const soldOut = allV.length > 0 && allV.every(v => (v.stock || 0) <= 0);
+                const first = colores[0];
+
                 data[p.id] = {
                     id: p.id, name: p.nombre, cat: p.categoria || '',
                     priceNum: precioNum, price: 'S/ ' + precioNum.toFixed(2),
-                    desc: p.descripcion || '', slides: imgs,
-                    variantes: variantes, soldOut: soldOut
+                    desc: p.descripcion || '',
+                    colores: colores,
+                    // slides/variantes reflejan el color activo (se re-apuntan al cambiar de color).
+                    // Al inicio = primer color. `cover` queda fijo para la portada del grid,
+                    // así cambiar de color en la ficha no altera la miniatura del catálogo.
+                    slides: first.slides, variantes: first.variantes,
+                    cover: first.slides[0],
+                    soldOut: soldOut
                 };
             });
+
+            // Guías de tallas (best-effort; no rompe el catálogo si falta la tabla).
+            try {
+                const gs = await sbFetch('guias_talla?select=producto_id,categoria,imagen_url');
+                sizeGuides = { prod: {}, cat: {} };
+                (gs || []).forEach(g => {
+                    if (g.producto_id) sizeGuides.prod[g.producto_id] = g.imagen_url;
+                    else if (g.categoria) sizeGuides.cat[g.categoria] = g.imagen_url;
+                });
+            } catch (e) { sizeGuides = { prod: {}, cat: {} }; }
+
             renderFilters();
             renderGrid();
         }
@@ -1370,7 +1491,7 @@
             track.innerHTML = list.map(p =>
                 '<div class="product-card reveal-fade' + (p.soldOut ? ' sold-out' : '') + '" data-p="' + p.id + '" role="button" tabindex="0" aria-label="Ver ' + escapeHtml(p.name) + '" onclick="openProduct(\'' + p.id + '\')" onkeydown="oniCardKey(event,\'' + p.id + '\')">' +
                     '<div class="product-img-wrap">' +
-                        oniPicture(p.slides[0], p.name, ' loading="lazy"') +
+                        oniPicture(p.cover || p.slides[0], p.name, ' loading="lazy"') +
                         '<div class="product-overlay"><button class="product-quick">Vista Rapida</button></div>' +
                         (p.soldOut ? '<div class="product-badge-sold">AGOTADO</div>' : '') +
                     '</div>' +
@@ -1452,12 +1573,74 @@
             document.getElementById('pdPrice').textContent = p.price;
             document.getElementById('pdDesc').textContent = p.desc;
 
-            // Tallas dinámicas desde variantes. Sin stock => tachada y deshabilitada.
+            currentProductData = p;
+            p._colorIdx = 0;
+
+            // --- Guía de tallas: producto -> categoría (la del producto manda) ---
+            const guideUrl = (sizeGuides.prod && sizeGuides.prod[p.id]) ||
+                             (sizeGuides.cat && sizeGuides.cat[p.cat]) || null;
+            p._guideUrl = guideUrl;
+            const guideLink = document.getElementById('pdSizeGuideLink');
+            if (guideLink) guideLink.style.display = guideUrl ? 'inline' : 'none';
+
+            // --- Swatches de color (miniatura = 1ª foto del color) ---
+            const colores = p.colores || [];
+            const colorsEl = document.getElementById('pdColors');
+            const colorsLabel = document.getElementById('pdColorsLabel');
+            colorsEl.innerHTML = '';
+            const multiColor = colores.length > 1;
+            colorsEl.style.display = multiColor ? 'flex' : 'none';
+            colorsLabel.style.display = multiColor ? 'block' : 'none';
+            if (multiColor) {
+                colores.forEach((c, idx) => {
+                    const sw = document.createElement('button');
+                    sw.className = 'pd-swatch';
+                    sw.title = c.nombre || ('Color ' + (idx + 1));
+                    const agotado = c.variantes.length > 0 && c.variantes.every(v => (v.stock || 0) <= 0);
+                    if (agotado) sw.classList.add('sin-stock');
+                    const src = c.slides && c.slides[0];
+                    if (src) {
+                        const img = document.createElement('img');
+                        const tw = oniWebp(src);
+                        img.onerror = tw ? function(){ img.onerror = null; img.src = src; } : null;
+                        img.loading = 'lazy'; img.decoding = 'async';
+                        img.src = tw || src; img.alt = c.nombre || '';
+                        sw.appendChild(img);
+                    } else if (c.hex) {
+                        sw.style.background = c.hex;
+                    }
+                    sw.onclick = () => pdSelectColor(idx);
+                    colorsEl.appendChild(sw);
+                });
+            }
+
+            // Render del color inicial (tallas + galería del primer color).
+            pdSelectColor(0);
+        }
+
+        // Cambia el color activo: re-apunta galería y tallas (stock de ESE color).
+        function pdSelectColor(idx) {
+            const p = currentProductData;
+            if (!p || !p.colores) return;
+            const color = p.colores[idx];
+            if (!color) return;
+            p._colorIdx = idx;
+
+            // Re-apunta slides/variantes activas (la galería lee p.slides).
+            p.slides = (color.slides && color.slides.length) ? color.slides : ['assets/images/logo.png'];
+            p.variantes = color.variantes;
+
+            // Nombre del color + swatch marcado
+            const nameEl = document.getElementById('pdColorName');
+            if (nameEl) nameEl.textContent = color.nombre ? (' — ' + color.nombre) : '';
+            document.querySelectorAll('#pdColors .pd-swatch').forEach((s, i) => s.classList.toggle('sel', i === idx));
+
+            // --- Tallas del color. Sin stock => tachada y deshabilitada. ---
             const sizesEl = document.getElementById('pdSizes');
             sizesEl.innerHTML = '';
             sizeSelected = false;
             let firstAvailable = null;
-            (p.variantes || []).forEach(v => {
+            (color.variantes || []).forEach(v => {
                 const btn = document.createElement('button');
                 btn.className = 'pd-sz';
                 btn.textContent = v.talla;
@@ -1474,21 +1657,19 @@
             });
             if (firstAvailable) { firstAvailable.classList.add('sel'); sizeSelected = true; }
 
-            slideCount = p.slides.length;
-            currentSlide = 0;
-            currentProductData = p;
-
+            // Botón: deshabilitado si este color no tiene ninguna talla con stock.
             const addBtn = document.getElementById('pdAddBtn');
             if (addBtn) {
-                if (p.soldOut) { addBtn.textContent = 'AGOTADO'; addBtn.disabled = true; }
+                if (!firstAvailable) { addBtn.textContent = 'AGOTADO'; addBtn.disabled = true; }
                 else { addBtn.textContent = 'AGREGAR A LA BOLSA'; addBtn.disabled = false; }
             }
 
-            // Set main image (WebP con fallback a PNG/JPG)
+            // --- Galería del color ---
+            slideCount = p.slides.length;
+            currentSlide = 0;
             setPdImg(p.slides[0]);
             document.getElementById('pdMainImg').alt = p.name;
 
-            // Build thumbnails
             const thumbsEl = document.getElementById('pdThumbs');
             thumbsEl.innerHTML = '';
             p.slides.forEach((src, i) => {
@@ -1509,6 +1690,22 @@
             const multiImg = p.slides.length > 1;
             thumbsEl.style.display = multiImg ? 'flex' : 'none';
             document.querySelectorAll('#pdMainImgWrap .pd-img-nav').forEach(a => { a.style.display = multiImg ? 'flex' : 'none'; });
+        }
+
+        // ===== MODAL GUÍA DE TALLAS =====
+        function openSizeGuide() {
+            const p = currentProductData;
+            const url = p && p._guideUrl;
+            if (!url) return;
+            const modal = document.getElementById('sizeGuideModal');
+            const img = document.getElementById('sizeGuideImg');
+            img.src = url;
+            modal.classList.add('active');
+        }
+        function closeSizeGuide(e) {
+            // Cierra al tocar el fondo o la X (no al tocar la imagen).
+            if (e && e.target && e.target.closest && e.target.closest('.sg-inner') && e.target.tagName === 'IMG') return;
+            document.getElementById('sizeGuideModal').classList.remove('active');
         }
 
         function goToSlide(index) {
@@ -1610,6 +1807,11 @@
 
         // Keyboard
         document.addEventListener('keydown', e => {
+            const sgModal = document.getElementById('sizeGuideModal');
+            if (sgModal && sgModal.classList.contains('active')) {
+                if (e.key === 'Escape') { closeSizeGuide(); }
+                return;
+            }
             if (fsIsOpen) {
                 if (e.key === 'Escape') { closeGallery(); return; }
             }
@@ -1732,10 +1934,12 @@
             const p = currentProductData;
             const size = sel.textContent;
             const varianteId = sel.dataset.varianteId;
+            const activeColor = (p.colores && p.colores[p._colorIdx]) ? (p.colores[p._colorIdx].nombre || '') : '';
 
             oniFlyToCart();   // Fase 14: vuela la imagen del producto a la bolsa
 
-            // Mismo variante (producto + talla) ya en la bolsa => suma cantidad
+            // Mismo variante (producto + color + talla) ya en la bolsa => suma cantidad.
+            // El variante_id ya identifica la combinación color+talla, así que basta con él.
             const existing = cart.find(item => item.variante_id === varianteId);
             if (existing) {
                 existing.qty++;
@@ -1748,6 +1952,7 @@
                     price: p.price,
                     priceNum: p.priceNum,
                     size: size,
+                    color: activeColor,
                     img: p.slides[0],
                     qty: 1
                 });
@@ -1800,7 +2005,7 @@
                     '<div class="cart-item-img"><img src="' + escapeHtml(item.img) + '" alt="' + escapeHtml(item.name) + '"></div>' +
                     '<div class="cart-item-info">' +
                         '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
-                        '<div class="cart-item-meta">Talla: ' + escapeHtml(item.size) + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
+                        '<div class="cart-item-meta">Talla: ' + escapeHtml(item.size) + (item.color ? ' &middot; ' + escapeHtml(item.color) : '') + (item.qty > 1 ? ' &middot; Cant: ' + item.qty : '') + '</div>' +
                         '<div class="cart-item-price">S/ ' + (item.priceNum * item.qty).toFixed(2) + '</div>' +
                     '</div>' +
                     '<button class="cart-item-remove" onclick="removeFromCart(' + i + ')">&times;</button>' +

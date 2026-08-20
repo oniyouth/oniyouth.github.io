@@ -12,7 +12,9 @@
 // Recursos:
 //   resumen    GET
 //   productos  GET (lista, incl. inactivos) · POST (crear) · PATCH (editar/activar)
-//   variantes  PATCH (stock, 1 o varias) · POST (nueva talla) · DELETE (quitar talla)
+//   colores    GET (por producto) · POST (crear) · PATCH (editar) · DELETE (quitar color)
+//   variantes  PATCH (stock, 1 o varias) · POST (nueva talla en un color) · DELETE (quitar talla)
+//   guias      GET · POST (upsert por producto o categoría) · DELETE
 //   pedidos    GET (lista/detalle, incl. PII) · PATCH (cambiar estado)
 //   cupones    GET · POST (crear) · PATCH (editar/desactivar)
 //   zonas      GET · PATCH (costo/días/contraentrega)
@@ -45,7 +47,9 @@ module.exports = async function handler(req, res) {
     switch (r) {
       case 'resumen':   return await recResumen(req, res);
       case 'productos': return await recProductos(req, res);
+      case 'colores':   return await recColores(req, res);
       case 'variantes': return await recVariantes(req, res);
+      case 'guias':     return await recGuias(req, res);
       case 'pedidos':   return await recPedidos(req, res);
       case 'cupones':   return await recCupones(req, res);
       case 'zonas':     return await recZonas(req, res);
@@ -103,8 +107,15 @@ function saneaProducto(b, esNuevo) {
 
 async function recProductos(req, res) {
   if (req.method === 'GET') {
-    const rr = await sb('productos?select=id,nombre,descripcion,precio,categoria,imagenes,activo,orden,creado_en,'
-      + 'variantes(id,talla,stock,sku)&order=orden.asc');
+    // Intento con colores (esquema nuevo). Si la migración 008 aún no se aplicó,
+    // PostgREST devuelve error por el embed inexistente: caemos a legacy para no
+    // dejar el panel roto en la ventana entre deploy y migración.
+    let rr = await sb('productos?select=id,nombre,descripcion,precio,categoria,imagenes,activo,orden,creado_en,'
+      + 'colores(id,nombre,hex,imagenes,orden),variantes(id,talla,stock,sku,color_id)&order=orden.asc');
+    if (!rr.ok) {
+      rr = await sb('productos?select=id,nombre,descripcion,precio,categoria,imagenes,activo,orden,creado_en,'
+        + 'variantes(id,talla,stock,sku)&order=orden.asc');
+    }
     if (!rr.ok) throw new Error('productos ' + rr.status);
     return res.status(200).json(await rr.json());
   }
@@ -118,10 +129,10 @@ async function recProductos(req, res) {
     });
     if (ins.status !== 201) throw new Error('insert producto ' + ins.status + ' ' + (await ins.text()));
     const prod = (await ins.json())[0];
-    // Variantes por defecto XS–XL con stock 0 (como el seed). Best-effort.
-    const vs = TALLAS_DEFAULT.map(t => ({ producto_id: prod.id, talla: t, stock: 0 }));
-    const iv = await sb('variantes', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(vs) });
-    if (!iv.ok) console.error('crear variantes por defecto:', iv.status, await iv.text());
+    // Un color por defecto (hereda las imágenes del producto) + sus tallas XS–XL
+    // stock 0. Las variantes ahora exigen color_id (NOT NULL), así que el color
+    // se crea PRIMERO. Best-effort: si algo falla, el producto igual se creó.
+    await crearColorConTallas(prod.id, 'Único', prod.imagenes || [], null);
     return res.status(201).json(prod);
   }
 
@@ -139,6 +150,90 @@ async function recProductos(req, res) {
     const arr = await up.json();
     if (!arr[0]) return res.status(404).json({ error: 'no_encontrado' });
     return res.status(200).json(arr[0]);
+  }
+
+  return res.status(405).json({ error: 'metodo' });
+}
+
+// ============================================================
+// COLORES (galería + stock por talla, dentro de un producto)
+// ============================================================
+function saneaImagenes(v) {
+  if (!Array.isArray(v)) return null;
+  return v.map(x => String(x)).filter(Boolean);
+}
+function saneaHex(v) {
+  if (v === undefined) return undefined;
+  if (v === null || v === '') return null;
+  const h = String(v).trim();
+  return /^#[0-9a-fA-F]{6}$/.test(h) ? h : null;
+}
+
+// Crea un color y le siembra las tallas por defecto XS–XL con stock 0.
+// Devuelve la fila del color (o null si falló la creación). Best-effort en
+// las variantes: el color se crea igual aunque el sembrado falle.
+async function crearColorConTallas(producto_id, nombre, imagenes, hex) {
+  const row = { producto_id, nombre: String(nombre || 'Color').trim() || 'Color',
+    imagenes: saneaImagenes(imagenes) || [], hex: saneaHex(hex) || null };
+  const ins = await sb('colores', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row) });
+  if (ins.status === 409) return { conflict: true };
+  if (ins.status !== 201) { console.error('insert color', ins.status, await ins.text()); return null; }
+  const color = (await ins.json())[0];
+  const vs = TALLAS_DEFAULT.map(t => ({ producto_id, color_id: color.id, talla: t, stock: 0 }));
+  const iv = await sb('variantes', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(vs) });
+  if (!iv.ok) console.error('sembrar tallas del color:', iv.status, await iv.text());
+  return color;
+}
+
+async function recColores(req, res) {
+  if (req.method === 'GET') {
+    const pid = String((req.query && req.query.producto_id) || '').trim();
+    let path = 'colores?select=id,producto_id,nombre,hex,imagenes,orden,variantes(id,talla,stock,color_id)&order=orden.asc';
+    if (pid) path += '&producto_id=eq.' + encodeURIComponent(pid);
+    const rr = await sb(path);
+    if (!rr.ok) throw new Error('colores ' + rr.status);
+    return res.status(200).json(await rr.json());
+  }
+
+  if (req.method === 'POST') {
+    const b = parseBody(req);
+    const producto_id = String(b.producto_id || '').trim();
+    const nombre = String(b.nombre || '').trim();
+    if (!producto_id || !nombre) return res.status(400).json({ error: 'datos', mensaje: 'Falta producto o nombre del color' });
+    const color = await crearColorConTallas(producto_id, nombre, b.imagenes, b.hex);
+    if (color && color.conflict) return res.status(409).json({ error: 'duplicado', mensaje: 'Ese color ya existe en el producto' });
+    if (!color) throw new Error('no se pudo crear el color');
+    return res.status(201).json(color);
+  }
+
+  if (req.method === 'PATCH') {
+    const b = parseBody(req);
+    const id = String(b.id || '').trim();
+    if (!id) return res.status(400).json({ error: 'id' });
+    const out = {};
+    if (b.nombre !== undefined) { const n = String(b.nombre).trim(); if (!n) return res.status(400).json({ error: 'datos', mensaje: 'Nombre vacío' }); out.nombre = n; }
+    if (b.imagenes !== undefined) { const im = saneaImagenes(b.imagenes); if (!im) return res.status(400).json({ error: 'datos', mensaje: 'imagenes debe ser una lista' }); out.imagenes = im; }
+    if (b.hex !== undefined) out.hex = saneaHex(b.hex);
+    if (b.orden !== undefined) { const o = toInt(b.orden); if (o == null) return res.status(400).json({ error: 'datos', mensaje: 'Orden inválido' }); out.orden = o; }
+    if (Object.keys(out).length === 0) return res.status(400).json({ error: 'vacio', mensaje: 'Nada que actualizar' });
+    const up = await sb('colores?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(out)
+    });
+    if (up.status === 409) return res.status(409).json({ error: 'duplicado', mensaje: 'Ese color ya existe en el producto' });
+    if (!up.ok) throw new Error('patch color ' + up.status + ' ' + (await up.text()));
+    const arr = await up.json();
+    if (!arr[0]) return res.status(404).json({ error: 'no_encontrado' });
+    return res.status(200).json(arr[0]);
+  }
+
+  if (req.method === 'DELETE') {
+    // Borra el color y (por cascada) sus variantes/stock. Pensado para colores
+    // sin ventas; el stock de esas variantes se pierde a propósito.
+    const id = String((req.query && req.query.id) || parseBody(req).id || '').trim();
+    if (!id) return res.status(400).json({ error: 'id' });
+    const del = await sb('colores?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    if (!del.ok) throw new Error('delete color ' + del.status);
+    return res.status(200).json({ ok: true });
   }
 
   return res.status(405).json({ error: 'metodo' });
@@ -172,13 +267,14 @@ async function recVariantes(req, res) {
   if (req.method === 'POST') {
     const b = parseBody(req);
     const producto_id = String(b.producto_id || '').trim();
+    const color_id = String(b.color_id || '').trim();
     const talla = String(b.talla || '').trim();
     const stock = toInt(b.stock);
-    if (!producto_id || !talla) return res.status(400).json({ error: 'datos', mensaje: 'Falta producto o talla' });
-    const row = { producto_id, talla, stock: (stock == null || stock < 0) ? 0 : stock };
+    if (!producto_id || !color_id || !talla) return res.status(400).json({ error: 'datos', mensaje: 'Falta producto, color o talla' });
+    const row = { producto_id, color_id, talla, stock: (stock == null || stock < 0) ? 0 : stock };
     if (b.sku) row.sku = String(b.sku).trim();
     const ins = await sb('variantes', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row) });
-    if (ins.status === 409) return res.status(409).json({ error: 'duplicado', mensaje: 'Esa talla ya existe' });
+    if (ins.status === 409) return res.status(409).json({ error: 'duplicado', mensaje: 'Esa talla ya existe en ese color' });
     if (ins.status !== 201) throw new Error('insert variante ' + ins.status + ' ' + (await ins.text()));
     return res.status(201).json((await ins.json())[0]);
   }
@@ -188,6 +284,58 @@ async function recVariantes(req, res) {
     if (!id) return res.status(400).json({ error: 'id' });
     const del = await sb('variantes?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
     if (!del.ok) throw new Error('delete variante ' + del.status);
+    return res.status(200).json({ ok: true });
+  }
+
+  return res.status(405).json({ error: 'metodo' });
+}
+
+// ============================================================
+// GUÍAS DE TALLA (imagen asociada a un producto o a una categoría)
+// La imagen se sube aparte con la ruta subir-imagen; aquí solo se guarda
+// su URL + a qué aplica. Upsert: una guía por producto y una por categoría.
+// ============================================================
+async function recGuias(req, res) {
+  if (req.method === 'GET') {
+    const rr = await sb('guias_talla?select=id,producto_id,categoria,imagen_url,creado_en&order=creado_en.desc');
+    if (!rr.ok) throw new Error('guias ' + rr.status);
+    return res.status(200).json(await rr.json());
+  }
+
+  if (req.method === 'POST') {
+    const b = parseBody(req);
+    const imagen_url = String(b.imagen_url || '').trim();
+    const producto_id = String(b.producto_id || '').trim();
+    const categoria = String(b.categoria || '').trim();
+    if (!imagen_url) return res.status(400).json({ error: 'datos', mensaje: 'Falta la imagen de la guía' });
+    if (!producto_id && !categoria) return res.status(400).json({ error: 'datos', mensaje: 'Asociá la guía a un producto o a una categoría' });
+    if (producto_id && categoria) return res.status(400).json({ error: 'datos', mensaje: 'Elegí producto O categoría, no ambos' });
+
+    // Upsert manual: si ya hay guía para ese producto/categoría, se actualiza.
+    const filtro = producto_id
+      ? 'producto_id=eq.' + encodeURIComponent(producto_id)
+      : 'producto_id=is.null&categoria=eq.' + encodeURIComponent(categoria);
+    const ex = await sb('guias_talla?select=id&' + filtro + '&limit=1');
+    if (!ex.ok) throw new Error('guias lookup ' + ex.status);
+    const prev = await ex.json();
+    if (Array.isArray(prev) && prev[0]) {
+      const up = await sb('guias_talla?id=eq.' + encodeURIComponent(prev[0].id), {
+        method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ imagen_url })
+      });
+      if (!up.ok) throw new Error('patch guia ' + up.status + ' ' + (await up.text()));
+      return res.status(200).json((await up.json())[0]);
+    }
+    const row = { imagen_url, producto_id: producto_id || null, categoria: producto_id ? null : categoria };
+    const ins = await sb('guias_talla', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row) });
+    if (ins.status !== 201) throw new Error('insert guia ' + ins.status + ' ' + (await ins.text()));
+    return res.status(201).json((await ins.json())[0]);
+  }
+
+  if (req.method === 'DELETE') {
+    const id = String((req.query && req.query.id) || parseBody(req).id || '').trim();
+    if (!id) return res.status(400).json({ error: 'id' });
+    const del = await sb('guias_talla?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    if (!del.ok) throw new Error('delete guia ' + del.status);
     return res.status(200).json({ ok: true });
   }
 

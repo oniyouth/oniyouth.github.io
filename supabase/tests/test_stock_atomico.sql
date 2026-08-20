@@ -9,15 +9,18 @@ begin;
 do $$
 declare
   v_prod    uuid;
+  v_color   uuid;
   v_a       uuid;
   v_b       uuid;
   v_stock_a int;
   v_stock_b int;
 begin
-  -- Datos de prueba: A con stock 5, B con stock 0
+  -- Datos de prueba: A con stock 5, B con stock 0 (bajo un color; migración 008
+  -- hace variantes.color_id NOT NULL).
   insert into productos(nombre, precio) values ('__TEST__', 10) returning id into v_prod;
-  insert into variantes(producto_id, talla, stock) values (v_prod, 'A', 5) returning id into v_a;
-  insert into variantes(producto_id, talla, stock) values (v_prod, 'B', 0) returning id into v_b;
+  insert into colores(producto_id, nombre) values (v_prod, '__TEST_COLOR__') returning id into v_color;
+  insert into variantes(producto_id, color_id, talla, stock) values (v_prod, v_color, 'A', 5) returning id into v_a;
+  insert into variantes(producto_id, color_id, talla, stock) values (v_prod, v_color, 'B', 0) returning id into v_b;
 
   -- CASO 1: pedido de 2 items (A×2 + B×1). B no tiene stock => debe fallar TODO.
   begin
