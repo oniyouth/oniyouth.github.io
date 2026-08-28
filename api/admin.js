@@ -54,6 +54,7 @@ module.exports = async function handler(req, res) {
       case 'cupones':   return await recCupones(req, res);
       case 'zonas':     return await recZonas(req, res);
       case 'subir-imagen': return await recSubirImagen(req, res);
+      case 'config':    return await recConfig(req, res);
       case 'test-email':return await recTestEmail(req, res);
       default:          return res.status(404).json({ error: 'recurso' });
     }
@@ -499,6 +500,66 @@ async function recZonas(req, res) {
     const arr = await up.json();
     if (!arr[0]) return res.status(404).json({ error: 'no_encontrado' });
     return res.status(200).json(arr[0]);
+  }
+
+  return res.status(405).json({ error: 'metodo' });
+}
+
+// ============================================================
+// CONFIGURACIÓN editable de la tienda (tabla clave/valor)
+//
+//   GET  ?r=config&clave=hero_slides   -> { clave, valor }
+//   POST ?r=config  { clave, valor }   -> upsert (valor jsonb libre)
+//
+// Solo se aceptan claves de una allowlist, y cada una se sanea a su forma
+// esperada antes de guardar (no se cree nada del navegador). Por ahora la
+// única clave es hero_slides = array de URLs (las imágenes del hero).
+// ============================================================
+const CONFIG_CLAVES = ['hero_slides'];
+const HERO_MAX_SLIDES = 12;
+
+function saneaConfig(clave, valor) {
+  if (clave === 'hero_slides') {
+    if (!Array.isArray(valor)) return null;
+    const urls = valor
+      .map(u => String(u == null ? '' : u).trim())
+      .filter(u => u.length > 0 && u.length <= 2048)
+      .slice(0, HERO_MAX_SLIDES);
+    return urls;
+  }
+  return null;
+}
+
+async function recConfig(req, res) {
+  if (req.method === 'GET') {
+    const clave = String((req.query && req.query.clave) || '').trim();
+    if (!CONFIG_CLAVES.includes(clave)) return res.status(400).json({ error: 'clave' });
+    const r = await sb('configuracion?clave=eq.' + encodeURIComponent(clave) + '&select=clave,valor&limit=1');
+    // Si la tabla aún no existe (migración 009 sin aplicar) devolvemos vacío
+    // en vez de un error: el panel muestra el estado "agregá una imagen".
+    if (!r.ok) return res.status(200).json({ clave, valor: null });
+    const rows = await r.json();
+    return res.status(200).json({ clave, valor: (rows[0] && rows[0].valor) != null ? rows[0].valor : null });
+  }
+
+  if (req.method === 'POST') {
+    const b = parseBody(req);
+    const clave = String(b.clave || '').trim();
+    if (!CONFIG_CLAVES.includes(clave)) return res.status(400).json({ error: 'clave', mensaje: 'Configuración no permitida' });
+    const valor = saneaConfig(clave, b.valor);
+    if (valor === null) return res.status(400).json({ error: 'valor', mensaje: 'Valor inválido para ' + clave });
+    const r = await sb('configuracion', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify({ clave, valor, actualizado_en: new Date().toISOString() })
+    });
+    if (!r.ok) {
+      const detalle = (await r.text().catch(() => '')).slice(0, 200);
+      console.error('config upsert', r.status, detalle);
+      return res.status(502).json({ error: 'db', mensaje: 'No se pudo guardar', detalle });
+    }
+    const rows = await r.json().catch(() => []);
+    return res.status(200).json({ clave, valor: (rows[0] && rows[0].valor) != null ? rows[0].valor : valor });
   }
 
   return res.status(405).json({ error: 'metodo' });

@@ -103,6 +103,20 @@
     .imgs .ii img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border2); }
     .imgs .ii button { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; border: none; background: var(--bad); color: #000; font-size: 11px; font-weight: 900; line-height: 1; }
 
+    /* ===== PORTADA (hero) ===== */
+    .hero-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .9rem; margin-top: .6rem; }
+    .hero-card { position: relative; border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; background: var(--card2); }
+    .hero-card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; }
+    .hero-card .idx { position: absolute; top: .5rem; left: .5rem; background: rgba(0,0,0,.7); color: #fff; font-size: .68rem; font-weight: 700; letter-spacing: .5px; padding: .18rem .5rem; border-radius: 999px; }
+    .hero-card .ctrls { display: flex; gap: .35rem; padding: .5rem; }
+    .hero-card .ctrls button { flex: 1; min-height: 40px; border: 1px solid var(--border2); border-radius: 8px; background: var(--card); color: var(--text); font-size: 1rem; line-height: 1; cursor: pointer; touch-action: manipulation; }
+    .hero-card .ctrls button:disabled { opacity: .35; cursor: default; }
+    .hero-card .ctrls .rm { color: var(--bad); border-color: var(--bad); }
+    .hero-add { display: flex; align-items: center; justify-content: center; min-height: 132px; border: 1px dashed var(--border2); border-radius: 12px; color: var(--text2); cursor: pointer; font-size: .85rem; text-align: center; padding: 1rem; }
+    .hero-add:hover { color: var(--text); border-color: var(--text2); }
+    @media (max-width: 560px) { .hero-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 380px) { .hero-grid { grid-template-columns: 1fr; } }
+
     /* ===== MODAL ===== */
     #modal { position: fixed; inset: 0; z-index: 50; display: none; align-items: flex-start; justify-content: center; background: rgba(0,0,0,.7); padding: 1.5rem 1rem; overflow-y: auto; }
     #modal.show { display: flex; }
@@ -281,6 +295,7 @@
   // ============================================================
   const TABS = [
     { id: 'resumen',  label: 'Resumen',   render: viewResumen },
+    { id: 'portada',  label: 'Portada',    render: viewPortada },
     { id: 'productos',label: 'Productos',  render: viewProductos },
     { id: 'stock',    label: 'Stock',      render: viewStock },
     { id: 'guias',    label: 'Guías',      render: viewGuias },
@@ -333,6 +348,69 @@
         btn.disabled = false; btn.textContent = orig;
       };
     } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; }
+  }
+
+  // ============================================================
+  // VISTA: PORTADA (imágenes del hero de la página principal)
+  //
+  // Lee/guarda la clave 'hero_slides' (array de URLs) vía /api/admin?r=config.
+  // Reordenar, quitar y subir imágenes; se guarda todo junto al presionar
+  // "Guardar cambios". El front (index.html) lee esta misma lista al cargar.
+  // ============================================================
+  async function viewPortada(el) {
+    loading(el);
+    let slides = [];
+    try {
+      const d = await api('config', { query: { clave: 'hero_slides' } });
+      slides = Array.isArray(d.valor) ? d.valor.slice() : [];
+    } catch (e) { el.innerHTML = '<div class="center-msg">' + esc(e.message) + '</div>'; return; }
+
+    function draw() {
+      const cards = slides.map((u, i) =>
+        '<div class="hero-card">' +
+          '<span class="idx">' + (i + 1) + '</span>' +
+          '<img src="' + esc(u) + '" alt="">' +
+          '<div class="ctrls">' +
+            '<button type="button" data-up="' + i + '" title="Subir en el orden"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+            '<button type="button" data-down="' + i + '" title="Bajar en el orden"' + (i === slides.length - 1 ? ' disabled' : '') + '>↓</button>' +
+            '<button type="button" class="rm" data-rm="' + i + '" title="Quitar">×</button>' +
+          '</div>' +
+        '</div>'
+      ).join('');
+      const add = '<label class="hero-add">+ Agregar imagen<input type="file" accept="image/*" id="heroFile" hidden></label>';
+      el.innerHTML =
+        '<h2 class="title">Portada <span class="spacer"></span><button class="btn" id="heroSave">Guardar cambios</button></h2>' +
+        '<div class="card">' +
+          '<p class="muted" style="font-size:.82rem;margin-bottom:.2rem">Estas imágenes se muestran en rotación en la parte superior de la página principal. Se adaptan solas a cualquier pantalla (celular, tablet o computadora); usá fotos horizontales de buena calidad. Máx. 4 MB, hasta 12 imágenes.</p>' +
+          (slides.length ? '' : '<p class="muted" style="font-size:.82rem;margin:.6rem 0">Todavía no hay imágenes. Agregá al menos una.</p>') +
+          '<div class="hero-grid">' + cards + add + '</div>' +
+        '</div>';
+      bind();
+    }
+
+    function bind() {
+      el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { slides.splice(+b.dataset.rm, 1); draw(); });
+      el.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { const i = +b.dataset.up; if (i > 0) { [slides[i - 1], slides[i]] = [slides[i], slides[i - 1]]; draw(); } });
+      el.querySelectorAll('[data-down]').forEach(b => b.onclick = () => { const i = +b.dataset.down; if (i < slides.length - 1) { [slides[i + 1], slides[i]] = [slides[i], slides[i + 1]]; draw(); } });
+      const fi = $('#heroFile');
+      if (fi) fi.onchange = async () => {
+        const file = fi.files[0]; if (!file) return;
+        if (slides.length >= 12) { toast('Máximo 12 imágenes', 'bad'); return; }
+        toast('Subiendo imagen…');
+        try { const url = await uploadImagen(file); slides.push(url); draw(); toast('Imagen subida — acordate de Guardar', 'ok'); }
+        catch (e) { toast(e.message, 'bad'); }
+      };
+      $('#heroSave').onclick = async () => {
+        if (!slides.length) { toast('Dejá al menos una imagen', 'bad'); return; }
+        const btn = $('#heroSave'), orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Guardando…';
+        try { await api('config', { method: 'POST', body: { clave: 'hero_slides', valor: slides } }); toast('Portada actualizada', 'ok'); }
+        catch (e) { toast(e.message, 'bad'); }
+        btn.disabled = false; btn.textContent = orig;
+      };
+    }
+
+    draw();
   }
 
   // ============================================================

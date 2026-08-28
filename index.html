@@ -1077,13 +1077,47 @@
         window.addEventListener('scroll', () => { if (heroSlideshow) heroSlideshow.style.transform = `scale(1.05) translateY(${window.scrollY * 0.12}px)`; });
 
         // ===== HERO SLIDESHOW =====
-        const slides = document.querySelectorAll('.hero-slide');
+        // Reiniciable: las imágenes se pueden reemplazar en caliente cuando
+        // se cargan desde la configuración editable (ver oniLoadHero()).
+        let heroSlides = document.querySelectorAll('.hero-slide');
         let currentHeroSlide = 0;
-        setInterval(() => {
-            slides[currentHeroSlide].classList.remove('active');
-            currentHeroSlide = (currentHeroSlide + 1) % slides.length;
-            slides[currentHeroSlide].classList.add('active');
-        }, 5000);
+        let heroTimer = null;
+        function startHeroSlideshow() {
+            heroSlides = document.querySelectorAll('.hero-slide');
+            currentHeroSlide = 0;
+            if (heroTimer) { clearInterval(heroTimer); heroTimer = null; }
+            heroSlides.forEach((s, i) => s.classList.toggle('active', i === 0));
+            if (heroSlides.length <= 1) return;
+            heroTimer = setInterval(() => {
+                heroSlides[currentHeroSlide].classList.remove('active');
+                currentHeroSlide = (currentHeroSlide + 1) % heroSlides.length;
+                heroSlides[currentHeroSlide].classList.add('active');
+            }, 5000);
+        }
+        startHeroSlideshow();
+
+        // Imágenes del hero editables desde el panel (clave 'hero_slides').
+        // Best-effort: si falla o la config no existe, quedan las slides
+        // estáticas del HTML. Las clases se reutilizan, así que el resultado
+        // sigue siendo responsive (object-fit: cover a pantalla completa).
+        async function oniLoadHero() {
+            try {
+                const rows = await sbFetch("configuracion?clave=eq.hero_slides&select=valor&limit=1");
+                const urls = (rows && rows[0] && Array.isArray(rows[0].valor))
+                    ? rows[0].valor.filter(u => typeof u === 'string' && u.trim())
+                    : [];
+                if (!urls.length) return;
+                const box = document.getElementById('heroSlideshow');
+                if (!box) return;
+                box.innerHTML = urls.map((u, i) =>
+                    '<div class="hero-slide' + (i === 0 ? ' active' : '') + '">' +
+                        '<img src="' + escapeHtml(u) + '" alt="OniYouth" ' +
+                        (i === 0 ? 'fetchpriority="high"' : 'loading="lazy"') + ' decoding="async">' +
+                    '</div>'
+                ).join('');
+                startHeroSlideshow();
+            } catch (e) { /* silencioso: quedan las slides del HTML */ }
+        }
 
         // ===== SHOP PAGE (overlay) =====
         const shopPage = document.getElementById('shopPage');
@@ -1511,6 +1545,9 @@
             const track = document.getElementById('track');
             if (track) track.innerHTML = '<div class="grid-status">No se pudo cargar la coleccion. Recarga la pagina.</div>';
         });
+
+        // Imágenes del hero desde la configuración editable (best-effort).
+        oniLoadHero();
 
         // ===== PRODUCT DETAIL (Carousel) =====
         const productDetail = document.getElementById('productDetail');
