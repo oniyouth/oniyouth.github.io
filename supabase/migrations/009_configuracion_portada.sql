@@ -21,7 +21,10 @@ create table if not exists public.configuracion (clave text primary key, valor j
 -- Semilla: las 4 slides actuales del hero (las mismas que estaban fijas en
 -- index.html), en WebP. Solo se inserta si la fila aun no existe, para no
 -- pisar lo que el dueno haya guardado desde el panel.
-insert into public.configuracion (clave, valor) values ('hero_slides', '["assets/images/hero-bg.webp","assets/images/hero-slide-2.webp","assets/images/hero-slide-3.webp","assets/images/hero-slide-4.webp"]'::jsonb) on conflict (clave) do nothing;
+-- Se usa jsonb_build_array (no un literal JSON largo) para que, si el editor
+-- de Supabase parte la linea al pegar, un salto de linea no rompa el JSON
+-- (error 22P02 "Character 0x0a must be escaped").
+insert into public.configuracion (clave, valor) values ('hero_slides', jsonb_build_array('assets/images/hero-bg.webp', 'assets/images/hero-slide-2.webp', 'assets/images/hero-slide-3.webp', 'assets/images/hero-slide-4.webp')) on conflict (clave) do nothing;
 
 -- RLS: lectura publica; escritura solo service_role (sin policy => bloqueada para anon).
 alter table public.configuracion enable row level security;
