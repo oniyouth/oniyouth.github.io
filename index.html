@@ -1436,12 +1436,19 @@
 
                 let colores;
                 if (conColores && Array.isArray(p.colores) && p.colores.length) {
+                    // Producto de un solo color: las fotos que manda el dueño son las
+                    // del producto (productos.imagenes), que es lo que edita en el
+                    // panel. Usamos esas y NO la copia del color (que puede quedar
+                    // vieja al editar). Con varios colores sí manda cada color.
+                    const unSoloColor = p.colores.length === 1;
                     colores = p.colores.slice()
                         .sort((a, b) => (a.orden || 0) - (b.orden || 0))
                         .map(c => {
                             const vs = allVars.filter(v => v.color_id === c.id)
                                 .sort((a, b) => sizeRank(a.talla) - sizeRank(b.talla));
-                            const imgs = (Array.isArray(c.imagenes) && c.imagenes.length) ? c.imagenes : prodImgs;
+                            const imgs = unSoloColor
+                                ? prodImgs
+                                : ((Array.isArray(c.imagenes) && c.imagenes.length) ? c.imagenes : prodImgs);
                             return { id: c.id, nombre: c.nombre || '', hex: c.hex || null, slides: imgs, variantes: vs };
                         });
                 } else {

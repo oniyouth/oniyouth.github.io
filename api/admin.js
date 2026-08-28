@@ -150,6 +150,25 @@ async function recProductos(req, res) {
     if (!up.ok) throw new Error('patch producto ' + up.status + ' ' + (await up.text()));
     const arr = await up.json();
     if (!arr[0]) return res.status(404).json({ error: 'no_encontrado' });
+    // La tienda muestra las imágenes del COLOR (colores.imagenes), no las del
+    // producto. Para un producto de un solo color (el "Unico" por defecto),
+    // editar las fotos del producto debe reflejarse en la tienda -> sincronizamos
+    // ese único color. Con varios colores no se toca: se gestionan por color
+    // desde la pestaña Colores.
+    if (s.value.imagenes !== undefined) {
+      try {
+        const cr = await sb('colores?producto_id=eq.' + encodeURIComponent(id) + '&select=id');
+        if (cr.ok) {
+          const cols = await cr.json();
+          if (Array.isArray(cols) && cols.length === 1) {
+            await sb('colores?id=eq.' + encodeURIComponent(cols[0].id), {
+              method: 'PATCH', headers: { Prefer: 'return=minimal' },
+              body: JSON.stringify({ imagenes: s.value.imagenes })
+            });
+          }
+        }
+      } catch (e) { console.error('sync color imagenes', e); }
+    }
     return res.status(200).json(arr[0]);
   }
 
