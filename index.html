@@ -24,6 +24,8 @@
     <meta name="twitter:image" content="https://oniyouth.xyz/assets/images/hero-bg.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Supabase: adelanta la conexión para que el hero (hero_slides) cargue antes -->
+    <link rel="preconnect" href="https://oblekapcdajpueiteukv.supabase.co" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- SDK de Mercado Pago (Checkout Pro, Fase 7b). La Public Key es publica. -->
     <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -354,7 +356,7 @@
 
         /* ===== HERO ===== */
         .hero { width: 100%; height: 100vh; position: relative; overflow: hidden; }
-        .hero-slideshow { position: absolute; inset: 0; }
+        .hero-slideshow { position: absolute; inset: 0; background: #000; }
         .hero-slide {
             position: absolute; inset: 0;
             opacity: 0;
@@ -879,12 +881,11 @@
                 <button class="theme-toggle" id="toggle"></button>
             </div>
         </nav>
-        <div class="hero-slideshow" id="heroSlideshow">
-            <div class="hero-slide active"><picture><source srcset="assets/images/hero-bg.webp" type="image/webp"><img src="assets/images/hero-bg.jpg" alt="OniYouth" fetchpriority="high" decoding="async"></picture></div>
-            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-2.webp" type="image/webp"><img src="assets/images/hero-slide-2.jpg" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
-            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-3.webp" type="image/webp"><img src="assets/images/hero-slide-3.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
-            <div class="hero-slide"><picture><source srcset="assets/images/hero-slide-4.webp" type="image/webp"><img src="assets/images/hero-slide-4.png" alt="OniYouth" loading="lazy" decoding="async"></picture></div>
-        </div>
+        <!-- Las imágenes del hero se cargan desde la configuración editable
+             (clave 'hero_slides' en Supabase) por oniLoadHero(). NO se hardcodean
+             acá: así una foto eliminada desde el panel nunca puede reaparecer.
+             Mientras carga, el fondo negro de .hero-slideshow hace de placeholder. -->
+        <div class="hero-slideshow" id="heroSlideshow"></div>
         <div class="hero-gradient"></div>
         <button class="cart-btn" id="cartBtnHero" onclick="openCart()">
             <img src="assets/images/cart-icon-new.webp" alt="Bolsa">
