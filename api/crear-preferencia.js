@@ -23,9 +23,11 @@ const crypto = require('crypto');
 const { setCors, money, configOK, parseBody, sb, fetchCupon, evaluarCupon } = require('./_lib/store');
 const { notificarContraentrega } = require('./_lib/mailer');
 
-// Envío gratis por encima de este subtotal (estricto: > 299). Regla de
-// negocio global; se aplica SOLO en el servidor.
-const UMBRAL_ENVIO_GRATIS = 299;
+// Envío gratis desde este subtotal (compras de S/300 a más). Por debajo se
+// cobra COSTO_ENVIO. La contraentrega es siempre sin costo. Regla de negocio
+// global; el importe final SIEMPRE lo decide el servidor.
+const UMBRAL_ENVIO_GRATIS = 300;
+const COSTO_ENVIO = 12;
 
 function codigoPedido() {
   return 'ONI-' + crypto.randomBytes(4).toString('hex').toUpperCase(); // ONI-XXXXXXXX
@@ -115,7 +117,10 @@ module.exports = async function handler(req, res) {
     const CONTRAENTREGA_DISTRITOS = ['SATIPO', 'MAZAMARI', 'RIO NEGRO'];
     const normLoc = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
     const esContraentrega = CONTRAENTREGA_DISTRITOS.indexOf(normLoc(distritoN)) !== -1;
-    const envio = 0;
+    // Contraentrega: sin costo. Resto: gratis desde S/300, si no, COSTO_ENVIO.
+    let envio;
+    if (esContraentrega) envio = 0;
+    else envio = (subtotal >= UMBRAL_ENVIO_GRATIS) ? 0 : COSTO_ENVIO;
 
     // --- 3b. Cupón recalculado en el servidor ---
     let descuento = 0;

@@ -1203,6 +1203,12 @@
         }
         function esContraentregaDist(dist) { return CONTRAENTREGA_DISTRITOS.indexOf(normLoc(dist)) !== -1; }
 
+        // Envío gratis desde este subtotal; por debajo se cobra COSTO_ENVIO.
+        // La contraentrega (Satipo/Mazamari/Río Negro) es siempre sin costo.
+        // El SERVIDOR recalcula y es el que manda; esto es solo UX.
+        const UMBRAL_ENVIO_GRATIS = 300;
+        const COSTO_ENVIO = 12;
+
         const SHIP_KEY = 'oy-ship';
         let shipping = loadShipping();
 
@@ -1322,7 +1328,7 @@
             }
             if (info.modo === 'provincia') {
                 shipping.agencia = '';
-                box.innerHTML = '<div class="sh-eyebrow">Envío gratis · Shalom</div>' +
+                box.innerHTML = '<div class="sh-eyebrow">Envío por Shalom</div>' +
                     '<div class="sh-title">Se enviará por Shalom</div>' +
                     '<div class="sh-addr">Tu pedido llegará a la agencia Shalom más cercana a ' +
                     escapeHtml(shipping.provincia || shipping.distrito) + '. Te confirmamos la dirección exacta al coordinar tu envío.</div>';
@@ -1338,11 +1344,13 @@
                     ags.map(a => '<option value="' + escapeHtml(a.n) + '"' + (a.n === chosen.n ? ' selected' : '') + '>' + escapeHtml(a.n) + '</option>').join('') +
                     '</select>';
             }
-            box.innerHTML = '<div class="sh-eyebrow">Envío gratis · Shalom' + (ags.length > 1 ? ' · ' + ags.length + ' agencias en tu distrito' : '') + '</div>' +
+            const mapa = (chosen.lat != null && chosen.lng != null)
+                ? '<a class="sh-map" href="https://www.google.com/maps/search/?api=1&query=' + chosen.lat + ',' + chosen.lng + '" target="_blank" rel="noopener">Ver en el mapa →</a>'
+                : '';
+            box.innerHTML = '<div class="sh-eyebrow">Envío por Shalom' + (ags.length > 1 ? ' · ' + ags.length + ' agencias en tu distrito' : '') + '</div>' +
                 '<div class="sh-title">' + escapeHtml(chosen.n) + '</div>' +
                 '<div class="sh-addr">' + escapeHtml(chosen.a) + '</div>' +
-                '<a class="sh-map" href="https://www.google.com/maps/search/?api=1&query=' + chosen.lat + ',' + chosen.lng + '" target="_blank" rel="noopener">Ver en el mapa →</a>' +
-                sel;
+                mapa + sel;
         }
 
         function onAgenciaChange() {
@@ -1355,11 +1363,17 @@
         function getCartSummary() {
             const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
             const contraentrega = esContraentregaDist(shipping.distrito);
-            const envio = 0;
+            // Contraentrega: sin costo de envío. Resto: gratis desde S/300,
+            // si no, COSTO_ENVIO. Antes de elegir distrito, se muestra estimado.
+            let envio = 0, envioGratis = false;
+            if (!contraentrega) {
+                if (subtotal >= UMBRAL_ENVIO_GRATIS) { envio = 0; envioGratis = true; }
+                else { envio = COSTO_ENVIO; }
+            } else { envioGratis = true; }
             let descuento = (coupon && coupon.valido) ? (Number(coupon.descuento) || 0) : 0;
             if (descuento > subtotal) descuento = subtotal;   // nunca más que el subtotal
             const total = Math.max(0, subtotal - descuento + envio);
-            return { subtotal, envio, descuento, total, envioGratis: true, contraentrega };
+            return { subtotal, envio, descuento, total, envioGratis, contraentrega };
         }
 
         function onDepartamentoChange() {
@@ -2183,17 +2197,26 @@
             const envEl = document.getElementById('cartEnvio');
             if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
             if (envEl) {
-                envEl.textContent = shipping.distrito ? 'Gratis' : 'Gratis';
+                envEl.textContent = (s.contraentrega || s.envioGratis) ? 'Gratis' : 'S/ ' + s.envio.toFixed(2);
             }
             document.getElementById('cartTotal').textContent = 'S/ ' + s.total.toFixed(2);
 
-            // Nota de envío: siempre gratis. Contraentrega paga al recibir.
+            // Nota de envío: contraentrega, ya-gratis (>= S/300), o cuánto falta.
             const envNote = document.getElementById('envioNote');
             if (envNote) {
-                envNote.className = 'cart-envio-note free';
-                envNote.textContent = s.contraentrega
-                    ? 'Envío gratis · pagas al recibir (contraentrega).'
-                    : '¡Envío gratis a todo el Perú!';
+                if (s.contraentrega) {
+                    envNote.className = 'cart-envio-note free';
+                    envNote.textContent = 'Envío gratis · pagas al recibir (contraentrega).';
+                } else if (s.envioGratis) {
+                    envNote.className = 'cart-envio-note free';
+                    envNote.textContent = '¡Tienes envío gratis!';
+                } else {
+                    const falta = UMBRAL_ENVIO_GRATIS - s.subtotal;
+                    envNote.className = 'cart-envio-note';
+                    envNote.textContent = falta > 0
+                        ? 'Te faltan S/ ' + falta.toFixed(2) + ' para envío gratis'
+                        : 'Envío S/ ' + s.envio.toFixed(2);
+                }
             }
 
             // El botón cambia a "confirmar" en contraentrega (no hay pago online)
