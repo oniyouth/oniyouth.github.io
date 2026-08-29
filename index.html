@@ -268,6 +268,9 @@
             font: 400 0.85rem 'Syne', sans-serif; letter-spacing: 0.5px;
         }
         .cart-field select { appearance: none; cursor: pointer; }
+        /* Opciones legibles en PC: sin esto, el desplegable nativo pinta texto
+           blanco sobre fondo blanco (fondo del select casi transparente). */
+        .cart-field select option, .cart-shalom select option { background-color: #141414; color: #fff; }
         .cart-field input::placeholder { color: rgba(255,255,255,0.25); }
         .cart-field select:focus, .cart-field input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
         .cart-field.invalid select, .cart-field.invalid input { border-color: #ff5a5a; }
@@ -1129,6 +1132,34 @@
         // Best-effort: si falla o la config no existe, quedan las slides
         // estáticas del HTML. Las clases se reutilizan, así que el resultado
         // sigue siendo responsive (object-fit: cover a pantalla completa).
+        const HERO_CACHE_KEY = 'oy-hero';
+        let heroRenderedKey = '';
+        function renderHero(urls) {
+            const box = document.getElementById('heroSlideshow');
+            if (!box || !Array.isArray(urls) || !urls.length) return;
+            const key = urls.join('|');
+            if (key === heroRenderedKey) return;   // sin cambios: no reiniciar el slideshow
+            heroRenderedKey = key;
+            box.innerHTML = urls.map((u, i) =>
+                '<div class="hero-slide' + (i === 0 ? ' active' : '') + '">' +
+                    '<img src="' + escapeHtml(u) + '" alt="OniYouth" ' +
+                    (i === 0 ? 'fetchpriority="high"' : 'loading="lazy"') + ' decoding="async">' +
+                '</div>'
+            ).join('');
+            startHeroSlideshow();
+        }
+
+        // Render inmediato desde caché: la imagen del hero empieza a descargar
+        // en cuanto carga la página, SIN esperar la consulta a Supabase. En la
+        // siguiente visita la portada aparece al toque; oniLoadHero() la refresca
+        // en segundo plano si cambió en el panel.
+        (function heroFromCache() {
+            try {
+                const c = JSON.parse(localStorage.getItem(HERO_CACHE_KEY) || 'null');
+                if (Array.isArray(c) && c.length) renderHero(c);
+            } catch (e) {}
+        })();
+
         async function oniLoadHero() {
             try {
                 const rows = await sbFetch("configuracion?clave=eq.hero_slides&select=valor&limit=1");
@@ -1136,15 +1167,8 @@
                     ? rows[0].valor.filter(u => typeof u === 'string' && u.trim())
                     : [];
                 if (!urls.length) return;
-                const box = document.getElementById('heroSlideshow');
-                if (!box) return;
-                box.innerHTML = urls.map((u, i) =>
-                    '<div class="hero-slide' + (i === 0 ? ' active' : '') + '">' +
-                        '<img src="' + escapeHtml(u) + '" alt="OniYouth" ' +
-                        (i === 0 ? 'fetchpriority="high"' : 'loading="lazy"') + ' decoding="async">' +
-                    '</div>'
-                ).join('');
-                startHeroSlideshow();
+                try { localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(urls)); } catch (e) {}
+                renderHero(urls);
             } catch (e) { /* silencioso: quedan las slides del HTML */ }
         }
 
