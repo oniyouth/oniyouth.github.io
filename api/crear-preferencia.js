@@ -49,13 +49,18 @@ module.exports = async function handler(req, res) {
   const telefono  = String(cli.telefono  || '').trim();
   const email     = String(cli.email     || '').trim();
   const direccion = String(cli.direccion || '').trim();
+  const departamentoN = String(cli.departamento || '').trim();
+  const provinciaN    = String(cli.provincia    || '').trim();
   const distritoN = String(cli.distrito  || '').trim();
   const referencia = String(cli.referencia || '').trim();
+  const agenciaN   = String(cli.agencia   || '').trim();
 
   const faltan = [];
   if (!nombre)    faltan.push('nombre');
   if (!telefono)  faltan.push('telefono');
   if (!direccion) faltan.push('direccion');
+  if (!departamentoN) faltan.push('departamento');
+  if (!provinciaN)    faltan.push('provincia');
   if (!distritoN) faltan.push('distrito');
   if (faltan.length) return res.status(400).json({ error: 'datos', campos: faltan, mensaje: 'Faltan datos de envío' });
 
@@ -104,19 +109,13 @@ module.exports = async function handler(req, res) {
     if (sinStock.length) return res.status(409).json({ error: 'stock', items: sinStock, mensaje: 'No hay stock suficiente para algunos artículos' });
     subtotal = money(subtotal);
 
-    // --- 3a. Envío desde la tabla zonas_envio ---
-    const rd = await sb('zonas_envio?select=nombre,costo_envio,dias_estimados,contraentrega&nombre=eq.' +
-      encodeURIComponent(distritoN) + '&limit=1');
-    if (!rd.ok) throw new Error('zonas_envio ' + rd.status);
-    const dRows = await rd.json();
-    const zona = Array.isArray(dRows) && dRows[0];
-    if (!zona) return res.status(400).json({ error: 'distrito', mensaje: 'Zona de envío no válida' });
-
-    const esContraentrega = zona.contraentrega === true;
-    // Envío: contraentrega y "envío gratis > 299" se deciden AQUÍ (server).
-    let envio;
-    if (esContraentrega) envio = 0;
-    else envio = (subtotal > UMBRAL_ENVIO_GRATIS) ? 0 : money(zona.costo_envio);
+    // --- 3a. Envío: GRATIS a todo el Perú (Fase 18). Satipo/Mazamari/Río Negro
+    // (Junín) = contraentrega (pago al recibir). El resto se envía por Shalom
+    // sin costo a la agencia más cercana. La decisión se toma AQUÍ (server). ---
+    const CONTRAENTREGA_DISTRITOS = ['SATIPO', 'MAZAMARI', 'RIO NEGRO'];
+    const normLoc = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    const esContraentrega = CONTRAENTREGA_DISTRITOS.indexOf(normLoc(distritoN)) !== -1;
+    const envio = 0;
 
     // --- 3b. Cupón recalculado en el servidor ---
     let descuento = 0;
@@ -140,8 +139,14 @@ module.exports = async function handler(req, res) {
       cliente_nombre: nombre,
       cliente_telefono: telefono,
       cliente_email: email || null,
-      // No hay columna de referencia: se anexa a la dirección para no perderla.
-      direccion: referencia ? (direccion + ' (Ref: ' + referencia + ')') : direccion,
+      // Sin columnas extra en `pedidos`: empaquetamos ubicación + agencia Shalom
+      // dentro de `direccion` para no perder nada y que se vea en panel/correos.
+      direccion: [
+        direccion,
+        referencia ? '(Ref: ' + referencia + ')' : '',
+        departamentoN + ' / ' + provinciaN,
+        (!esContraentrega && agenciaN) ? 'Shalom: ' + agenciaN : ''
+      ].filter(Boolean).join(' · '),
       distrito: distritoN
     };
 

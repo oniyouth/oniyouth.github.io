@@ -278,6 +278,21 @@
         .cart-total-sub { font: 500 0.85rem 'Syne', sans-serif; color: var(--text2); }
         .cart-total-row + .cart-total-row { margin-top: 0.5rem; }
 
+        /* ===== Caja de agencia Shalom / envío (Fase 18) ===== */
+        .cart-shalom {
+            margin-top: 0.6rem; padding: 0.85rem 0.9rem; border: 1px solid var(--border2, #2a2a2a);
+            border-radius: 12px; background: rgba(255,255,255,0.02);
+        }
+        .cart-shalom .sh-eyebrow {
+            font: 700 0.58rem 'Syne', sans-serif; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text3, #7a7a7a); margin-bottom: 0.35rem;
+        }
+        .cart-shalom .sh-title { font: 600 0.82rem 'Syne', sans-serif; color: var(--text, #fff); margin-bottom: 0.15rem; }
+        .cart-shalom .sh-addr { font: 400 0.72rem 'Syne', sans-serif; color: var(--text2); line-height: 1.45; }
+        .cart-shalom .sh-map { display: inline-block; margin-top: 0.4rem; font: 600 0.68rem 'Syne', sans-serif; color: #7CFC9A; text-decoration: none; }
+        .cart-shalom.free { border-color: rgba(124,252,154,0.35); }
+        .cart-shalom select { margin-top: 0.4rem; width: 100%; }
+
         /* ===== Cupón (Fase 6) ===== */
         .cart-coupon { margin-bottom: 1.2rem; }
         .cart-coupon-input { display: flex; gap: 8px; }
@@ -994,13 +1009,26 @@
                     <span>Email (para tu comprobante)</span>
                     <input type="email" id="shipEmail" placeholder="tucorreo@ejemplo.com" oninput="saveShipping()" autocomplete="email">
                 </label>
+                <label class="cart-field" id="fieldDepartamento">
+                    <span>Departamento</span>
+                    <select id="shipDepartamento" onchange="onDepartamentoChange()">
+                        <option value="">Cargando...</option>
+                    </select>
+                </label>
+                <label class="cart-field" id="fieldProvincia">
+                    <span>Provincia</span>
+                    <select id="shipProvincia" onchange="onProvinciaChange()" disabled>
+                        <option value="">Elige tu departamento</option>
+                    </select>
+                </label>
                 <label class="cart-field" id="fieldDistrito">
-                    <span>Zona de envio</span>
-                    <select id="shipDistrito" onchange="onDistritoChange()">
-                        <option value="">Cargando zonas...</option>
+                    <span>Distrito</span>
+                    <select id="shipDistrito" onchange="onDistritoChange()" disabled>
+                        <option value="">Elige tu provincia</option>
                     </select>
                 </label>
                 <div class="cart-ship-note" id="shipNote"></div>
+                <div class="cart-shalom" id="shalomBox" style="display:none;"></div>
                 <label class="cart-field" id="fieldDireccion">
                     <span>Direccion</span>
                     <input type="text" id="shipDireccion" placeholder="Av. / Calle y numero" oninput="saveShipping()" autocomplete="street-address">
@@ -1157,24 +1185,42 @@
         // El costo de envío viene de la tabla `distritos` (lectura pública por RLS).
         // La tabla puede estar vacía: se maneja con un estado deshabilitado.
         // El total real se recalcula igualmente en /api antes de cobrar (Fase 7).
-        let districts = [];
-        let districtByName = {};          // nombre -> {costo_envio, dias_estimados}
+        // ===== ENVÍO A TODO EL PERÚ (Fase 18) =====
+        // Selección en cascada Departamento → Provincia → Distrito (ubigeo INEI
+        // completo) + agencia Shalom. Datos en assets/envio-peru.json.
+        //  - Satipo / Mazamari / Río Negro (Junín): envío gratis + CONTRAENTREGA.
+        //  - Resto del Perú: envío GRATIS, se envía por Shalom a la agencia más
+        //    cercana (exacta con dirección en Lima; a nivel provincia en el resto).
+        let ubigeo = {};        // { Departamento: { Provincia: [Distrito,...] } }
+        let shalomAgencias = [];// [{dep,prov,dist,n,a,lat,lng}]
+        let ubigeoReady = false;
+
+        // Distritos con envío propio (contraentrega). Se comparan normalizados.
+        const CONTRAENTREGA_DISTRITOS = ['SATIPO', 'MAZAMARI', 'RIO NEGRO'];
+        function normLoc(s) {
+            return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .replace(/\s+/g, ' ').trim().toUpperCase();
+        }
+        function esContraentregaDist(dist) { return CONTRAENTREGA_DISTRITOS.indexOf(normLoc(dist)) !== -1; }
 
         const SHIP_KEY = 'oy-ship';
         let shipping = loadShipping();
 
-        const EMPTY_SHIP = { nombre: '', email: '', distrito: '', direccion: '', telefono: '', referencia: '' };
+        const EMPTY_SHIP = { nombre: '', email: '', departamento: '', provincia: '', distrito: '', direccion: '', telefono: '', referencia: '', agencia: '' };
 
         function loadShipping() {
             try {
                 const s = JSON.parse(localStorage.getItem(SHIP_KEY) || '{}');
                 return {
-                    nombre:     s.nombre     || '',
-                    email:      s.email      || '',
-                    distrito:   s.distrito   || '',
-                    direccion:  s.direccion  || '',
-                    telefono:   s.telefono   || '',
-                    referencia: s.referencia || ''
+                    nombre:       s.nombre       || '',
+                    email:        s.email        || '',
+                    departamento: s.departamento || '',
+                    provincia:    s.provincia    || '',
+                    distrito:     s.distrito     || '',
+                    direccion:    s.direccion    || '',
+                    telefono:     s.telefono     || '',
+                    referencia:   s.referencia   || '',
+                    agencia:      s.agencia      || ''
                 };
             } catch (e) { return { ...EMPTY_SHIP }; }
         }
@@ -1182,88 +1228,159 @@
         function saveShipping() {
             const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
             shipping = {
-                nombre:     g('shipNombre'),
-                email:      g('shipEmail'),
-                distrito:   g('shipDistrito'),
-                direccion:  g('shipDireccion'),
-                telefono:   g('shipTelefono'),
-                referencia: g('shipReferencia')
+                nombre:       g('shipNombre'),
+                email:        g('shipEmail'),
+                departamento: g('shipDepartamento'),
+                provincia:    g('shipProvincia'),
+                distrito:     g('shipDistrito'),
+                direccion:    g('shipDireccion'),
+                telefono:     g('shipTelefono'),
+                referencia:   g('shipReferencia'),
+                agencia:      shipping ? (shipping.agencia || '') : ''
             };
             try { localStorage.setItem(SHIP_KEY, JSON.stringify(shipping)); } catch (e) {}
         }
 
         async function loadDistricts() {
             try {
-                districts = await sbFetch('zonas_envio?select=nombre,costo_envio,dias_estimados,contraentrega&order=nombre.asc');
+                const r = await fetch('assets/envio-peru.json', { cache: 'force-cache' });
+                if (!r.ok) throw new Error('envio ' + r.status);
+                const data = await r.json();
+                ubigeo = data.ubigeo || {};
+                shalomAgencias = data.shalom || [];
+                ubigeoReady = true;
             } catch (e) {
-                console.error('No se pudieron cargar los distritos:', e);
-                districts = [];
+                console.error('No se pudo cargar el envío:', e);
+                ubigeoReady = false;
             }
-            districtByName = {};
-            districts.forEach(d => { districtByName[d.nombre] = d; });
-            // Si el distrito guardado ya no existe, lo limpiamos
-            if (shipping.distrito && !districtByName[shipping.distrito]) shipping.distrito = '';
+            populateDepartamentoSelect();
+        }
+
+        function optList(sel, placeholder, items, current) {
+            sel.innerHTML = '<option value="">' + placeholder + '</option>' +
+                items.map(x => '<option value="' + escapeHtml(x) + '"' + (x === current ? ' selected' : '') + '>' + escapeHtml(x) + '</option>').join('');
+        }
+
+        function populateDepartamentoSelect() {
+            const sd = document.getElementById('shipDepartamento');
+            if (!sd) return;
+            if (!ubigeoReady) { sd.innerHTML = '<option value="">No disponible, reintenta</option>'; sd.disabled = true; return; }
+            sd.disabled = false;
+            const deps = Object.keys(ubigeo).sort();
+            optList(sd, 'Elige tu departamento', deps, shipping.departamento);
+            populateProvinciaSelect();
+        }
+
+        function populateProvinciaSelect() {
+            const sp = document.getElementById('shipProvincia');
+            if (!sp) return;
+            const provs = (shipping.departamento && ubigeo[shipping.departamento]) ? Object.keys(ubigeo[shipping.departamento]).sort() : [];
+            if (!provs.length) { sp.innerHTML = '<option value="">Elige tu departamento</option>'; sp.disabled = true; }
+            else { sp.disabled = false; optList(sp, 'Elige tu provincia', provs, shipping.provincia); }
             populateDistritoSelect();
         }
 
-        // Envío gratis por encima de este subtotal (solo VISUAL; el servidor
-        // recalcula y manda). Estricto: > 299.
-        const UMBRAL_ENVIO_GRATIS = 299;
-
         function populateDistritoSelect() {
-            const sel = document.getElementById('shipDistrito');
-            if (!sel) return;
-            if (districts.length === 0) {
-                sel.innerHTML = '<option value="">No hay zonas disponibles aun</option>';
-                sel.disabled = true;
-            } else {
-                sel.disabled = false;
-                sel.innerHTML = '<option value="">Selecciona tu zona...</option>' +
-                    districts.map(d => {
-                        const etiqueta = d.contraentrega
-                            ? 'Contraentrega'
-                            : 'S/ ' + (Number(d.costo_envio) || 0).toFixed(2);
-                        return '<option value="' + escapeHtml(d.nombre) + '">' +
-                            escapeHtml(d.nombre) + ' — ' + etiqueta + '</option>';
-                    }).join('');
-                if (shipping.distrito) sel.value = shipping.distrito;
-            }
+            const st = document.getElementById('shipDistrito');
+            if (!st) return;
+            const dists = (shipping.departamento && shipping.provincia && ubigeo[shipping.departamento] && ubigeo[shipping.departamento][shipping.provincia]) || [];
+            if (!dists.length) { st.innerHTML = '<option value="">Elige tu provincia</option>'; st.disabled = true; }
+            else { st.disabled = false; optList(st, 'Elige tu distrito', dists, shipping.distrito); }
             updateShipNote();
+        }
+
+        // Resuelve el modo de envío para el distrito elegido.
+        // -> { modo:'contraentrega'|'agencia'|'provincia', agencias:[...] }
+        function resolveEnvio() {
+            if (!shipping.distrito) return { modo: 'none' };
+            if (esContraentregaDist(shipping.distrito)) return { modo: 'contraentrega' };
+            // Solo mostramos una agencia concreta cuando está en el MISMO distrito
+            // del cliente (así es realmente la más cercana). Si el distrito no
+            // tiene agencia en nuestros datos, damos el mensaje genérico por zona.
+            const nd = normLoc(shipping.distrito), nDep = normLoc(shipping.departamento);
+            const enDist = shalomAgencias.filter(a => normLoc(a.dist) === nd && normLoc(a.dep) === nDep);
+            if (enDist.length) return { modo: 'agencia', agencias: enDist };
+            return { modo: 'provincia' };
         }
 
         function updateShipNote() {
             const note = document.getElementById('shipNote');
-            if (!note) return;
-            const d = districtByName[shipping.distrito];
-            if (!d) { note.textContent = ''; return; }
-            if (d.contraentrega) { note.textContent = 'Contraentrega — pagas al recibir'; return; }
-            note.textContent = 'Entrega estimada: ' + d.dias_estimados +
-                (Number(d.dias_estimados) === 1 ? ' dia habil' : ' dias habiles');
+            const box = document.getElementById('shalomBox');
+            if (note) note.textContent = '';
+            if (!box) return;
+            const info = resolveEnvio();
+            if (info.modo === 'none') { box.style.display = 'none'; shipping.agencia = ''; return; }
+            box.style.display = 'block';
+            box.className = 'cart-shalom free';
+
+            if (info.modo === 'contraentrega') {
+                shipping.agencia = '';
+                box.innerHTML = '<div class="sh-eyebrow">Envío gratis · Contraentrega</div>' +
+                    '<div class="sh-title">Entrega en tu zona</div>' +
+                    '<div class="sh-addr">Coordinamos la entrega y pagas al recibir tu pedido.</div>';
+                return;
+            }
+            if (info.modo === 'provincia') {
+                shipping.agencia = '';
+                box.innerHTML = '<div class="sh-eyebrow">Envío gratis · Shalom</div>' +
+                    '<div class="sh-title">Se enviará por Shalom</div>' +
+                    '<div class="sh-addr">Tu pedido llegará a la agencia Shalom más cercana a ' +
+                    escapeHtml(shipping.provincia || shipping.distrito) + '. Te confirmamos la dirección exacta al coordinar tu envío.</div>';
+                return;
+            }
+            // modo agencia (Lima): mostrar la más cercana; si hay varias, selector
+            const ags = info.agencias;
+            if (!shipping.agencia || !ags.some(a => a.n === shipping.agencia)) shipping.agencia = ags[0].n;
+            const chosen = ags.find(a => a.n === shipping.agencia) || ags[0];
+            let sel = '';
+            if (ags.length > 1) {
+                sel = '<select id="shalomSel" onchange="onAgenciaChange()">' +
+                    ags.map(a => '<option value="' + escapeHtml(a.n) + '"' + (a.n === chosen.n ? ' selected' : '') + '>' + escapeHtml(a.n) + '</option>').join('') +
+                    '</select>';
+            }
+            box.innerHTML = '<div class="sh-eyebrow">Envío gratis · Shalom' + (ags.length > 1 ? ' · ' + ags.length + ' agencias en tu distrito' : '') + '</div>' +
+                '<div class="sh-title">' + escapeHtml(chosen.n) + '</div>' +
+                '<div class="sh-addr">' + escapeHtml(chosen.a) + '</div>' +
+                '<a class="sh-map" href="https://www.google.com/maps/search/?api=1&query=' + chosen.lat + ',' + chosen.lng + '" target="_blank" rel="noopener">Ver en el mapa →</a>' +
+                sel;
         }
 
-        // Resumen de importes. Reglas de envío (contraentrega y gratis > 299)
-        // se muestran aquí solo para UX; el SERVIDOR (crear-preferencia)
-        // recalcula todo y es el que manda. El descuento del cupón también
-        // viene del servidor.
+        function onAgenciaChange() {
+            const s = document.getElementById('shalomSel');
+            if (s) { shipping.agencia = s.value; saveShipping(); updateShipNote(); }
+        }
+
+        // Resumen de importes. El envío es SIEMPRE GRATIS; contraentrega según
+        // el distrito. El SERVIDOR (crear-preferencia) recalcula y es el que manda.
         function getCartSummary() {
             const subtotal = cart.reduce((s, it) => s + it.priceNum * it.qty, 0);
-            const z = districtByName[shipping.distrito] || null;
-            const contraentrega = !!(z && z.contraentrega);
-            let envio = 0, envioGratis = false;
-            if (z && !contraentrega) {
-                if (subtotal > UMBRAL_ENVIO_GRATIS) { envio = 0; envioGratis = true; }
-                else { envio = Number(z.costo_envio) || 0; }
-            }
+            const contraentrega = esContraentregaDist(shipping.distrito);
+            const envio = 0;
             let descuento = (coupon && coupon.valido) ? (Number(coupon.descuento) || 0) : 0;
             if (descuento > subtotal) descuento = subtotal;   // nunca más que el subtotal
             const total = Math.max(0, subtotal - descuento + envio);
-            return { subtotal, envio, descuento, total, envioGratis, contraentrega, zona: z };
+            return { subtotal, envio, descuento, total, envioGratis: true, contraentrega };
         }
 
+        function onDepartamentoChange() {
+            saveShipping();
+            shipping.provincia = ''; shipping.distrito = ''; shipping.agencia = '';
+            const sp = document.getElementById('shipProvincia'); if (sp) sp.value = '';
+            const st = document.getElementById('shipDistrito'); if (st) st.value = '';
+            populateProvinciaSelect();
+            saveShipping(); renderCart();
+        }
+        function onProvinciaChange() {
+            saveShipping();
+            shipping.distrito = ''; shipping.agencia = '';
+            const st = document.getElementById('shipDistrito'); if (st) st.value = '';
+            populateDistritoSelect();
+            saveShipping(); renderCart();
+        }
         function onDistritoChange() {
             saveShipping();
             updateShipNote();
-            renderCart();
+            saveShipping(); renderCart();
         }
 
         function applyShippingToForm() {
@@ -1273,9 +1390,7 @@
             set('shipDireccion', shipping.direccion);
             set('shipTelefono', shipping.telefono);
             set('shipReferencia', shipping.referencia);
-            const sel = document.getElementById('shipDistrito');
-            if (sel && shipping.distrito && districtByName[shipping.distrito]) sel.value = shipping.distrito;
-            updateShipNote();
+            if (ubigeoReady) { populateDepartamentoSelect(); }
         }
 
         // ===== CUPÓN (Fase 6) — la validación SIEMPRE es del servidor =====
@@ -2068,28 +2183,17 @@
             const envEl = document.getElementById('cartEnvio');
             if (subEl) subEl.textContent = 'S/ ' + s.subtotal.toFixed(2);
             if (envEl) {
-                if (!shipping.distrito) envEl.textContent = '—';
-                else if (s.contraentrega) envEl.textContent = 'Contraentrega';
-                else if (s.envioGratis) envEl.textContent = 'Gratis';
-                else envEl.textContent = 'S/ ' + s.envio.toFixed(2);
+                envEl.textContent = shipping.distrito ? 'Gratis' : 'Gratis';
             }
             document.getElementById('cartTotal').textContent = 'S/ ' + s.total.toFixed(2);
 
-            // Nota de envío: contraentrega, ya-gratis, o cuánto falta para el gratis
+            // Nota de envío: siempre gratis. Contraentrega paga al recibir.
             const envNote = document.getElementById('envioNote');
             if (envNote) {
-                envNote.className = 'cart-envio-note';
-                if (s.contraentrega) {
-                    envNote.textContent = 'Pagas al recibir (contraentrega).';
-                } else if (s.envioGratis) {
-                    envNote.textContent = '¡Tienes envío gratis!';
-                    envNote.classList.add('free');
-                } else {
-                    const falta = UMBRAL_ENVIO_GRATIS - s.subtotal;
-                    envNote.textContent = falta > 0
-                        ? 'Te faltan S/ ' + falta.toFixed(2) + ' para envío gratis'
-                        : 'Agrega un poco más para envío gratis';
-                }
+                envNote.className = 'cart-envio-note free';
+                envNote.textContent = s.contraentrega
+                    ? 'Envío gratis · pagas al recibir (contraentrega).'
+                    : '¡Envío gratis a todo el Perú!';
             }
 
             // El botón cambia a "confirmar" en contraentrega (no hay pago online)
@@ -2227,15 +2331,17 @@
         // Validación de UX antes de enviar. El servidor revalida igual.
         function validateShippingForm() {
             saveShipping();
-            const FIELDS = ['fieldNombre', 'fieldDistrito', 'fieldDireccion', 'fieldTelefono'];
+            const FIELDS = ['fieldNombre', 'fieldDepartamento', 'fieldProvincia', 'fieldDistrito', 'fieldDireccion', 'fieldTelefono'];
             FIELDS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('invalid'); });
-            if (districts.length === 0) {
+            if (!ubigeoReady) {
                 setCheckoutMsg('El envio aun no esta disponible. Intentalo mas tarde.', 'error');
                 return false;
             }
             const problems = [];
             if (!shipping.nombre) problems.push('fieldNombre');
-            if (!shipping.distrito || !districtByName[shipping.distrito]) problems.push('fieldDistrito');
+            if (!shipping.departamento) problems.push('fieldDepartamento');
+            if (!shipping.provincia) problems.push('fieldProvincia');
+            if (!shipping.distrito) problems.push('fieldDistrito');
             if (!shipping.direccion) problems.push('fieldDireccion');
             if (!shipping.telefono) problems.push('fieldTelefono');
             // Email es opcional; si se escribe, debe tener formato válido.
@@ -2267,8 +2373,11 @@
                     email: shipping.email,
                     telefono: shipping.telefono,
                     direccion: shipping.direccion,
+                    departamento: shipping.departamento,
+                    provincia: shipping.provincia,
                     distrito: shipping.distrito,
-                    referencia: shipping.referencia
+                    referencia: shipping.referencia,
+                    agencia: shipping.agencia
                 }
             };
 

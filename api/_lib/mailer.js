@@ -117,6 +117,16 @@ function totalesHtml(p) {
     row('Total', money(p.total), true) + '</table>';
 }
 
+// Bloque de envío para el cliente: distrito + dirección/agencia (la dirección
+// ya trae empaquetado departamento/provincia y, si aplica, la agencia Shalom).
+function envioCliente(p) {
+  const linea = [p.distrito, p.direccion].filter(Boolean).join(' · ');
+  if (!linea) return '';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;border-top:1px solid #2c2c2c;">' +
+    '<tr><td style="padding-top:16px;font:700 11px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:#666666;">Env&iacute;o</td></tr>' +
+    '<tr><td style="padding-top:6px;font:400 13px/1.55 ' + F + ';color:#9a9a9a;">' + esc(linea) + '</td></tr></table>';
+}
+
 // Botón único: blanco, texto negro, mayúsculas, tracking, SIN bordes redondeados. Centrado.
 function btn(href, label) {
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:36px;"><tr><td align="center">' +
@@ -133,9 +143,11 @@ function tplClientePagado(p) {
   const nom = firstName(p.cliente_nombre);
   const body = head({ center: true, eyebrow: 'Pago confirmado', title: nom ? ('Gracias, ' + nom) : 'Gracias',
     msg: 'Recibimos tu pago. Ya estamos preparando tu pedido <span style="color:#ffffff;">' + esc(p.codigo) + '</span>.' })
-    + itemsHtml(p.items) + totalesHtml(p) + btn(trackUrl(p), 'Seguir mi pedido');
+    + itemsHtml(p.items) + totalesHtml(p) + envioCliente(p) + btn(trackUrl(p), 'Seguir mi pedido');
   const text = 'PAGO CONFIRMADO\n\nGracias' + (nom ? ', ' + nom : '') + '. Recibimos tu pago del pedido ' + p.codigo + '.\n\n' +
-    itemsText(p.items) + '\nTotal: ' + money(p.total) + '\n\nSeguimiento: ' + trackUrl(p);
+    itemsText(p.items) + '\nTotal: ' + money(p.total) +
+    ((p.distrito || p.direccion) ? '\n\nEnvio: ' + [p.distrito, p.direccion].filter(Boolean).join(' - ') : '') +
+    '\n\nSeguimiento: ' + trackUrl(p);
   return { subject: 'Tu pedido ' + p.codigo + ' está confirmado', html: layout({ preheader: 'Recibimos tu pago', bodyHtml: body }), text };
 }
 
